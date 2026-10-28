@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /danke.html
+Disallow: /danke-erstgespraech.html
+Sitemap: https://locadas.de/sitemap.xml
