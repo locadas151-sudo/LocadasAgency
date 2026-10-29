@@ -266,3 +266,5 @@ button{font-family:inherit}
 .who b{color:var(--text);font-weight:600}
 .who a{color:var(--g2);text-decoration:none}.who a:hover{text-decoration:underline}
 .ziel-fuss a{color:var(--g2);text-decoration:none;font-weight:500}
+
+.form-note{margin:14px 0 0;font-size:14px;color:var(--t2);background:var(--gp);border:1px solid var(--gs);border-radius:var(--rsm);padding:10px 12px}.form-note a{color:var(--g2)}
