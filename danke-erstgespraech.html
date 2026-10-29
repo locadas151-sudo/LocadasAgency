@@ -2,25 +2,44 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Anfrage erhalten – Locadas</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Anfrage erhalten · Locadas</title>
+<meta name="description" content="Danke. Julius ruft dich innerhalb eines Werktags an.">
 <meta name="robots" content="noindex">
+<meta name="theme-color" content="#0a2e23">
 <link rel="icon" href="assets/logo.png">
-<style>
-@font-face{font-family:Gellix;font-weight:400;src:url(assets/Gellix-Regular.dcf6566770bb03e30252.woff2) format("woff2")}
-@font-face{font-family:Gellix;font-weight:600 900;src:url(assets/Gellix-SemiBold.dcac5bbef4f3f1758782.woff2) format("woff2")}
-body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(180deg,#1a4d3f 0,#06261b 100%);color:#fff;font-family:Gellix,system-ui,sans-serif;text-align:center}
-h1{font-size:clamp(40px,6vw,80px);font-weight:600;letter-spacing:-.04em;line-height:1.02;margin:0 0 20px}
-h1 em{font-style:normal;color:#71de86}
-p{font-size:19px;line-height:1.5;color:rgba(220,252,231,.85);max-width:44ch;margin:0 auto 32px}
-a{display:inline-flex;align-items:center;height:52px;padding:0 24px;border-radius:14px;border:.5px solid rgba(220,252,231,.32);color:#fff;font-weight:600;text-decoration:none}
-</style>
+<link rel="preload" as="font" type="font/woff2" crossorigin href="assets/Gellix-SemiBold.dcac5bbef4f3f1758782.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="assets/Gellix-Regular.dcf6566770bb03e30252.woff2">
+<link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
-<div>
-<h1>Anfrage ist <em>da.</em></h1>
-<p>Danke. Julius ruft dich innerhalb eines Werktags an.</p>
-<a href="index.html">Zurück zur Startseite</a>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+<symbol id="i-ccheck" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></symbol>
+</svg>
+<header class="hd" id="hd">
+<div class="hd-in">
+<a class="logo" href="index.html" aria-label="Locadas Startseite"><img src="assets/logo.png" alt="" width="34" height="34"><span class="logo-t">Locadas</span></a>
+<nav class="nav" aria-label="Hauptnavigation">
+<a href="index.html#leistungen">Leistungen</a>
+<a href="index.html#ablauf">So läuft's</a>
+<a href="index.html#fragen">Fragen</a>
+</nav>
+<div class="hd-act">
+<a class="btn-login" href="https://app.locadas.de/login">Einloggen</a>
+<a class="btn-signin" href="https://calendly.com/julius-locadas/julius-komorek">Erstgespräch</a>
 </div>
+</div>
+</header>
+<main>
+<section class="hero" style="min-height:100vh;display:flex;align-items:center">
+<div class="wrap hero-in">
+<h1 class="h1">Anfrage ist <em>da.</em></h1>
+<p class="services" style="font-size:18px;max-width:46ch">Danke. Julius ruft dich innerhalb eines Werktags an.</p>
+<div class="cta-wrap" style="margin-top:12px"><a class="btn-login" href="index.html">Zurück zur Startseite</a></div>
+</div>
+</section>
+</main>
+<script>(function(){var hd=document.getElementById('hd');function s(){hd.classList.toggle('scrolled',(window.scrollY||0)>40)}window.addEventListener('scroll',s,{passive:true});s();})();</script>
 </body>
 </html>

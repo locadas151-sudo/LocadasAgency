@@ -3,25 +3,45 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Impressum – Locadas</title>
+<title>Impressum · Locadas</title>
+<meta name="description" content="Angaben gemäß § 5 DDG und Verantwortliche für den Inhalt.">
 <meta name="robots" content="index,follow">
+<meta name="theme-color" content="#0a2e23">
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/legal.css">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="assets/Gellix-SemiBold.dcac5bbef4f3f1758782.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="assets/Gellix-Regular.dcf6566770bb03e30252.woff2">
+<link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
-<header>
-<div class="wrap bar">
-<a href="index.html" class="brand" aria-label="Locadas Startseite"><img src="assets/logo.png" alt="" width="32" height="32"><span>Locadas</span></a>
-<a href="index.html" class="back">Zur Startseite</a>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+<symbol id="i-ccheck" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></symbol>
+</svg>
+<header class="hd" id="hd">
+<div class="hd-in">
+<a class="logo" href="index.html" aria-label="Locadas Startseite"><img src="assets/logo.png" alt="" width="34" height="34"><span class="logo-t">Locadas</span></a>
+<nav class="nav" aria-label="Hauptnavigation">
+<a href="index.html#leistungen">Leistungen</a>
+<a href="index.html#ablauf">So läuft's</a>
+<a href="index.html#fragen">Fragen</a>
+</nav>
+<div class="hd-act">
+<a class="btn-login" href="https://app.locadas.de/login">Einloggen</a>
+<a class="btn-signin" href="https://calendly.com/julius-locadas/julius-komorek">Erstgespräch</a>
+</div>
 </div>
 </header>
 <main>
-<section class="hero"><div class="wrap">
-<span class="eyebrow">Rechtliches</span>
-<h1>Impressum</h1>
-<p class="lead">Angaben gemäß § 5 DDG und Verantwortliche für den Inhalt.</p>
-</div></section>
-<section class="body"><div class="wrap prose">
+<section class="hero hero--sub">
+<div class="hero-bg" aria-hidden="true"><div class="orb" style="width:520px;height:520px;right:-160px;top:-160px"></div></div>
+<div class="wrap hero-in">
+<span class="eyebrow"><span class="edot"></span>Rechtliches</span>
+<h1 class="h1">Impressum</h1>
+<p class="services">Angaben gemäß § 5 DDG und Verantwortliche für den Inhalt.</p>
+
+</div>
+</section>
+<section class="section"><div class="wrap wrap--narrow prose">
 <h2>Angaben gemäß § 5 DDG</h2>
 <p>Locadas GmbH<br>Gladbacher Straße 21<br>52525 Heinsberg<br>Deutschland</p>
 <h2>Handelsregister</h2>
@@ -39,10 +59,40 @@
 <p>Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
 </div></section>
 </main>
-<footer><div class="wrap foot">
-<span>Locadas GmbH · Gladbacher Straße 21 · 52525 Heinsberg</span>
-<nav><a href="impressum.html">Impressum</a><a href="datenschutz.html">Datenschutz</a><a href="agb.html">AGB</a><a href="kontakt.html">Kontakt</a></nav>
+<footer class="lf lf--light">
+<div class="wrap wrap--narrow">
+<div class="lf-grid">
+<div class="lf-brand">
+<a class="lf-logo" href="index.html"><img src="assets/logo.png" alt="" width="40" height="40"><span class="lf-logo-t">Locadas</span></a>
+<p>Wir machen Handwerks- und Dienstleistungsbetriebe profitabel groß.</p>
+<span class="lf-rope"><svg class="ic"><use href="#i-ccheck"/></svg>Erstgespräche frei</span>
+</div>
+<div class="lf-col">
+<h4>Locadas</h4>
+<a href="index.html#leistungen">Leistungen</a>
+<a href="index.html#ablauf">So läuft's</a>
+<a href="index.html#fragen">Fragen</a>
+<a href="karriere.html">Mit uns arbeiten</a>
+</div>
+<div class="lf-col">
+<h4>Kontakt</h4>
+<a href="kontakt.html">Erstgespräch</a>
+<a href="mailto:info@locadas.de">info@locadas.de</a>
+<a href="https://www.instagram.com/locadas.de">Instagram</a>
+<a href="https://www.tiktok.com/@locadas.de">TikTok</a>
+<a href="https://app.locadas.de/login">Login Bestandskunden</a>
+</div>
+<div class="lf-col lf-contact">
+<h4>Locadas GmbH</h4>
+<p>Gladbacher Straße 21<br>52525 Heinsberg<br>Deutschland</p>
+</div>
+</div>
+<div class="lf-bottom">
 <span>© 2026 Locadas GmbH</span>
-</div></footer>
+<span class="lf-legal"><a href="agb.html">AGB</a><a href="datenschutz.html">Datenschutz</a><a href="impressum.html">Impressum</a></span>
+</div>
+</div>
+</footer>
+<script>(function(){var hd=document.getElementById('hd');function s(){hd.classList.toggle('scrolled',(window.scrollY||0)>40)}window.addEventListener('scroll',s,{passive:true});s();})();</script>
 </body>
 </html>
