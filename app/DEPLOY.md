@@ -56,7 +56,10 @@ Tests: `cd app && python -m pytest -q` (22 Tests, darunter ein kompletter Durchl
 
 ## 5. Was noch offen ist
 
-- **Outlook / Microsoft 365 und Gmail-Ein-Klick-Login (OAuth):** Code-Seite vorbereitet (`auth_type=oauth`, XOAUTH2 in IMAP und SMTP), aber es fehlen die App-Registrierungen. Google: Cloud Console → OAuth-Client (Web), Redirect `https://app.locadas.de/oauth/google/callback`, Scope `https://mail.google.com/`. Microsoft: Entra → App registration, Redirect `https://app.locadas.de/oauth/microsoft/callback`, Scopes `IMAP.AccessAsUser.All`, `SMTP.Send`, `offline_access`. Die Routen `/oauth/*` sind noch nicht gebaut; Secrets sind im Workflow schon vorgesehen.
+- **Gmail-Ein-Klick und Outlook / Microsoft 365 (OAuth):** fertig gebaut (`/oauth/google/*`, `/oauth/microsoft/*`), erscheint auf der Verbinden-Seite automatisch, sobald die Secrets gesetzt sind. Dafür einmal anlegen:
+  - Google: Cloud Console → APIs & Dienste → OAuth-Zustimmungsbildschirm (extern, App „Locadas Nachfasser“, Scope `https://mail.google.com/`) → Anmeldedaten → OAuth-Client-ID (Webanwendung), autorisierte Weiterleitungs-URI `https://app.locadas.de/oauth/google/callback`. Bis zur Google-Verifizierung können nur Test-Nutzer verbinden (unter Zielgruppe eintragen).
+  - Microsoft: Entra Admin Center → App-Registrierungen → neu (Konten in allen Organisationen und persönliche Konten), Redirect-URI (Web) `https://app.locadas.de/oauth/microsoft/callback`, Zertifikate und Geheimnisse → Client-Secret; API-Berechtigungen: `Office 365 Exchange Online → IMAP.AccessAsUser.All`, `SMTP.Send` plus `openid`, `email`, `offline_access`.
+  - Secrets `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET` in GitHub eintragen, neu deployen. Live noch nicht getestet (nur mit gemocktem Token-Austausch).
 - **Lese-Tracking** („Kunde hat das Angebot geöffnet“) gibt es beim Postfach-Weg nicht, nur Antwort-Erkennung. Dafür müsste das Angebot als Link über Locadas verschickt werden, das ist eine zweite Ausbaustufe.
 - **Claude-Extraktion** ist mit gemockter API getestet, nicht live. Nach dem ersten echten Postfach im Log prüfen, ob `extraction_source=claude` auftaucht und Beträge stimmen.
 - Rechnungen ohne erkennbares Zahlungsziel bekommen 14 Tage ab Versand (`DEFAULT_INVOICE_DUE_DAYS`).

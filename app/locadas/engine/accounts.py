@@ -6,16 +6,31 @@ from sqlalchemy.orm import Session
 from ..crypto import decrypt, encrypt
 from ..db import AccountStatus, Business, MailAccount, log_event
 from ..mail.connect import ConnectionConfig
-from ..mail.imap import ImapClient
+from ..mail import oauth
+from ..mail.imap import ImapClient, MailAuthError
 from ..mail.smtp import SmtpClient
 
 
+def _secret(account: MailAccount) -> str:
+    """Passwort, oder bei OAuth ein frisches Access-Token aus dem gespeicherten Refresh-Token."""
+    raw = decrypt(account.secret_enc)
+    if account.auth_type != "oauth":
+        return raw
+    provider = oauth.get(account.provider)
+    if provider is None:
+        raise MailAuthError(f"OAuth-Anbieter {account.provider!r} unbekannt")
+    try:
+        return oauth.access_token(provider, raw, cache_key=f"acc:{account.id}")
+    except oauth.OAuthError as exc:
+        raise MailAuthError(str(exc)) from exc
+
+
 def imap_for(account: MailAccount) -> ImapClient:
-    return ImapClient(account.imap_host, account.imap_port, account.imap_ssl, account.username, decrypt(account.secret_enc), account.auth_type)
+    return ImapClient(account.imap_host, account.imap_port, account.imap_ssl, account.username, _secret(account), account.auth_type)
 
 
 def smtp_for(account: MailAccount) -> SmtpClient:
-    return SmtpClient(account.smtp_host, account.smtp_port, account.smtp_ssl, account.username, decrypt(account.secret_enc), account.auth_type)
+    return SmtpClient(account.smtp_host, account.smtp_port, account.smtp_ssl, account.username, _secret(account), account.auth_type)
 
 
 def create_account(session: Session, business: Business, cfg: ConnectionConfig, secret: str, auth_type: str = "password") -> MailAccount:

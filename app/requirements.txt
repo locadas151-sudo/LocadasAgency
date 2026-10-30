@@ -9,4 +9,3 @@ cryptography>=42
 pdfplumber>=0.11
 pypdf>=4
 anthropic>=0.40
-httpx>=0.27

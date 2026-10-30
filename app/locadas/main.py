@@ -24,7 +24,9 @@ from .engine.scanner import scan_account
 from .engine.scheduler import run_cycle, start_scheduler
 from .extract.check import check_offer
 from .extract.pdftext import pdf_to_text
-from .mail.connect import ConnectFailed, connect_mailbox
+from .mail import oauth
+from .mail.connect import ConnectFailed, ConnectionConfig, connect_mailbox
+from .mail.imap import ImapClient, MailAuthError, MailConnectError
 from .mail.providers import PROVIDERS, detect_provider
 from .web import auth
 
@@ -102,6 +104,7 @@ templates.env.filters["rel"] = rel_date
 templates.env.globals.update(
     STATUS_LABEL=STATUS_LABEL, STATUS_CLASS=STATUS_CLASS, FU_LABEL=FU_LABEL, DocStatus=DocStatus, DocKind=DocKind,
     FollowUpStatus=FollowUpStatus, settings=settings, PROVIDERS=PROVIDERS, version=__version__,
+    oauth_providers=lambda: [p for p in oauth.providers().values() if p.enabled],
 )
 
 
@@ -378,6 +381,79 @@ def approval_link(request: Request, token: str, action: str, session: Session = 
         raise HTTPException(404)
     session.commit()
     return render(request, "approval.html", title=title, text=text, doc=doc, fu=fu)
+
+
+# --- OAuth (Gmail, Outlook) -----------------------------------------------------
+
+def _oauth_state(data: dict) -> str:
+    return auth._serializer("oauth").dumps(data)
+
+
+def _oauth_state_load(token: str) -> dict | None:
+    from itsdangerous import BadSignature, SignatureExpired
+    try:
+        return auth._serializer("oauth").loads(token, max_age=900)
+    except (BadSignature, SignatureExpired):
+        return None
+
+
+@app.get("/oauth/{key}/start")
+def oauth_start(key: str, business_name: str = "", owner_name: str = "", phone: str = ""):
+    p = oauth.get(key)
+    if p is None or not p.enabled:
+        raise HTTPException(404)
+    state = _oauth_state({"k": key, "b": business_name.strip()[:200], "o": owner_name.strip()[:200], "p": phone.strip()[:60]})
+    return RedirectResponse(oauth.authorize_url(p, state), status_code=303)
+
+
+@app.get("/oauth/{key}/callback", response_class=HTMLResponse)
+def oauth_callback(request: Request, key: str, session: Session = Depends(get_db), code: str = "", state: str = "", error: str = "", error_description: str = ""):
+    p = oauth.get(key)
+    data = _oauth_state_load(state) if state else None
+    if p is None or not p.enabled or data is None or data.get("k") != key:
+        raise HTTPException(status_code=400, detail="Die Anmeldung ist abgelaufen. Bitte noch einmal von vorn.")
+    values = dict(business_name=data.get("b", ""), owner_name=data.get("o", ""), phone=data.get("p", ""))
+
+    def fail(msg: str, hint: str = ""):
+        return render(request, "connect.html", business=None, email="", provider=None, values=values, error=msg, hint=hint)
+
+    if error or not code:
+        return fail(f"{p.label} hat die Verbindung abgelehnt.", error_description or error)
+    try:
+        tok = oauth.exchange_code(p, code)
+    except oauth.OAuthError as exc:
+        return fail("Die Verbindung hat nicht geklappt.", str(exc))
+    email = oauth.email_from_id_token(tok.get("id_token"))
+    if not email:
+        return fail("Wir konnten deine Mailadresse nicht lesen.", "Bitte erlaube beim Verbinden den Zugriff auf die E-Mail-Adresse.")
+    try:
+        with ImapClient(p.imap_host, 993, True, email, tok["access_token"], "oauth") as c:
+            sent = c.find_sent_folder(p.sent_folders)
+    except (MailAuthError, MailConnectError) as exc:
+        return fail(f"Postfach {email} ist angebunden, aber IMAP antwortet nicht.", f"{exc}. Bei Microsoft 365 muss IMAP im Admin-Center für das Postfach erlaubt sein.")
+    if not sent:
+        return fail("Kein Gesendet-Ordner gefunden.")
+    cfg = ConnectionConfig(
+        provider_key=key, provider_label=p.label, email=email, username=email,
+        imap_host=p.imap_host, imap_port=993, imap_ssl=True,
+        smtp_host=p.smtp_host, smtp_port=p.smtp_port, smtp_ssl=p.smtp_ssl, sent_folder=sent,
+    )
+    business = auth.business_by_email(session, email)
+    if business is None:
+        business = Business(name=values["business_name"] or email.split("@")[0], owner_name=values["owner_name"], email=email, phone=values["phone"])
+        session.add(business)
+        session.flush()
+    else:
+        business.name = values["business_name"] or business.name
+        business.owner_name = values["owner_name"] or business.owner_name
+        for a in business.accounts:
+            a.status = AccountStatus.DISCONNECTED
+    account = acc.create_account(session, business, cfg, tok["refresh_token"], auth_type="oauth")
+    oauth._cache[f"acc:{account.id}"] = (tok["access_token"], __import__("time").time() + int(tok.get("expires_in", 3600)))
+    business.last_login_at = utcnow()
+    session.commit()
+    threading.Thread(target=_background_scan, args=(account.id,), daemon=True).start()
+    return set_session(RedirectResponse("/start", status_code=303), business)
 
 
 # --- Einstellungen -------------------------------------------------------------------

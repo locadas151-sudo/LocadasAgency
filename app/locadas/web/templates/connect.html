@@ -14,6 +14,13 @@
 <div class="field"><label for="business_name">Betrieb</label><input id="business_name" name="business_name" value="{{ values.business_name or '' }}" placeholder="Müller Haustechnik GmbH" required></div>
 <div class="field"><label for="owner_name">Dein Name <small>(steht unter den Mails)</small></label><input id="owner_name" name="owner_name" value="{{ values.owner_name or '' }}" placeholder="Thomas Müller"></div>
 </div>
+{% set oap = oauth_providers() %}
+{% if oap %}
+<div class="btn-row" id="oauth-row">
+{% for p in oap %}<a class="btn ghost" href="/oauth/{{ p.key }}/start" data-oauth="{{ p.key }}">Mit {{ 'Google' if p.key == 'google' else 'Microsoft' }} verbinden</a>{% endfor %}
+<span class="small muted">Ein Klick, kein Passwort. Oder unten mit Adresse und Passwort.</span>
+</div>
+{% endif %}
 <div class="field"><label for="email">Mailadresse, von der deine Angebote rausgehen</label><input id="email" name="email" type="email" value="{{ email or '' }}" placeholder="info@mueller-haustechnik.de" required autocomplete="email"></div>
 <div class="field"><label for="password">Passwort des Postfachs</label><input id="password" name="password" type="password" required autocomplete="current-password">
 <p class="small muted" id="provider-hint" style="margin:0">{% if provider %}{{ provider.label }}: {{ provider.hint or 'Dein normales Postfach-Passwort.' }}{% else %}Das Passwort, mit dem du dich auch in deinem Mailprogramm anmeldest.{% endif %}</p></div>
@@ -57,7 +64,7 @@
 <li><b>GMX, WEB.DE:</b> dein normales Passwort, IMAP muss in den Einstellungen eingeschaltet sein.</li>
 <li><b>T-Online:</b> das E-Mail-Passwort aus dem Kundencenter.</li>
 <li><b>IONOS, STRATO, eigene Domain:</b> dein normales Postfach-Passwort.</li>
-<li><b>Outlook, Microsoft 365:</b> noch nicht möglich, kommt.</li>
+<li><b>Outlook, Microsoft 365:</b> {% if oauth_providers()|selectattr('key','equalto','microsoft')|list %}über „Mit Microsoft verbinden“, kein Passwort nötig.{% else %}noch nicht möglich, kommt.{% endif %}</li>
 </ul>
 </div>
 </div>
@@ -84,6 +91,7 @@ var email=document.getElementById('email'),hint=document.getElementById('provide
 function upd(){var d=(email.value.split('@')[1]||'').toLowerCase();var k=map[d];hint.textContent=k?texts[k]:(d?'Eigene Domain: Dein normales Postfach-Passwort. Wir suchen den Server automatisch.':'Das Passwort, mit dem du dich auch in deinem Mailprogramm anmeldest.');}
 email.addEventListener('input',upd);email.addEventListener('change',upd);
 var f=document.getElementById('connect'),b=document.getElementById('submit');
+document.querySelectorAll('[data-oauth]').forEach(function(a){a.addEventListener('click',function(e){var bn=document.getElementById('business_name').value.trim();if(!bn){e.preventDefault();document.getElementById('business_name').focus();document.getElementById('business_name').reportValidity();return;}var q=new URLSearchParams({business_name:bn,owner_name:document.getElementById('owner_name').value,phone:document.getElementById('phone').value});a.href=a.getAttribute('href').split('?')[0]+'?'+q.toString();});});
 f.addEventListener('submit',function(){b.disabled=true;b.textContent='Verbindung wird geprüft …';});
 })();
 </script>
