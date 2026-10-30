@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Locadas Nachfasser{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap">
+<div class="app-head">
+<div><h1 class="h2">{{ business.name }}</h1><p class="app-sub">{% if account %}{{ account.email }}{% if account.last_scan_at %} · zuletzt geprüft {{ account.last_scan_at|datetime }}{% endif %}{% endif %}</p></div>
+<form method="post" action="/jetzt-pruefen" class="inline-form"><button class="btn ghost sm" type="submit">Jetzt Postfach prüfen</button></form>
+</div>
+
+{% if account and account.status.value == 'error' %}
+<div class="card danger" style="margin-bottom:20px"><b>Postfach-Verbindung gestört:</b> {{ account.last_error }}<br><span class="small">Meist hilft es, das Postfach <a href="/verbinden">neu zu verbinden</a> (bei geändertem Passwort).</span></div>
+{% endif %}
+{% if business.paused %}
+<div class="card warn" style="margin-bottom:20px"><b>Nachfassen ist pausiert.</b> In den <a href="/einstellungen">Einstellungen</a> wieder einschalten.</div>
+{% endif %}
+
+<div class="kpis">
+<div class="kpi"><span class="kpi-num">{{ counts.open_offers }}</span><span class="kpi-lbl">Offene Angebote</span></div>
+<div class="kpi"><span class="kpi-num">{{ counts.open_invoices }}</span><span class="kpi-lbl">Offene Rechnungen{% if open_amount %} · {{ open_amount|money }}{% endif %}</span></div>
+<div class="kpi"><span class="kpi-num">{{ counts.sent }}</span><span class="kpi-lbl">Nachfass-Mails geschickt</span></div>
+<div class="kpi"><span class="kpi-num">{{ counts.won }}</span><span class="kpi-lbl">Aufträge und Zahlungen</span></div>
+</div>
+
+{% if pending %}
+<div class="card warn" style="margin-bottom:20px">
+<h3 class="h3">Wartet auf deine Freigabe</h3>
+<p class="small muted" style="margin:0 0 10px">Noch {{ settings.approvals_before_auto - business.approvals_done if settings.approvals_before_auto > business.approvals_done else 0 }} Freigaben, dann läuft es automatisch. <a href="/einstellungen">Jetzt schon umstellen</a></p>
+<ul class="list">
+{% for f in pending %}
+<li class="row">
+<div><a class="t" href="/dokument/{{ f.document.id }}">{{ f.document.kind_label }} {{ f.document.document_number or f.document.title }} · {{ f.document.customer_name or f.document.customer_email }}</a><div class="meta"><span>Nachfass-Mail {{ f.step }}</span><span>{{ f.subject }}</span></div></div>
+<div class="right btn-row"><a class="btn sm" href="/f/{{ f.approval_token }}/send">Senden</a><a class="btn ghost sm" href="/f/{{ f.approval_token }}/skip">Diesmal nicht</a></div>
+</li>
+{% endfor %}
+</ul>
+</div>
+{% endif %}
+
+<div class="grid2">
+<div>
+<div class="tabs">
+<a class="tab {% if filter=='open' %}on{% endif %}" href="/dashboard?filter=open">Offen</a>
+<a class="tab {% if filter=='offers' %}on{% endif %}" href="/dashboard?filter=offers">Angebote</a>
+<a class="tab {% if filter=='invoices' %}on{% endif %}" href="/dashboard?filter=invoices">Rechnungen</a>
+<a class="tab {% if filter=='closed' %}on{% endif %}" href="/dashboard?filter=closed">Erledigt</a>
+<a class="tab {% if filter=='all' %}on{% endif %}" href="/dashboard?filter=all">Alle</a>
+</div>
+<div class="card">
+{% if not docs %}
+<p class="muted" style="margin:0">Hier ist noch nichts. Sobald ein Angebot oder eine Rechnung als PDF aus deinem Postfach rausgeht, taucht es hier auf.</p>
+{% else %}
+<ul class="list">
+{% for d in docs %}
+<li class="row">
+<div>
+<a class="t" href="/dokument/{{ d.id }}">{{ d.customer_name or d.customer_email }}</a>
+<div class="meta"><span class="pill kind">{{ d.kind_label }}{% if d.document_number %} {{ d.document_number }}{% endif %}</span>{% if d.title %}<span>{{ d.title }}</span>{% endif %}<span>gesendet {{ d.sent_at|date }}</span>{% if d.kind == DocKind.INVOICE and d.due_date %}<span>fällig {{ d.due_date|date }}</span>{% endif %}</div>
+</div>
+<div class="right">
+<span class="amt">{{ d.amount_gross|money }}</span>
+<div class="next">{% if d.status == DocStatus.OPEN %}{% if d.next_followup_at %}nachfassen {{ d.next_followup_at|rel }}{% elif d.followups_sent %}{{ d.followups_sent }}× nachgefasst{% endif %}{% else %}<span class="pill {{ STATUS_CLASS[d.status] }}">{{ STATUS_LABEL[d.status] }}</span>{% endif %}</div>
+</div>
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+</div>
+</div>
+<div>
+<div class="card">
+<h3 class="h3">Zuletzt passiert</h3>
+{% if not events %}<p class="muted small" style="margin:0">Noch nichts.</p>{% else %}
+<ul class="timeline">
+{% for e in events %}<li><time>{{ e.created_at|datetime }}</time><span>{% if e.document_id %}<a href="/dokument/{{ e.document_id }}" style="color:inherit">{{ e.text }}</a>{% else %}{{ e.text }}{% endif %}</span></li>{% endfor %}
+</ul>
+{% endif %}
+</div>
+<div class="card" style="margin-top:16px">
+<h3 class="h3">So läuft's gerade</h3>
+<ul class="plain">
+<li>Angebote: nachfassen {{ settings.offer_followup_days|join(', ') }} Tage nach Versand{% if not business.followup_offers %} (<b>aus</b>){% endif %}</li>
+<li>Rechnungen: nachfassen {{ settings.invoice_followup_days|join(', ') }} Tage nach Fälligkeit{% if not business.followup_invoices %} (<b>aus</b>){% endif %}</li>
+<li>{% if business.auto_mode or business.approvals_done >= settings.approvals_before_auto %}Automatisch, ohne Rückfrage{% else %}Mit Freigabe per Mail, noch {{ settings.approvals_before_auto - business.approvals_done }}×{% endif %}</li>
+<li>Versand nur werktags {{ settings.send_hour_from }} bis {{ settings.send_hour_to }} Uhr</li>
+</ul>
+<a class="btn ghost sm" href="/einstellungen" style="margin-top:12px">Einstellungen</a>
+</div>
+</div>
+</div>
+</div>
+</section>
+{% endblock %}

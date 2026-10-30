@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} · Locadas Nachfasser{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap wrap--narrow" style="max-width:560px">
+<div class="card"><h1 class="h2" style="font-size:30px">{{ title }}</h1><p>{{ message }}</p><a class="btn ghost sm" href="/">Zur Startseite</a></div>
+</div>
+</section>
+{% endblock %}

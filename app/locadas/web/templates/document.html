@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.kind_label }} {{ doc.document_number or doc.title }} · Locadas Nachfasser{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap">
+<p class="small"><a href="/dashboard">← Dashboard</a></p>
+<div class="app-head">
+<div>
+<h1 class="h2">{{ doc.customer_name or doc.customer_email }}</h1>
+<p class="app-sub"><span class="pill kind">{{ doc.kind_label }}{% if doc.document_number %} {{ doc.document_number }}{% endif %}</span> {% if doc.title %}{{ doc.title }} · {% endif %}gesendet {{ doc.sent_at|date }}{% if doc.amount_gross %} · {{ doc.amount_gross|money }}{% endif %}{% if doc.kind == DocKind.INVOICE and doc.due_date %} · fällig {{ doc.due_date|date }}{% endif %}</p>
+</div>
+<span class="pill {{ STATUS_CLASS[doc.status] }}">{{ STATUS_LABEL[doc.status] }}</span>
+</div>
+{% if msg == 'gespeichert' %}<div class="note" style="margin-bottom:16px">Gespeichert.</div>{% endif %}
+
+<div class="grid2">
+<div>
+<div class="card">
+<h3 class="h3">Nachfassen</h3>
+{% if doc.status == DocStatus.OPEN %}
+<form method="post" action="/dokument/{{ doc.id }}/status" class="btn-row" style="margin-bottom:16px">
+{% if doc.kind == DocKind.OFFER %}
+<button class="btn sm" name="action" value="won">Auftrag bekommen</button>
+<button class="btn ghost sm" name="action" value="lost">Absage</button>
+{% else %}
+<button class="btn sm" name="action" value="paid">Bezahlt</button>
+{% endif %}
+<button class="btn ghost sm" name="action" value="replied">Kunde hat sich gemeldet</button>
+<button class="btn ghost sm" name="action" value="ignore">Nicht nachfassen</button>
+{% if doc.customer_email %}<button class="btn ghost sm" name="action" value="send_now" onclick="return confirm('Nächste Nachfass-Mail jetzt sofort an {{ doc.customer_email }} schicken?')">Nächste Stufe jetzt senden</button>{% endif %}
+</form>
+{% else %}
+<form method="post" action="/dokument/{{ doc.id }}/status" class="btn-row" style="margin-bottom:16px">
+<span class="muted small">{{ doc.close_reason }}{% if doc.closed_at %} · {{ doc.closed_at|date }}{% endif %}</span>
+<button class="btn ghost sm" name="action" value="reopen">Wieder nachfassen</button>
+</form>
+{% endif %}
+{% if not doc.customer_email %}<div class="note err" style="margin-bottom:12px">Keine Kunden-Mailadresse gefunden. Trag sie rechts ein, sonst können wir nicht nachfassen.</div>{% endif %}
+<ul class="steps">
+{% for f in doc.followups %}
+<details class="step" {% if f.status in (FollowUpStatus.AWAITING_APPROVAL,) %}open{% endif %}>
+<summary><span>Nachfass-Mail {{ f.step }}</span><span class="pill {% if f.status == FollowUpStatus.SENT %}good{% elif f.status == FollowUpStatus.AWAITING_APPROVAL %}warn{% elif f.status == FollowUpStatus.SCHEDULED %}open{% else %}muted{% endif %}">{{ FU_LABEL[f.status] }}{% if f.status == FollowUpStatus.SENT and f.sent_at %} {{ f.sent_at|date }}{% elif f.status == FollowUpStatus.SCHEDULED %} · {{ f.due_at|rel }}{% endif %}</span></summary>
+{% set sub = f.subject or (previews[f.id][0] if f.id in previews else '') %}
+{% set body = f.body or (previews[f.id][1] if f.id in previews else '') %}
+<p class="sub"><b>Betreff:</b> {{ sub }}</p>
+<pre>{{ body }}</pre>
+{% if f.status == FollowUpStatus.AWAITING_APPROVAL %}<div class="btn-row" style="margin-top:12px"><a class="btn sm" href="/f/{{ f.approval_token }}/send">Jetzt senden</a><a class="btn ghost sm" href="/f/{{ f.approval_token }}/skip">Diesmal nicht</a></div>{% endif %}
+{% if f.error %}<p class="sub" style="color:#991b1b">{{ f.error }}</p>{% endif %}
+</details>
+{% endfor %}
+</ul>
+</div>
+
+<div class="card" style="margin-top:16px">
+<h3 class="h3">Verlauf</h3>
+<ul class="timeline">
+{% for e in events %}<li><time>{{ e.created_at|datetime }}</time><span>{{ e.text }}</span></li>{% endfor %}
+</ul>
+</div>
+</div>
+
+<div>
+<div class="card">
+<h3 class="h3">Angaben</h3>
+<p class="small muted" style="margin:0 0 12px">Erkannt aus deiner Mail{% if doc.extraction_source == 'claude' %} und dem PDF{% endif %}. Stimmt etwas nicht, einfach korrigieren.</p>
+<form method="post" action="/dokument/{{ doc.id }}/bearbeiten" style="display:flex;flex-direction:column;gap:14px">
+<div class="field"><label>Kunde</label><input name="customer_name" value="{{ doc.customer_name }}"></div>
+<div class="field"><label>Kunden-Mail</label><input name="customer_email" type="email" value="{{ doc.customer_email }}"></div>
+<div class="fields2">
+<div class="field"><label>Nummer</label><input name="document_number" value="{{ doc.document_number }}"></div>
+<div class="field"><label>Betrag brutto</label><input name="amount_gross" value="{{ '%.2f'|format(doc.amount_gross)|replace('.', ',') if doc.amount_gross is not none else '' }}"></div>
+</div>
+<div class="field"><label>Bezeichnung</label><input name="title" value="{{ doc.title }}"></div>
+{% if doc.kind == DocKind.INVOICE %}<div class="field"><label>Fällig am</label><input name="due_date" type="date" value="{{ doc.due_date.strftime('%Y-%m-%d') if doc.due_date else '' }}"></div>{% endif %}
+<button class="btn ghost sm" type="submit">Speichern</button>
+</form>
+</div>
+<div class="card" style="margin-top:16px">
+<h3 class="h3">Original</h3>
+<p class="small muted" style="margin:0 0 8px">Betreff: {{ doc.subject }}</p>
+{% if doc.pdf_path %}<a class="btn ghost sm" href="/pdf/{{ doc.id }}">{{ doc.pdf_filename or 'PDF öffnen' }}</a>{% endif %}
+</div>
+</div>
+</div>
+</div>
+</section>
+{% endblock %}

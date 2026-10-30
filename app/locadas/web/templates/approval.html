@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} · Locadas Nachfasser{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap wrap--narrow" style="max-width:640px">
+<div class="card accent">
+<h1 class="h2" style="font-size:32px">{{ title }}</h1>
+<p style="font-size:16px">{{ text }}</p>
+<p class="small muted">{{ doc.kind_label }} {{ doc.document_number or doc.title }} · {{ doc.customer_name or doc.customer_email }}</p>
+<div class="btn-row"><a class="btn sm" href="/dokument/{{ doc.id }}">Zum Dokument</a><a class="btn ghost sm" href="/dashboard">Dashboard</a></div>
+</div>
+</div>
+</section>
+{% endblock %}

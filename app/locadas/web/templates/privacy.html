@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Datenschutz · Locadas Nachfasser{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap wrap--narrow" style="max-width:760px">
+<div class="app-head"><div><h1 class="h2">Datenschutz im Nachfasser</h1><p class="app-sub">Was wir lesen, was wir speichern, was nie passiert.</p></div></div>
+<div class="card">
+<h3 class="h3">Was wir lesen</h3>
+<ul class="plain">
+<li><b>Gesendet-Ordner:</b> nur Mails mit PDF-Anhang. Davon verarbeiten wir nur die, bei denen Betreff, Dateiname oder PDF auf ein Angebot oder eine Rechnung hinweisen.</li>
+<li><b>Posteingang:</b> nur Kopfzeilen (Absender, Betreff, Bezug), um Antworten deiner Kunden auf offene Angebote und Rechnungen zu erkennen. Inhalte lesen wir dort nicht.</li>
+<li>Alles andere in deinem Postfach wird weder gelesen noch gespeichert.</li>
+</ul>
+</div>
+<div class="card" style="margin-top:16px">
+<h3 class="h3">Was wir speichern</h3>
+<ul class="plain">
+<li>Deine Postfach-Zugangsdaten, verschlüsselt (AES). Sie werden nie angezeigt und nur zum Lesen und Versenden über dein Postfach verwendet.</li>
+<li>Die erkannten Angebots- und Rechnungs-PDFs sowie die daraus gelesenen Angaben (Kunde, Nummer, Betrag, Fälligkeit).</li>
+<li>Die Nachfass-Mails, die wir in deinem Namen geschickt haben, und den Verlauf dazu.</li>
+<li>Server-Standort Deutschland (AWS Frankfurt). Zur Erkennung der Angaben im PDF nutzen wir ein KI-Modell von Anthropic, die Inhalte werden dort nicht zum Training verwendet.</li>
+</ul>
+</div>
+<div class="card" style="margin-top:16px">
+<h3 class="h3">Was nie passiert</h3>
+<ul class="plain">
+<li>Wir schicken keine Mail, die du nicht in den Einstellungen erlaubt hast. Anfangs fragen wir vor jeder Nachfass-Mail.</li>
+<li>Wir löschen oder verändern nichts in deinem Postfach.</li>
+<li>Wir geben Kundendaten nicht an Dritte weiter und nutzen sie nicht für Werbung.</li>
+<li>Trennst du die Verbindung, werden Zugangsdaten, Dokumente, PDFs und Verlauf sofort gelöscht.</li>
+</ul>
+</div>
+<p class="small muted" style="margin-top:20px">Verantwortlich: Locadas GmbH, Gladbacher Straße 21, 52525 Heinsberg, <a href="mailto:info@locadas.de">info@locadas.de</a>. Einen Auftragsverarbeitungsvertrag (AVV) nach Art. 28 DSGVO stellen wir dir auf Anfrage aus. Allgemeine Datenschutzerklärung: <a href="https://locadas.de/datenschutz.html">locadas.de/datenschutz</a>.</p>
+</div>
+</section>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Verbunden · Locadas Nachfasser{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap wrap--narrow">
+<div class="app-head">
+<div><h1 class="h2">Postfach <em>verbunden.</em></h1><p class="app-sub">{{ account.email if account else business.email }} ist angebunden. {% if scanning %}Wir lesen gerade die letzten 30 Tage.{% else %}Das haben wir gefunden:{% endif %}</p></div>
+<a class="btn" href="/dashboard">Zum Dashboard <svg class="ic"><use href="#i-arrow"/></svg></a>
+</div>
+
+{% if scanning %}
+<div class="card accent" id="scanning">
+<h3 class="h3">Einen Moment …</h3>
+<p class="muted" style="margin:0">Wir gehen durch deinen Gesendet-Ordner und sammeln alle Angebote und Rechnungen der letzten 30 Tage. Das dauert je nach Postfach ein bis zwei Minuten. Die Seite aktualisiert sich von selbst.</p>
+</div>
+{% elif account and account.status.value == 'error' %}
+<div class="card danger">
+<h3 class="h3">Da hakt etwas</h3>
+<p style="margin:0">{{ account.last_error }}</p>
+</div>
+{% elif not docs %}
+<div class="card">
+<h3 class="h3">Noch nichts gefunden</h3>
+<p class="muted">In den letzten 30 Tagen war in deinem Gesendet-Ordner keine Mail mit einem Angebots- oder Rechnungs-PDF an einen Kunden. Ab jetzt schauen wir alle paar Minuten nach. Sobald du das nächste Angebot schickst, taucht es hier auf.</p>
+<p class="small muted" style="margin:0">Tipp: Wir erkennen Dokumente am Betreff, am Dateinamen und am Inhalt des PDFs („Angebot“, „Kostenvoranschlag“, „Rechnung“). Mahnungen, Lieferscheine und Auftragsbestätigungen lassen wir bewusst liegen.</p>
+</div>
+{% else %}
+<div class="card">
+<h3 class="h3">{{ docs|length }} Dokumente erkannt</h3>
+<ul class="list">
+{% for d in docs %}
+<li class="row">
+<div><a class="t" href="/dokument/{{ d.id }}">{{ d.kind_label }} {{ d.document_number }}{% if d.title %} · {{ d.title }}{% endif %}</a>
+<div class="meta"><span>{{ d.customer_name or d.customer_email }}</span><span>gesendet {{ d.sent_at|date }}</span>{% if d.kind == DocKind.INVOICE and d.due_date %}<span>fällig {{ d.due_date|date }}</span>{% endif %}</div></div>
+<div class="right"><span class="amt">{{ d.amount_gross|money }}</span><div class="next">{% if d.next_followup_at %}nachfassen {{ d.next_followup_at|rel }}{% endif %}</div></div>
+</li>
+{% endfor %}
+</ul>
+</div>
+<div class="note" style="margin-top:16px">Passt eines nicht (falscher Kunde, schon erledigt)? Klick drauf und setz den Status. Die erste Nachfass-Mail geht erst raus, wenn du sie freigegeben hast.</div>
+{% endif %}
+</div>
+</section>
+{% endblock %}
+{% block scripts %}{% if scanning %}<script>setTimeout(function(){location.reload();},6000);</script>{% endif %}{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Angebots-Check · Ist dein Handwerker-Angebot vollständig und fair aufgebaut?{% endblock %}
+{% block description %}Lad dein Handwerker-Angebot hoch. Wir sagen dir, was drinsteht, was fehlt, wo Risiken liegen und welche Fragen du vor der Unterschrift stellen solltest. Kostenlos.{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap wrap--narrow">
+<div class="app-head">
+<div><div class="eyebrow"><span class="dot" aria-hidden="true"></span><span>Für Kunden, kostenlos</span></div><h1 class="h2">Ist dein Angebot <em>sauber?</em></h1><p class="app-sub">Lad das Angebot hoch. Wir prüfen, ob alles drinsteht, was reingehört, wo Risiken liegen und was du vor der Unterschrift fragen solltest.</p></div>
+</div>
+
+{% if result %}
+<div class="card accent">
+<div class="score"><span class="score-num">{{ result.score }}</span><div style="flex:1"><div class="score-bar"><i style="width:{{ result.score }}%"></i></div><p class="small muted" style="margin:6px 0 0">Vollständigkeit und Klarheit, 0 bis 100. {% if result.score >= 90 %}Sehr sauberes Angebot.{% elif result.score >= 70 %}Gut, mit kleinen Lücken.{% elif result.score >= 50 %}Wichtige Angaben fehlen, erst klären.{% else %}So nicht unterschreiben, erst nachbessern lassen.{% endif %}</p></div></div>
+<p style="font-size:16px;margin:18px 0 0">{{ result.summary }}</p>
+{% if result.trade or result.amount_gross %}<p class="small muted" style="margin:6px 0 0">{% if result.trade %}{{ result.trade }}{% endif %}{% if result.amount_gross %} · {{ result.amount_gross|money }} brutto{% endif %}</p>{% endif %}
+</div>
+<div class="cols2" style="margin-top:16px">
+<div class="card"><h3 class="h3">Das steht sauber drin</h3>{% if result.present %}<ul class="plain">{% for p in result.present %}<li>{{ p }}</li>{% endfor %}</ul>{% else %}<p class="muted small">Wenig Konkretes.</p>{% endif %}</div>
+<div class="card"><h3 class="h3">Das fehlt oder ist unklar</h3>{% if result.missing %}<ul class="plain">{% for p in result.missing %}<li>{{ p }}</li>{% endfor %}</ul>{% else %}<p class="muted small">Nichts Wesentliches.</p>{% endif %}</div>
+</div>
+{% if result.risks %}<div class="card warn" style="margin-top:16px"><h3 class="h3">Worauf du achten solltest</h3><ul class="plain">{% for p in result.risks %}<li>{{ p }}</li>{% endfor %}</ul></div>{% endif %}
+<div class="card" style="margin-top:16px"><h3 class="h3">Das solltest du den Betrieb fragen</h3><ul class="plain">{% for p in result.questions %}<li>{{ p }}</li>{% endfor %}</ul></div>
+{% if result.price_note %}<div class="card" style="margin-top:16px"><h3 class="h3">Zum Preis</h3><p style="margin:0">{{ result.price_note }}</p><p class="small muted" style="margin:8px 0 0">Ob der Preis hoch oder niedrig ist, hängt von Region, Material und Zustand ab. Das kann niemand seriös aus dem PDF allein sagen, wir auch nicht.</p></div>{% endif %}
+{% if result.verdict %}<div class="note" style="margin-top:16px"><b>{{ result.verdict }}</b></div>{% endif %}
+<p style="margin-top:20px"><a class="btn ghost sm" href="/check">Noch ein Angebot prüfen</a></p>
+{% else %}
+<div class="grid2">
+<form class="form-card" method="post" action="/check" enctype="multipart/form-data" id="checkform">
+{% if error %}<div class="note err">{{ error }}</div>{% endif %}
+{% if not available %}<div class="note warn">Der Check ist gerade nicht aktiv. Schau in ein paar Stunden noch einmal vorbei.</div>{% endif %}
+<div class="field"><label for="file">Angebot als PDF</label><input id="file" name="file" type="file" accept=".pdf,application/pdf,.txt" style="padding:12px 16px;height:auto"></div>
+<div class="field"><label for="text">Oder Text reinkopieren</label><textarea id="text" name="text" placeholder="Angebot Nr. 2026-118 … Pos. 1 Demontage … Gesamtbetrag …"></textarea></div>
+<button class="btn" type="submit" id="checkbtn" {% if not available %}disabled{% endif %}>Angebot prüfen <svg class="ic"><use href="#i-arrow"/></svg></button>
+<p class="small muted" style="margin:0">Das PDF wird nur für die Auswertung verarbeitet und nicht gespeichert.</p>
+</form>
+<div class="card accent">
+<h3 class="h3">Was du bekommst</h3>
+<ul class="plain">
+<li>Eine Einschätzung in einem Satz, was angeboten wird und zu welchem Betrag</li>
+<li>Was sauber drinsteht und was fehlt (Mengen, Einzelpreise, Gültigkeit, Zahlungsbedingungen, Ausführungszeitraum)</li>
+<li>Risiken wie Stundenlohnarbeiten ohne Obergrenze, hohe Anzahlungen, Materialvorbehalte</li>
+<li>Die Fragen, die du dem Betrieb vor der Unterschrift stellen solltest</li>
+</ul>
+<p class="small muted" style="margin:12px 0 0">Wir sagen bewusst nicht „zu teuer“ oder „zu günstig“. Das hängt von Region, Material und Zustand ab und wäre geraten.</p>
+</div>
+</div>
+{% endif %}
+</div>
+</section>
+{% endblock %}
+{% block scripts %}<script>(function(){var f=document.getElementById('checkform'),b=document.getElementById('checkbtn');if(f&&b)f.addEventListener('submit',function(){b.disabled=true;b.textContent='Wird geprüft, 20 Sekunden …';});})();</script>{% endblock %}

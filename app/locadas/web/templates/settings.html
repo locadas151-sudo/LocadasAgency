@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Einstellungen · Locadas Nachfasser{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap wrap--narrow">
+<div class="app-head"><div><h1 class="h2">Einstellungen</h1><p class="app-sub">Wie und wann nachgefasst wird.</p></div></div>
+{% if msg == 'gespeichert' %}<div class="note" style="margin-bottom:16px">Gespeichert.</div>{% endif %}
+{% if msg == 'bestaetigen' %}<div class="note warn" style="margin-bottom:16px">Zum Trennen bitte „ja“ ins Feld schreiben.</div>{% endif %}
+<div class="grid2">
+<form class="form-card" method="post" action="/einstellungen" style="max-width:none">
+<div class="fields2">
+<div class="field"><label>Betrieb <small>(Absendername)</small></label><input name="name" value="{{ business.name }}" required></div>
+<div class="field"><label>Dein Name</label><input name="owner_name" value="{{ business.owner_name }}"></div>
+</div>
+<div class="field"><label>Telefon</label><input name="phone" value="{{ business.phone }}"></div>
+<div class="field"><label>Grußformel und Signatur <small>(leer = „Viele Grüße“, Name, Betrieb, Telefon)</small></label><textarea name="signature" placeholder="Viele Grüße&#10;Thomas Müller&#10;Müller Haustechnik GmbH&#10;0171 2345678">{{ business.signature }}</textarea></div>
+<div>
+<label class="toggle"><input type="checkbox" name="followup_offers" value="1" {% if business.followup_offers %}checked{% endif %}><div><b>Angebote nachfassen</b><span>{{ settings.offer_followup_days|join(', ') }} Tage nach Versand, bis der Kunde antwortet.</span></div></label>
+<label class="toggle"><input type="checkbox" name="followup_invoices" value="1" {% if business.followup_invoices %}checked{% endif %}><div><b>Rechnungen nachfassen</b><span>{{ settings.invoice_followup_days|join(', ') }} Tage nach Fälligkeit. Freundlich, dann deutlicher.</span></div></label>
+<label class="toggle"><input type="checkbox" name="auto_mode" value="1" {% if business.auto_mode or business.approvals_done >= settings.approvals_before_auto %}checked{% endif %}><div><b>Automatisch senden, ohne Freigabe</b><span>Aus = du bekommst jede Nachfass-Mail vorher per Mail zur Freigabe. {{ business.approvals_done }} von {{ settings.approvals_before_auto }} Freigaben erteilt.</span></div></label>
+<label class="toggle"><input type="checkbox" name="notify_opened" value="1" {% if business.notify_opened %}checked{% endif %}><div><b>Bescheid geben, wenn ein Kunde antwortet</b><span>Kurze Mail in dein Postfach, sobald wir eine Antwort erkennen.</span></div></label>
+<label class="toggle"><input type="checkbox" name="paused" value="1" {% if business.paused %}checked{% endif %}><div><b>Alles pausieren</b><span>Urlaub oder Baustelle: Wir lesen weiter mit, schicken aber nichts.</span></div></label>
+</div>
+<button class="btn" type="submit">Speichern</button>
+</form>
+
+<div>
+<div class="card">
+<h3 class="h3">Postfach</h3>
+{% if account %}
+<p style="margin:0 0 4px"><b>{{ account.email }}</b> <span class="pill {% if account.status.value == 'active' %}good{% else %}bad{% endif %}">{{ 'verbunden' if account.status.value == 'active' else 'Fehler' }}</span></p>
+<p class="small muted" style="margin:0">{{ account.imap_host }} · Ordner „{{ account.sent_folder }}“{% if account.last_scan_at %} · zuletzt geprüft {{ account.last_scan_at|datetime }}{% endif %}</p>
+{% if account.last_error %}<p class="small" style="color:#991b1b">{{ account.last_error }}</p>{% endif %}
+<a class="btn ghost sm" href="/verbinden" style="margin-top:12px">Neu verbinden</a>
+{% else %}
+<p class="muted">Kein Postfach verbunden.</p><a class="btn sm" href="/verbinden">Postfach verbinden</a>
+{% endif %}
+</div>
+<div class="card danger" style="margin-top:16px">
+<h3 class="h3">Verbindung trennen</h3>
+<p class="small" style="margin:0 0 10px">Löscht Zugangsdaten, alle erkannten Dokumente, PDFs und den Verlauf. Sofort und endgültig. Geplante Nachfass-Mails werden nicht mehr geschickt.</p>
+<form method="post" action="/einstellungen/trennen" class="btn-row">
+<input name="confirm" placeholder="ja" style="width:90px;height:38px;border:1px solid #fca5a5;border-radius:10px;padding:0 10px;font:inherit">
+<button class="btn danger sm" type="submit">Trennen und alles löschen</button>
+</form>
+</div>
+</div>
+</div>
+</div>
+</section>
+{% endblock %}

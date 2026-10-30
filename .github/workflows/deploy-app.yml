@@ -1,0 +1,82 @@
+name: Deploy Nachfasser (app/) to AWS
+on:
+  push:
+    branches: [main]
+    paths: ["app/**", ".github/workflows/deploy-app.yml"]
+  workflow_dispatch:
+concurrency:
+  group: deploy-app
+  cancel-in-progress: false
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: app/requirements.txt
+      - run: pip install -r app/requirements.txt pytest aiosmtpd reportlab
+      - run: cd app && python -m pytest -q
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      AWS_HOST: ${{ secrets.AWS_HOST }}
+    steps:
+      - name: Secrets vorhanden?
+        id: check
+        run: |
+          if [ -z "$AWS_HOST" ]; then
+            echo "::notice::AWS_HOST nicht gesetzt, Deploy übersprungen (siehe app/DEPLOY.md)"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.skip == 'false'
+      - name: SSH-Key einrichten
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AWS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.AWS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+      - name: .env aus Secrets bauen
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          cat > app/.env <<EOF
+          BASE_URL=${{ vars.APP_BASE_URL || 'https://app.locadas.de' }}
+          APP_DOMAIN=${{ vars.APP_DOMAIN || 'app.locadas.de' }}
+          SECRET_KEY=${{ secrets.APP_SECRET_KEY }}
+          ENCRYPTION_KEY=${{ secrets.APP_ENCRYPTION_KEY }}
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_MODEL=${{ vars.CLAUDE_MODEL || 'claude-sonnet-5-5' }}
+          SCAN_INTERVAL_MINUTES=10
+          OFFER_FOLLOWUP_DAYS=3,7,14
+          INVOICE_FOLLOWUP_DAYS=3,10,20
+          APPROVALS_BEFORE_AUTO=5
+          INITIAL_SCAN_DAYS=30
+          SEND_HOUR_FROM=8
+          SEND_HOUR_TO=18
+          TZ=Europe/Berlin
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          MICROSOFT_CLIENT_ID=${{ secrets.MICROSOFT_CLIENT_ID }}
+          MICROSOFT_CLIENT_SECRET=${{ secrets.MICROSOFT_CLIENT_SECRET }}
+          EOF
+      - name: Dateien auf den Server kopieren
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          ssh -i ~/.ssh/deploy_key "${{ secrets.AWS_USER || 'ubuntu' }}@${{ secrets.AWS_HOST }}" "mkdir -p ~/locadas-app"
+          rsync -az --delete --exclude tests --exclude __pycache__ -e "ssh -i ~/.ssh/deploy_key" app/ "${{ secrets.AWS_USER || 'ubuntu' }}@${{ secrets.AWS_HOST }}:~/locadas-app/"
+      - name: Container bauen und starten
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          ssh -i ~/.ssh/deploy_key "${{ secrets.AWS_USER || 'ubuntu' }}@${{ secrets.AWS_HOST }}" '
+            cd ~/locadas-app &&
+            (docker compose version >/dev/null 2>&1 || (curl -fsSL https://get.docker.com | sudo sh && sudo usermod -aG docker $USER)) &&
+            docker compose up -d --build --remove-orphans &&
+            docker image prune -f >/dev/null &&
+            sleep 5 && docker compose ps'

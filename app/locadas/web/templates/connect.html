@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Postfach verbinden · Locadas Nachfasser{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap wrap--narrow">
+<div class="app-head">
+<div><h1 class="h2">Postfach <em>verbinden</em></h1><p class="app-sub">Zwei Minuten. Danach läuft das Nachfassen von allein.</p></div>
+</div>
+<div class="grid2">
+<form class="form-card" method="post" action="/verbinden" autocomplete="on" id="connect">
+{% if error %}<div class="note err"><b>{{ error }}</b>{% if hint %}<br>{{ hint }}{% endif %}</div>{% endif %}
+<div class="fields2">
+<div class="field"><label for="business_name">Betrieb</label><input id="business_name" name="business_name" value="{{ values.business_name or '' }}" placeholder="Müller Haustechnik GmbH" required></div>
+<div class="field"><label for="owner_name">Dein Name <small>(steht unter den Mails)</small></label><input id="owner_name" name="owner_name" value="{{ values.owner_name or '' }}" placeholder="Thomas Müller"></div>
+</div>
+<div class="field"><label for="email">Mailadresse, von der deine Angebote rausgehen</label><input id="email" name="email" type="email" value="{{ email or '' }}" placeholder="info@mueller-haustechnik.de" required autocomplete="email"></div>
+<div class="field"><label for="password">Passwort des Postfachs</label><input id="password" name="password" type="password" required autocomplete="current-password">
+<p class="small muted" id="provider-hint" style="margin:0">{% if provider %}{{ provider.label }}: {{ provider.hint or 'Dein normales Postfach-Passwort.' }}{% else %}Das Passwort, mit dem du dich auch in deinem Mailprogramm anmeldest.{% endif %}</p></div>
+<div class="field"><label for="phone">Telefon <small>(optional, steht unter den Mails)</small></label><input id="phone" name="phone" value="{{ values.phone or '' }}" placeholder="0171 2345678"></div>
+
+<details class="adv" {% if show_advanced %}open{% endif %}>
+<summary>Eigene Domain oder Server manuell eintragen</summary>
+<div>
+<p class="small muted" style="margin:0">Nur nötig, wenn wir deinen Anbieter nicht automatisch finden. Die Angaben stehen in den Konto-Einstellungen deines Mailprogramms.</p>
+<div class="fields2">
+<div class="field"><label for="imap_host">IMAP-Server (Posteingang)</label><input id="imap_host" name="imap_host" value="{{ values.imap_host or '' }}" placeholder="imap.deinanbieter.de"></div>
+<div class="field"><label for="imap_port">Port</label><input id="imap_port" name="imap_port" value="{{ values.imap_port or '' }}" placeholder="993"></div>
+</div>
+<div class="fields2">
+<div class="field"><label for="smtp_host">SMTP-Server (Postausgang)</label><input id="smtp_host" name="smtp_host" value="{{ values.smtp_host or '' }}" placeholder="smtp.deinanbieter.de"></div>
+<div class="field"><label for="smtp_port">Port</label><input id="smtp_port" name="smtp_port" value="{{ values.smtp_port or '' }}" placeholder="465"></div>
+</div>
+<div class="field"><label for="username">Benutzername <small>(falls nicht die Mailadresse)</small></label><input id="username" name="username" value="{{ values.username or '' }}"></div>
+</div>
+</details>
+
+<label class="check"><input type="checkbox" name="consent" value="1" required><span>Ich bin berechtigt, dieses Postfach zu nutzen. Locadas darf Mails mit Angebots- und Rechnungs-PDFs in meinem Gesendet-Ordner lesen, Antworten meiner Kunden im Posteingang erkennen und in meinem Namen Nachfass-Mails über dieses Postfach verschicken. <a href="/datenschutz">Datenschutz</a></span></label>
+<button class="btn" type="submit" id="submit">Verbinden und loslegen <svg class="ic"><use href="#i-arrow"/></svg></button>
+<p class="small muted" style="margin:0">Wir prüfen die Verbindung jetzt sofort. Dein Passwort wird verschlüsselt gespeichert und nie angezeigt.</p>
+</form>
+
+<div>
+<div class="card accent">
+<h3 class="h3">Was dann passiert</h3>
+<ul class="plain">
+<li>Wir lesen die Mails der letzten 30 Tage mit PDF-Anhang und legen alle Angebote und Rechnungen an.</li>
+<li>Du siehst die Liste im Dashboard und kannst alles rauswerfen, was nicht nachgefasst werden soll.</li>
+<li>Die ersten fünf Nachfass-Mails bekommst du vorher per Mail zur Freigabe: Senden, diesmal nicht, oder stopp.</li>
+<li>Danach läuft es automatisch. Jede Antwort eines Kunden stoppt das Nachfassen bei ihm.</li>
+</ul>
+</div>
+<div class="card" style="margin-top:16px">
+<h3 class="h3">Welches Passwort?</h3>
+<ul class="plain">
+<li><b>Gmail, iCloud, Yahoo:</b> ein App-Passwort aus den Konto-Einstellungen, nicht dein Login-Passwort.</li>
+<li><b>GMX, WEB.DE:</b> dein normales Passwort, IMAP muss in den Einstellungen eingeschaltet sein.</li>
+<li><b>T-Online:</b> das E-Mail-Passwort aus dem Kundencenter.</li>
+<li><b>IONOS, STRATO, eigene Domain:</b> dein normales Postfach-Passwort.</li>
+<li><b>Outlook, Microsoft 365:</b> noch nicht möglich, kommt.</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){
+var hints={{ hints_json|safe if hints_json else '{}' }};
+var map={"gmail.com":"gmail","googlemail.com":"gmail","outlook.com":"outlook","outlook.de":"outlook","hotmail.com":"outlook","hotmail.de":"outlook","live.de":"outlook","live.com":"outlook","gmx.de":"gmx","gmx.net":"gmx","gmx.at":"gmx","gmx.ch":"gmx","web.de":"webde","t-online.de":"tonline","magenta.de":"tonline","ionos.de":"ionos","1und1.de":"ionos","icloud.com":"icloud","me.com":"icloud","yahoo.de":"yahoo","yahoo.com":"yahoo","freenet.de":"freenet","posteo.de":"posteo","mailbox.org":"mailbox"};
+var texts={
+ gmail:"Gmail: Du brauchst ein App-Passwort (Google-Konto → Sicherheit → App-Passwörter). Dein normales Passwort funktioniert nicht.",
+ outlook:"Outlook und Microsoft 365 erlauben keinen Passwort-Login. Die Anbindung kommt in Kürze.",
+ gmx:"GMX: Dein normales Passwort. IMAP muss unter E-Mail → Einstellungen → POP3/IMAP eingeschaltet sein.",
+ webde:"WEB.DE: Dein normales Passwort. IMAP muss unter E-Mail → Einstellungen → POP3/IMAP eingeschaltet sein.",
+ tonline:"T-Online: Das E-Mail-Passwort aus dem Kundencenter (Passwörter → Passwort für E-Mail-Programme).",
+ ionos:"IONOS: Dein normales Postfach-Passwort.",
+ icloud:"iCloud: Ein anwendungsspezifisches Passwort von appleid.apple.com.",
+ yahoo:"Yahoo: Ein App-Passwort aus den Konto-Einstellungen.",
+ freenet:"freenet: Dein normales Passwort.",posteo:"Posteo: Dein normales Passwort.",mailbox:"mailbox.org: Dein normales Passwort."};
+var email=document.getElementById('email'),hint=document.getElementById('provider-hint');
+function upd(){var d=(email.value.split('@')[1]||'').toLowerCase();var k=map[d];hint.textContent=k?texts[k]:(d?'Eigene Domain: Dein normales Postfach-Passwort. Wir suchen den Server automatisch.':'Das Passwort, mit dem du dich auch in deinem Mailprogramm anmeldest.');}
+email.addEventListener('input',upd);email.addEventListener('change',upd);
+var f=document.getElementById('connect'),b=document.getElementById('submit');
+f.addEventListener('submit',function(){b.disabled=true;b.textContent='Verbindung wird geprüft …';});
+})();
+</script>
+{% endblock %}

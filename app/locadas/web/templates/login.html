@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Anmelden · Locadas Nachfasser{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap wrap--narrow" style="max-width:560px">
+<div class="app-head"><div><h1 class="h2">Anmelden</h1><p class="app-sub">Kein Passwort. Wir schicken dir einen Link in dein Postfach.</p></div></div>
+{% if sent %}
+<div class="card accent"><h3 class="h3">Link ist raus</h3><p style="margin:0">Schau in das Postfach <b>{{ sent }}</b>. Der Link ist zwei Stunden gültig. Absender ist dein eigenes Postfach, die Mail landet also nicht im Spam.</p></div>
+{% else %}
+<form class="form-card" method="post" action="/login">
+{% if error %}<div class="note err">{{ error }}{% if 'kein Postfach' in error %} <a href="/verbinden">Jetzt verbinden</a>{% endif %}</div>{% endif %}
+<input type="hidden" name="next" value="{{ next }}">
+<div class="field"><label for="email">Mailadresse des verbundenen Postfachs</label><input id="email" name="email" type="email" required autocomplete="email"></div>
+<button class="btn" type="submit">Login-Link schicken <svg class="ic"><use href="#i-arrow"/></svg></button>
+<p class="small muted" style="margin:0">Noch kein Postfach verbunden? <a href="/verbinden">Hier geht's los.</a></p>
+</form>
+{% endif %}
+</div>
+</section>
+{% endblock %}
