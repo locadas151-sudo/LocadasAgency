@@ -98,6 +98,11 @@ class Business(Base):
     include_view_link: Mapped[bool] = mapped_column(Boolean, default=True)
     approvals_done: Mapped[int] = mapped_column(Integer, default=0)
     auto_mode: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Nachfass-Texte im Stil des Betriebs (per Claude, mit Prüfung und Vorlage als Netz)
+    personalize: Mapped[bool] = mapped_column(Boolean, default=True)
+    style_json: Mapped[str] = mapped_column(Text, default="")          # abgeleitetes Stilprofil
+    style_updated_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    style_samples_json: Mapped[str] = mapped_column(Text, default="")  # gekürzte Mailtexte, nur bis zur nächsten Ableitung
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     last_login_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
 
@@ -276,7 +281,35 @@ def new_session() -> Session:
 
 
 def init_db() -> None:
-    Base.metadata.create_all(get_engine())
+    engine = get_engine()
+    Base.metadata.create_all(engine)
+    _add_missing_columns(engine)
+
+
+def _add_missing_columns(engine) -> None:
+    """Neue Spalten in bestehenden SQLite-Datenbanken nachziehen (create_all legt nur neue Tabellen an)."""
+    if engine.dialect.name != "sqlite":
+        return
+    from sqlalchemy import inspect, text
+
+    insp = inspect(engine)
+    with engine.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            existing = {c["name"] for c in insp.get_columns(table.name)}
+            for col in table.columns:
+                if col.name in existing:
+                    continue
+                default = col.default.arg if col.default is not None and not callable(col.default.arg) else None
+                if isinstance(default, bool):
+                    literal = "1" if default else "0"
+                elif isinstance(default, (int, float)):
+                    literal = str(default)
+                elif isinstance(default, str):
+                    literal = "'" + default.replace("'", "''") + "'"
+                else:
+                    literal = "NULL"
+                ddl = col.type.compile(dialect=engine.dialect)
+                conn.execute(text(f'ALTER TABLE "{table.name}" ADD COLUMN "{col.name}" {ddl} DEFAULT {literal}'))
 
 
 def reset_engine_for_tests(url: str) -> None:

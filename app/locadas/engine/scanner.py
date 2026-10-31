@@ -15,6 +15,7 @@ from ..extract.fields import extract_fields, utc_from_iso
 from ..extract.pdftext import pdf_to_text
 from ..mail.imap import ImapClient, MailAuthError, MailConnectError, ParsedMail, since_days
 from . import accounts as acc
+from . import style
 from .followups import close_document, notify_business, schedule_followups
 
 log = logging.getLogger(__name__)
@@ -48,6 +49,7 @@ def _store_pdf(account: MailAccount, filename: str, data: bytes) -> str:
 
 def process_sent_mail(session: Session, account: MailAccount, mail: ParsedMail) -> Document | None:
     """Eine gesendete Mail prüfen und ggf. als Dokument anlegen."""
+    style.collect_sample(session, account, mail)  # Stilprobe für personalisierte Nachfass-Texte, wirft nie
     pdfs = mail.pdf_attachments
     if not pdfs:
         return None

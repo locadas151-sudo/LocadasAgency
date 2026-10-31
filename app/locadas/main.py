@@ -507,7 +507,7 @@ def settings_save(
     business: Business = Depends(require_business), session: Session = Depends(get_db),
     name: str = Form(""), owner_name: str = Form(""), phone: str = Form(""), signature: str = Form(""),
     followup_offers: str = Form(""), followup_invoices: str = Form(""), paused: str = Form(""), auto_mode: str = Form(""), notify_opened: str = Form(""),
-    include_view_link: str = Form(""),
+    include_view_link: str = Form(""), personalize: str = Form(""),
 ):
     b = session.get(Business, business.id)
     b.name = name.strip() or b.name
@@ -520,6 +520,7 @@ def settings_save(
     b.auto_mode = bool(auto_mode)
     b.notify_opened = bool(notify_opened)
     b.include_view_link = bool(include_view_link)
+    b.personalize = bool(personalize)
     for d in b.documents:
         for f in d.followups:
             if f.status == FollowUpStatus.SCHEDULED:
