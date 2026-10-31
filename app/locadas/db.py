@@ -138,6 +138,8 @@ class Business(Base):
     # Nachfass-Kanal: "mail" (Standard), "whatsapp_tap" (WhatsApp mit einem Tipp, wenn Kunden-Handy bekannt, sonst Mail),
     # "both" (Mail automatisch plus WhatsApp-Vorschlag). Siehe engine/taps.py
     followup_channel: Mapped[str] = mapped_column(String(20), default="mail", server_default="mail")
+    # Paket: "free" | "pro" (WhatsApp über die eigene Nummer braucht "pro", siehe channels/usage.py)
+    plan: Mapped[str] = mapped_column(String(10), default="free", server_default="free")
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     last_login_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
 
@@ -350,6 +352,7 @@ class FollowUp(Base):
     tap_notified_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     tapped_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)   # Link „In WhatsApp öffnen“ geöffnet
     tap_reminded_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    wa_read_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)    # per WhatsApp (eigene Nummer) gelesen, echte Lesebestätigung
 
     document: Mapped[Document] = relationship(back_populates="followups")
 
@@ -390,6 +393,107 @@ class SeenMessage(Base):
     account_id: Mapped[int] = mapped_column(ForeignKey("mail_accounts.id"), index=True)
     message_id: Mapped[str] = mapped_column(String(500), index=True)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+# --- WhatsApp über die eigene Nummer des Betriebs (Stufe 2, Coexistence) ----------------
+# Alles hier wird nur benutzt, wenn channels/config.py es freischaltet. Logik in locadas/channels/.
+
+class WhatsAppConnection(Base):
+    """Per Embedded Signup verbundenes WhatsApp-Business-Konto des Betriebs (eine Nummer je Betrieb)."""
+
+    __tablename__ = "wa_connections"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), unique=True, index=True)
+    waba_id: Mapped[str] = mapped_column(String(40), default="", index=True)
+    phone_number_id: Mapped[str] = mapped_column(String(40), default="", index=True)
+    display_phone: Mapped[str] = mapped_column(String(40), default="")
+    verified_name: Mapped[str] = mapped_column(String(200), default="")
+    business_token_enc: Mapped[str] = mapped_column(Text, default="")  # Business Integration System User Token, verschlüsselt
+    register_pin_enc: Mapped[str] = mapped_column(Text, default="")    # nur ohne Coexistence (neue Nummer)
+    status: Mapped[str] = mapped_column(String(20), default="pending")  # pending | active | error | disconnected
+    coexistence: Mapped[bool] = mapped_column(Boolean, default=True)
+    connected_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    last_error: Mapped[str] = mapped_column(Text, default="")
+    quality_rating: Mapped[str] = mapped_column(String(20), default="")
+    messaging_limit_tier: Mapped[str] = mapped_column(String(40), default="")
+    templates_synced_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    history_request_id: Mapped[str] = mapped_column(String(100), default="")
+    contacts_request_id: Mapped[str] = mapped_column(String(100), default="")
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class WaTemplate(Base):
+    """Unsere Nachfass-Vorlagen im WhatsApp-Konto des Betriebs, mit Status und Kategorie laut Meta."""
+
+    __tablename__ = "wa_templates"
+    __table_args__ = (Index("ux_wa_template_conn_name", "connection_id", "name", "language", unique=True),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    connection_id: Mapped[int] = mapped_column(ForeignKey("wa_connections.id", ondelete="CASCADE"), index=True)
+    key: Mapped[str] = mapped_column(String(40))
+    name: Mapped[str] = mapped_column(String(120))
+    language: Mapped[str] = mapped_column(String(10), default="de")
+    category: Mapped[str] = mapped_column(String(20), default="")   # UTILITY | MARKETING (Meta kann umstufen)
+    status: Mapped[str] = mapped_column(String(30), default="")     # APPROVED | PENDING | REJECTED | PAUSED | DISABLED | ERROR
+    meta_id: Mapped[str] = mapped_column(String(40), default="")
+    note: Mapped[str] = mapped_column(Text, default="")
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, onupdate=utcnow)
+
+
+class WaContact(Base):
+    """Endkunde als WhatsApp-Kontakt eines Betriebs: Einwilligung, Abmeldung, 24h-Fenster."""
+
+    __tablename__ = "wa_contacts"
+    __table_args__ = (Index("ux_wa_contact_business_phone", "business_id", "phone", unique=True),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), index=True)
+    phone: Mapped[str] = mapped_column(String(20))                    # E.164 ohne „+“
+    customer_email: Mapped[str] = mapped_column(String(320), default="", index=True)
+    name: Mapped[str] = mapped_column(String(200), default="")
+    wa_opt_in_source: Mapped[str] = mapped_column(String(40), default="")  # customer_initiated_chat | offer_form | manual
+    opt_in_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    opted_out_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    last_inbound_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)  # öffnet das 24h-Fenster
+    history_seen_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)  # im Chatverlauf der App gesehen (nur Hinweis)
+    undeliverable_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class WaMessage(Base):
+    """Von uns über die Nummer des Betriebs verschickte Nachricht (für Lesebestätigung und Abrechnung)."""
+
+    __tablename__ = "wa_messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), index=True)
+    followup_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    document_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    wamid: Mapped[str] = mapped_column(String(200), unique=True, index=True)
+    to_phone: Mapped[str] = mapped_column(String(20), default="")
+    kind: Mapped[str] = mapped_column(String(20), default="template")  # template | text
+    template_key: Mapped[str] = mapped_column(String(40), default="")
+    category: Mapped[str] = mapped_column(String(20), default="")      # utility | marketing | service (wie gezählt)
+    status: Mapped[str] = mapped_column(String(20), default="accepted")  # accepted | sent | delivered | read | failed
+    delivered_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    read_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    failed_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    error: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class WaUsage(Base):
+    """Gesendete Nachrichten je Betrieb, Monat (lokale Zeit) und Kategorie."""
+
+    __tablename__ = "wa_usage"
+    __table_args__ = (Index("ux_wa_usage", "business_id", "month", "category", unique=True),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), index=True)
+    month: Mapped[str] = mapped_column(String(7))      # 2026-11
+    category: Mapped[str] = mapped_column(String(20))  # utility | marketing | service
+    count: Mapped[int] = mapped_column(Integer, default=0)
 
 
 # --- Engine / Session -------------------------------------------------------

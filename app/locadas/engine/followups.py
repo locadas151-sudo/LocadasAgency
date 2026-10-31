@@ -547,7 +547,7 @@ def process_due(session: Session, now: datetime | None = None, business_id: int 
             continue
         if any(f.document_id == doc.id for f in approvals.get(business.id, [])):
             continue
-        if taps.channel_for(doc) == "whatsapp_tap":
+        if taps.channel_for(doc) == "whatsapp_tap" and not _wa_business_active(session, business):
             # Der Betrieb schickt selbst per WhatsApp: keine Mail, keine Freigabe (er sieht den Text und tippt selbst)
             taps.start_tap(session, fu, now)
             stats["tap"] += 1
@@ -568,7 +568,7 @@ def process_due(session: Session, now: datetime | None = None, business_id: int 
         if sent_count[business.id] >= settings.max_sends_per_day:
             stats["capped"] += 1
             continue
-        if send_followup(session, fu):
+        if _send_any(session, fu, now):
             stats["sent"] += 1
             sent_count[business.id] += 1
         session.commit()
@@ -716,6 +716,30 @@ def on_first_open(session: Session, doc: Document, now: datetime | None = None) 
     doc.next_followup_at = min(f.due_at for f in pending)
 
 
+def _wa_business_active(session: Session, business: Business) -> bool:
+    """Stufe 2 (WhatsApp über die eigene Nummer) aktiv? Dann ersetzt sie den Tipp-Link aus Stufe 1."""
+    try:
+        from ..channels import business_channel_active
+
+        return bool(business_channel_active(session, business))
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _send_any(session: Session, fu: FollowUp, now: datetime) -> bool:
+    """Erst WhatsApp über die eigene Nummer (Stufe 2, wenn verbunden), sonst Mail wie bisher."""
+    try:
+        from ..channels import select_and_send
+
+        result = select_and_send(session, fu, now)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("WhatsApp-Kanal fehlgeschlagen, nehme Mail: %s", exc)
+        result = None
+    if result is None:
+        return send_followup(session, fu)
+    return bool(result)
+
+
 def approve(session: Session, fu: FollowUp) -> bool:
     """„Senden“ bzw. bei Rechnungen „Noch offen“. Bei älteren Angeboten heißt es: bitte nachfassen (normaler Ablauf)."""
     if fu.status != FollowUpStatus.AWAITING_APPROVAL:
@@ -728,7 +752,7 @@ def approve(session: Session, fu: FollowUp) -> bool:
         doc.needs_review = False
         fu.subject, fu.body = "", ""
         log_event(session, doc.business_id, "confirmed", f"Du hast bestätigt: {doc.kind_label} {doc.document_number or doc.title} ist noch offen.", doc.id)
-    ok = send_followup(session, fu)
+    ok = _send_any(session, fu, utcnow())
     if ok:
         doc.business.approvals_done += 1
     return ok

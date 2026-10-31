@@ -27,6 +27,7 @@
 <div class="kpi"><span class="kpi-num">{{ counts.won }}</span><span class="kpi-lbl">Aufträge und Zahlungen</span></div>
 <div class="kpi"><span class="kpi-num">{{ counts.review_clicks }}</span><span class="kpi-lbl">Bewertungs-Klicks{% if not business.google_review_url %} · <a href="/einstellungen#bewertung">Link hinterlegen</a>{% endif %}</span></div>
 </div>
+{% include "_wa_business_dashboard.html" %}
 
 {% if wa_taps %}
 <div class="card wa-card" id="whatsapp" style="margin-bottom:20px">
@@ -90,6 +91,7 @@
 <span class="amt">{{ d.amount_gross|money(d.currency) }}</span>
 {% set c = customers.get((d.customer_email or '')|lower) %}
 {% if d.kind == DocKind.OFFER and d.status == DocStatus.WON and c %}<div class="next">{% if c.completed_at %}<span class="pill good">fertig {{ c.completed_at|date }}</span>{% else %}<form method="post" action="/kunde/{{ c.id }}/fertig" class="inline-form"><input type="hidden" name="next" value="/dashboard?filter={{ filter }}"><button class="btn ghost sm" type="submit" onclick="return confirm('Auftrag fertig melden? Der Kunde bekommt dann eine kurze Abschluss-Mail in deinem Namen.')">Fertig melden</button></form>{% endif %}</div>{% endif %}
+{% set wr = wa_read_at(d) %}{% if wr %}<div class="next"><span class="pill good" title="echte Lesebestätigung von WhatsApp">auf WhatsApp gelesen {{ wr|date }}</span></div>{% endif %}
 <div class="next">{% if d.status == DocStatus.OPEN and channel_for(d) != 'mail' %}<span class="pill good">WhatsApp</span> {% endif %}{% if d.first_opened_at %}<span class="pill good" title="zuletzt {{ d.last_opened_at|datetime }}">geöffnet{% if d.open_count > 1 %} {{ d.open_count }}×{% endif %}</span> {% endif %}{% if d.status == DocStatus.OPEN %}{% if d.next_followup_at %}nachfassen {{ d.next_followup_at|rel }}{% elif d.followups_sent %}{{ d.followups_sent }}× nachgefasst{% endif %}{% else %}<span class="pill {{ STATUS_CLASS[d.status] }}">{{ STATUS_LABEL[d.status] }}</span>{% endif %}</div>
 </div>
 </li>
