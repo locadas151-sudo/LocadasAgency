@@ -10,6 +10,7 @@ from sqlalchemy import (
     Enum,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -81,6 +82,7 @@ class DocStatus(str, enum.Enum):
 class FollowUpStatus(str, enum.Enum):
     SCHEDULED = "scheduled"
     AWAITING_APPROVAL = "awaiting_approval"
+    SENDING = "sending"      # gerade beim SMTP-Versand (atomar beansprucht, verhindert Doppelversand)
     SENT = "sent"
     SKIPPED = "skipped"
     CANCELLED = "cancelled"
@@ -123,7 +125,12 @@ class Business(Base):
     whatsapp_opt_in: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     whatsapp_last_inbound_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)  # 24h-Fenster
     whatsapp_context: Mapped[str] = mapped_column(Text, default="", server_default="")  # JSON: nummerierte Liste der letzten Vorschau u. ä.
-    auto_mode: Mapped[bool] = mapped_column(Boolean, default=False)
+    auto_mode: Mapped[bool] = mapped_column(Boolean, default=False)  # alt, nicht mehr benutzt (siehe review_mode)
+    # Freigaben: "auto" = Angebote laufen automatisch mit Morgen-Vorschau, "all" = jede Nachfass-Mail vorher freigeben.
+    # Rechnungen fragen immer erst „Noch offen?“, Angebote über approval_threshold immer mit Freigabe.
+    review_mode: Mapped[str] = mapped_column(String(10), default="auto", server_default="auto")
+    approval_threshold: Mapped[float | None] = mapped_column(Float, nullable=True)  # None = settings.approval_threshold
+    avv_accepted_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     last_login_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
 
@@ -133,7 +140,12 @@ class Business(Base):
 
     @property
     def needs_approval(self) -> bool:
-        return not self.auto_mode and self.approvals_done < settings.approvals_before_auto
+        """Betrieb will jede Nachfass-Mail selbst freigeben."""
+        return self.review_mode == "all"
+
+    @property
+    def threshold(self) -> float:
+        return self.approval_threshold if self.approval_threshold is not None else settings.approval_threshold
 
 
 class MailAccount(Base):
@@ -184,6 +196,8 @@ class Document(Base):
     # Kunde
     customer_name: Mapped[str] = mapped_column(String(200), default="")
     customer_email: Mapped[str] = mapped_column(String(320), default="", index=True)
+    # CC der Ursprungsmail (JSON-Liste [[Name, Adresse], ...], ohne eigene Adresse), Nachfass-Mails behalten sie
+    cc_json: Mapped[str] = mapped_column(Text, default="", server_default="")
     # Dokument
     document_number: Mapped[str] = mapped_column(String(100), default="")
     title: Mapped[str] = mapped_column(String(300), default="")
@@ -214,6 +228,10 @@ class Document(Base):
     # Abschlussfrage an den Betrieb („Auftrag bekommen?“ / „Bezahlt?“)
     outcome_token: Mapped[str] = mapped_column(String(64), default=lambda: __import__("secrets").token_urlsafe(18), index=True)
     outcome_asked_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    outcome_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)  # per Link beantwortet (nur einmal)
+    # Betrieb hat selbst an den Kunden geschrieben (letztes Mal), Abwesenheit des Kunden bis
+    owner_contact_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    away_until: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     # Beim ersten Scan gefundene ältere Dokumente: Nachfassen nur mit Freigabe (könnte schon erledigt sein)
     needs_review: Mapped[bool] = mapped_column(Boolean, default=False)
     # Kunde hat den Eingang automatisch bestätigt (z. B. Rechnungseingang eines GU)
@@ -246,6 +264,16 @@ class Document(Base):
         return self.doc_term or self.kind_label
 
     @property
+    def cc(self) -> list[tuple[str, str]]:
+        import json
+
+        try:
+            data = json.loads(self.cc_json) if self.cc_json else []
+        except (ValueError, TypeError):
+            return []
+        return [(str(n), str(a)) for n, a in data if a] if isinstance(data, list) else []
+
+    @property
     def reply_intent_label(self) -> str:
         return REPLY_INTENT_LABEL.get(self.reply_intent, "Antwort") if self.reply_intent else ""
 
@@ -265,6 +293,8 @@ class FollowUp(Base):
     message_id: Mapped[str] = mapped_column(String(500), default="")
     error: Mapped[str] = mapped_column(Text, default="")
     announced_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)  # in der Morgen-Vorschau angekündigt
+    send_after: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)    # in der Vorschau genannte Versandzeit
+    requested_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)  # Freigabe angefragt (Link-Ablauf)
 
     document: Mapped[Document] = relationship(back_populates="followups")
 
@@ -299,6 +329,7 @@ class SeenMessage(Base):
     """Verhindert doppelte Verarbeitung derselben Mail (Message-ID je Account)."""
 
     __tablename__ = "seen_messages"
+    __table_args__ = (Index("ux_seen_account_message", "account_id", "message_id", unique=True),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     account_id: Mapped[int] = mapped_column(ForeignKey("mail_accounts.id"), index=True)
@@ -342,6 +373,19 @@ def new_session() -> Session:
 def init_db() -> None:
     Base.metadata.create_all(get_engine())
     _add_missing_columns()
+    _ensure_unique_seen()
+
+
+def _ensure_unique_seen() -> None:
+    """Bestehende Datenbanken: Dubletten in seen_messages entfernen, dann den eindeutigen Index anlegen."""
+    from sqlalchemy import text
+
+    eng = get_engine()
+    with eng.begin() as conn:
+        conn.execute(text(
+            "DELETE FROM seen_messages WHERE id NOT IN (SELECT MIN(id) FROM seen_messages GROUP BY account_id, message_id)"
+        ))
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ux_seen_account_message ON seen_messages (account_id, message_id)"))
 
 
 def _add_missing_columns() -> None:

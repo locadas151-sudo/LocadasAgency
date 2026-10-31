@@ -23,7 +23,14 @@
 <div>
 <label class="toggle"><input type="checkbox" name="followup_offers" value="1" {% if business.followup_offers %}checked{% endif %}><div><b>Angebote nachfassen</b><span>{{ settings.offer_followup_days|join(', ') }} Tage nach Versand, bis der Kunde antwortet.</span></div></label>
 <label class="toggle"><input type="checkbox" name="followup_invoices" value="1" {% if business.followup_invoices %}checked{% endif %}><div><b>Rechnungen nachfassen</b><span>{{ settings.invoice_followup_days|join(', ') }} Tage nach Fälligkeit. Freundlich, dann deutlicher.</span></div></label>
-<label class="toggle"><input type="checkbox" name="auto_mode" value="1" {% if business.auto_mode or business.approvals_done >= settings.approvals_before_auto %}checked{% endif %}><div><b>Automatisch senden, ohne Freigabe</b><span>Aus = du bekommst jede Nachfass-Mail vorher per Mail zur Freigabe. {{ business.approvals_done }} von {{ settings.approvals_before_auto }} Freigaben erteilt.</span></div></label>
+<div class="fields2">
+<div class="field"><label>Angebote nachfassen</label><select name="review_mode">
+<option value="auto" {% if business.review_mode != 'all' %}selected{% endif %}>Automatisch senden (Vorschau am Morgen mit Stopp)</option>
+<option value="all" {% if business.review_mode == 'all' %}selected{% endif %}>Ich gebe jede Mail frei</option>
+</select></div>
+<div class="field"><label>Freigabe ab Betrag <small>(brutto)</small></label><input name="approval_threshold" inputmode="decimal" value="{{ '%.0f'|format(business.threshold) }}"></div>
+</div>
+<p class="small muted" style="margin:-6px 0 14px">Angebote über diesem Betrag bekommst du immer mit dem vollen Text zur Freigabe. Rechnungen erinnere ich nie automatisch: Vorher frage ich dich „Noch offen?“, weil ich dein Konto nicht sehe.</p>
 <div class="fields2">
 <div class="field"><label>Dokument in Nachfass-Mails</label><select name="doc_delivery">
 <option value="link" {% if business.include_view_link and business.doc_delivery != 'attachment' %}selected{% endif %}>Link zum PDF (du siehst, wann geöffnet)</option>

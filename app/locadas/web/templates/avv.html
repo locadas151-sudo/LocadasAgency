@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}AVV · Locadas Nachfasser{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap wrap--narrow" style="max-width:760px">
+<div class="app-head"><div><h1 class="h2">Auftragsverarbeitungsvertrag</h1><p class="app-sub">nach Art. 28 DSGVO für den Locadas Nachfasser</p></div></div>
+<div class="card warn" style="margin-bottom:16px"><b>Vorlage, noch nicht anwaltlich geprüft.</b> Dieser Text ist ein Entwurf und wird vor dem Regelbetrieb von einer Anwältin bzw. einem Anwalt geprüft. Die geprüfte Fassung ersetzt diese Vorlage, du wirst darüber informiert.</div>
+<div class="card">
+<h3 class="h3">§ 1 Parteien und Gegenstand</h3>
+<p>Verantwortlicher (Auftraggeber) ist der Betrieb, der sein Postfach mit dem Locadas Nachfasser verbindet. Auftragsverarbeiter (Auftragnehmer) ist die Locadas GmbH, Gladbacher Straße 21, 52525 Heinsberg. Gegenstand ist das Erkennen von Angeboten und Rechnungen im Postfach des Auftraggebers, das Versenden von Nachfass-Mails und Zahlungserinnerungen in seinem Namen sowie das Erkennen von Kundenantworten. Der Vertrag gilt, solange das Postfach verbunden ist.</p>
+<h3 class="h3">§ 2 Art der Daten und betroffene Personen</h3>
+<p>Betroffen sind Kunden und Interessenten des Auftraggebers sowie deren Ansprechpartner (auch CC-Empfänger). Verarbeitet werden Name, E-Mail-Adresse, Inhalte von Angeboten und Rechnungen (Leistung, Beträge, Daten, Anschrift), Inhalte von E-Mails im Zusammenhang mit offenen Vorgängen sowie Zeitpunkte, zu denen ein Dokument-Link aufgerufen wurde.</p>
+<h3 class="h3">§ 3 Weisungen</h3>
+<p>Der Auftragnehmer verarbeitet die Daten nur nach dokumentierter Weisung des Auftraggebers. Die Weisungen ergeben sich aus diesem Vertrag und den Einstellungen im Nachfasser (z. B. Freigaben, Pause, Art der Dokumentbeifügung). Hält der Auftragnehmer eine Weisung für rechtswidrig, informiert er den Auftraggeber unverzüglich.</p>
+<h3 class="h3">§ 4 Vertraulichkeit</h3>
+<p>Personen, die beim Auftragnehmer Zugang zu den Daten haben, sind zur Vertraulichkeit verpflichtet.</p>
+<h3 class="h3">§ 5 Technische und organisatorische Maßnahmen</h3>
+<ul class="plain">
+<li>Hosting in Deutschland (AWS Frankfurt), Zugriff nur für berechtigte Administratoren.</li>
+<li>Postfach-Zugangsdaten verschlüsselt gespeichert (Fernet/AES), Verbindungen zu Mailservern nur mit TLS und Zertifikatsprüfung.</li>
+<li>Login nur per zeitlich begrenztem Link an die verbundene Adresse, Bestätigungs-Links laufen nach 60 Tagen ab und ändern erst nach einem Klick auf einen Knopf etwas.</li>
+<li>Datensparsamkeit: Mailtexte aus dem Posteingang werden nicht gespeichert, nur eine Kurzfassung; Stilproben werden nach der Auswertung gelöscht.</li>
+<li>Begrenzung von Anmelde- und Verbindungsversuchen.</li>
+</ul>
+<h3 class="h3">§ 6 Unterauftragsverarbeiter</h3>
+<p>Der Auftraggeber genehmigt folgende Unterauftragsverarbeiter:</p>
+<ul class="plain">
+<li><b>Amazon Web Services EMEA SARL</b>, Rechenzentrum Frankfurt: Hosting.</li>
+<li><b>Anthropic PBC</b>, USA: KI-Auswertung (Erkennung von Dokumenten, Zuordnung von Kundenmails, Formulierung der Nachfass-Texte). Übermittlung auf Grundlage der EU-Standardvertragsklauseln; keine Nutzung der Daten zum Training.</li>
+<li><b>Meta Platforms Ireland Ltd.</b> (WhatsApp Business), nur wenn der Auftraggeber den WhatsApp-Sekretär einschaltet: Benachrichtigungen an den Auftraggeber.</li>
+</ul>
+<p>Über neue oder geänderte Unterauftragsverarbeiter informiert der Auftragnehmer vorab; der Auftraggeber kann widersprechen und die Verbindung trennen.</p>
+<h3 class="h3">§ 7 Unterstützung und Rechte der Betroffenen</h3>
+<p>Der Auftragnehmer unterstützt den Auftraggeber bei Anfragen Betroffener (Auskunft, Berichtigung, Löschung) und bei Meldepflichten. Datenpannen meldet er unverzüglich, spätestens innerhalb von 48 Stunden nach Kenntnis.</p>
+<h3 class="h3">§ 8 Löschung</h3>
+<p>Trennt der Auftraggeber die Verbindung, löscht der Auftragnehmer Zugangsdaten, Dokumente, PDFs und Verlauf sofort. Datensicherungen werden spätestens nach 30 Tagen überschrieben.</p>
+<h3 class="h3">§ 9 Kontrollen</h3>
+<p>Der Auftraggeber kann sich nach Absprache von der Einhaltung dieses Vertrags überzeugen. Der Auftragnehmer stellt die dafür nötigen Informationen bereit.</p>
+<h3 class="h3">§ 10 Schluss</h3>
+<p>Es gilt deutsches Recht. Änderungen bedürfen der Textform. Sollte eine Bestimmung unwirksam sein, bleibt der Rest wirksam.</p>
+</div>
+<p class="small muted" style="margin-top:20px">Stand: Vorlage. Fragen an <a href="mailto:info@locadas.de">info@locadas.de</a>. <a href="/datenschutz">Datenschutz im Nachfasser</a></p>
+</div>
+</section>
+{% endblock %}

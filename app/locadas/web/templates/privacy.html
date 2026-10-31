@@ -3,34 +3,49 @@
 {% block content %}
 <section class="app-main">
 <div class="wrap wrap--narrow" style="max-width:760px">
-<div class="app-head"><div><h1 class="h2">Datenschutz im Nachfasser</h1><p class="app-sub">Was wir lesen, was wir speichern, was nie passiert.</p></div></div>
+<div class="app-head"><div><h1 class="h2">Datenschutz im Nachfasser</h1><p class="app-sub">Was wir lesen, was wir an wen weitergeben, was wir speichern.</p></div></div>
 <div class="card">
 <h3 class="h3">Was wir lesen</h3>
 <ul class="plain">
-<li><b>Gesendet-Ordner:</b> nur Mails mit PDF-Anhang. Davon verarbeiten wir nur die, bei denen Betreff, Dateiname oder PDF auf ein Angebot oder eine Rechnung hinweisen.</li>
-<li><b>Posteingang:</b> nur Kopfzeilen (Absender, Betreff, Bezug), um Antworten deiner Kunden auf offene Angebote und Rechnungen zu erkennen. Inhalte lesen wir dort nicht.</li>
-<li>Alles andere in deinem Postfach wird weder gelesen noch gespeichert.</li>
+<li><b>Gesendet-Ordner, Mails mit PDF:</b> Betreff, Empfänger (auch CC) und PDF-Text, um Angebote und Rechnungen zu erkennen. Mails mit Auftragsbestätigung oder Rechnung an einen Kunden mit offenem Angebot werten wir als Auftrag.</li>
+<li><b>Gesendet-Ordner, Mails ohne PDF:</b> Empfänger und Betreff, um zu sehen, ob du einem Kunden selbst geschrieben hast (dann warten wir länger). Außerdem den Text von bis zu 15 Mails an Kunden als Stilprobe (gekürzt auf 1.200 Zeichen), damit die Nachfass-Mails nach dir klingen. Die Stilproben werden nach der Auswertung gelöscht, gespeichert bleibt nur ein kleines Stilprofil (Du/Sie, Begrüßung, Grußformel, Signatur).</li>
+<li><b>Posteingang:</b> Absender, Betreff und Bezug (Kopfzeilen) aller neuen Mails. Den Text einer Mail lesen wir nur, wenn sie zu einem offenen Vorgang passen kann: Antwort im selben Mailverlauf, Absender ist die Kundenadresse oder dieselbe Firmendomain, oder die Dokumentnummer bzw. der Name des Kunden steht in Betreff oder Text. Bei Abwesenheitsnotizen und Eingangsbestätigungen lesen wir den Text, um Rückkehrdatum bzw. Eingang zu erkennen.</li>
+<li>Newsletter, Werbung und alle anderen Mails werden nicht geöffnet und nicht gespeichert. Wir löschen oder verändern nichts in deinem Postfach. Unsere Nachfass-Mails legen wir als Kopie in deinem Gesendet-Ordner ab.</li>
+</ul>
+</div>
+<div class="card" style="margin-top:16px">
+<h3 class="h3">KI-Auswertung durch Anthropic (Unterauftragsverarbeiter)</h3>
+<ul class="plain">
+<li>PDF-Texte, die oben genannten Mailtexte aus dem Posteingang und die Stilproben schicken wir zur Auswertung an <b>Anthropic PBC</b> (USA, KI-Modell Claude). Auch die Nachfass-Texte in deinem Stil lässt Claude schreiben, mit den Angaben zum Vorgang (Kunde, Nummer, Betrag, Daten).</li>
+<li>Die Übermittlung in die USA ist mit den <b>EU-Standardvertragsklauseln</b> (Art. 46 Abs. 2 lit. c DSGVO) abgesichert. Anthropic nutzt API-Daten nicht zum Training und löscht sie nach kurzer Aufbewahrung.</li>
+<li>Gespeichert wird von einer Kundenantwort nur die Kurzfassung (ein Satz) und die erkannte Absicht, nicht der Mailtext.</li>
 </ul>
 </div>
 <div class="card" style="margin-top:16px">
 <h3 class="h3">Was wir speichern</h3>
 <ul class="plain">
-<li>Deine Postfach-Zugangsdaten, verschlüsselt (AES). Sie werden nie angezeigt und nur zum Lesen und Versenden über dein Postfach verwendet.</li>
-<li>Die erkannten Angebots- und Rechnungs-PDFs sowie die daraus gelesenen Angaben (Kunde, Nummer, Betrag, Fälligkeit).</li>
+<li>Deine Postfach-Zugangsdaten, verschlüsselt (AES). Sie werden nie angezeigt und nur zum Lesen und Versenden über dein Postfach verwendet. Verbindungen zum Mailserver laufen immer verschlüsselt (TLS).</li>
+<li>Die erkannten Angebots- und Rechnungs-PDFs sowie die daraus gelesenen Angaben (Kunde, CC-Empfänger, Nummer, Betrag, Fälligkeit, Bankverbindung des Betriebs).</li>
 <li>Die Nachfass-Mails, die wir in deinem Namen geschickt haben, und den Verlauf dazu.</li>
-<li>Server-Standort Deutschland (AWS Frankfurt). Zur Erkennung der Angaben im PDF nutzen wir ein KI-Modell von Anthropic, die Inhalte werden dort nicht zum Training verwendet.</li>
+<li>Server-Standort Deutschland (AWS Frankfurt).</li>
+</ul>
+</div>
+<div class="card" style="margin-top:16px">
+<h3 class="h3">Der Link in den Nachfass-Mails</h3>
+<ul class="plain">
+<li>Statt das PDF erneut anzuhängen, enthält die Nachfass-Mail einen Link, unter dem dein Kunde das Dokument ansehen kann. Ruft er ihn auf, speichern wir Zeitpunkt und Anzahl der Aufrufe und sagen dir beim ersten Mal Bescheid. Wir setzen dabei keine Cookies, kein Zählpixel und speichern keine IP-Adresse.</li>
+<li>In den Einstellungen kannst du stattdessen das PDF anhängen oder nichts beifügen, dann gibt es keine Öffnen-Info.</li>
 </ul>
 </div>
 <div class="card" style="margin-top:16px">
 <h3 class="h3">Was nie passiert</h3>
 <ul class="plain">
-<li>Wir schicken keine Mail, die du nicht in den Einstellungen erlaubt hast. Anfangs fragen wir vor jeder Nachfass-Mail.</li>
-<li>Wir löschen oder verändern nichts in deinem Postfach.</li>
-<li>Wir geben Kundendaten nicht an Dritte weiter und nutzen sie nicht für Werbung.</li>
+<li>Keine Zahlungserinnerung ohne dein „Noch offen“. Angebote über deiner Freigabegrenze (Standard 10.000 €) gehen nur mit deiner Freigabe raus. Alle anderen Nachfass-Mails kündigen wir dir vorher in der Morgen-Vorschau an.</li>
+<li>Wir geben Kundendaten nicht an Dritte weiter (außer Anthropic wie oben beschrieben) und nutzen sie nicht für Werbung.</li>
 <li>Trennst du die Verbindung, werden Zugangsdaten, Dokumente, PDFs und Verlauf sofort gelöscht.</li>
 </ul>
 </div>
-<p class="small muted" style="margin-top:20px">Verantwortlich: Locadas GmbH, Gladbacher Straße 21, 52525 Heinsberg, <a href="mailto:info@locadas.de">info@locadas.de</a>. Einen Auftragsverarbeitungsvertrag (AVV) nach Art. 28 DSGVO stellen wir dir auf Anfrage aus. Allgemeine Datenschutzerklärung: <a href="https://locadas.de/datenschutz.html">locadas.de/datenschutz</a>.</p>
+<p class="small muted" style="margin-top:20px">Verantwortlich für die Daten deiner Kunden bist du, wir verarbeiten sie in deinem Auftrag nach dem <a href="/avv">Auftragsverarbeitungsvertrag (AVV)</a>, den du beim Verbinden akzeptierst. Locadas GmbH, Gladbacher Straße 21, 52525 Heinsberg, <a href="mailto:info@locadas.de">info@locadas.de</a>. Allgemeine Datenschutzerklärung: <a href="https://locadas.de/datenschutz.html">locadas.de/datenschutz</a>.</p>
 </div>
 </section>
 {% endblock %}

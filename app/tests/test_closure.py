@@ -12,6 +12,7 @@ from sqlalchemy import select
 from locadas.db import DocStatus, Document, FollowUpStatus, new_session
 from locadas.engine import followups as fu
 from locadas.engine.scanner import scan_account
+from tests.conftest import click
 from tests.test_e2e import WEEKDAY_10, _seed_sent, _setup
 
 
@@ -34,7 +35,7 @@ def test_preview_stop_prevents_send(fresh_db, imap, smtp):
         doc_id = offer.id
     stop = re.search(r"http://testserver(/f/\S+/stop)", _last(smtp).get_content()).group(1)
     n = len(smtp.messages)
-    assert TestClient(app).get(stop).status_code == 200  # Kunde hat angerufen
+    assert click(TestClient(app), stop).status_code == 200  # Kunde hat angerufen
     with new_session() as s:
         assert fu.process_due(s, now=WEEKDAY_10 + timedelta(hours=3))["sent"] == 0
         d = s.get(Document, doc_id)
@@ -63,6 +64,6 @@ def test_outcome_question_after_last_step(fresh_db, imap, smtp):
     m = _last(smtp)
     assert "Wie ist es ausgegangen" in m["Subject"]
     won = re.search(r"http://testserver(/o/\S+/won)", m.get_content()).group(1)
-    assert TestClient(app).get(won).status_code == 200
+    assert click(TestClient(app), won).status_code == 200
     with new_session() as s:
         assert s.get(Document, doc_id).status == DocStatus.WON

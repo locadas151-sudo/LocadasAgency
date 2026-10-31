@@ -17,7 +17,9 @@ Repo → Settings → Secrets and variables → Actions → **Secrets**:
 | `ANTHROPIC_API_KEY` | der Claude-Key (ohne Key läuft nur die Regex-Heuristik, der Angebots-Check ist dann aus) |
 | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` | optional, WhatsApp-Sekretär (Einrichtung und Vorlagen: `WHATSAPP.md`). Ohne geht alles per Mail. |
 
-Optional als **Variables**: `APP_DOMAIN` (Default `app.locadas.de`), `APP_BASE_URL` (Default `https://app.locadas.de`), `CLAUDE_MODEL`.
+Optional als **Variables**: `APP_DOMAIN` (Default `app.locadas.de`), `APP_BASE_URL` (Default `https://app.locadas.de`), `CLAUDE_MODEL`, `CLAUDE_FAST_MODEL`, `APPROVAL_THRESHOLD`.
+
+Ohne `SECRET_KEY` und `ENCRYPTION_KEY` bricht die App beim Start mit einer klaren Meldung im Log ab. `ALLOW_INSECURE_DEV=1` ist nur für Entwicklung, Tests und Demo gedacht (erlaubt Standard-Schlüssel und Mailserver auf internen Adressen) und darf in Produktion nie gesetzt sein.
 
 Ohne `AWS_HOST` läuft der Workflow nur die Tests und überspringt den Deploy (mit Hinweis im Log).
 

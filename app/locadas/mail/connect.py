@@ -5,7 +5,8 @@ import logging
 from dataclasses import dataclass
 
 from .imap import ImapClient, MailAuthError, MailConnectError
-from .providers import Provider, custom_host_candidates, detect_provider, guess_custom_provider
+from . import autoconfig
+from .providers import Provider, detect_provider, guess_custom_provider
 from .smtp import SmtpClient
 
 log = logging.getLogger(__name__)
@@ -45,7 +46,7 @@ def _try(imap_host, imap_port, imap_ssl, smtp_host, smtp_port, smtp_ssl, usernam
     if not sent:
         raise ConnectFailed("Kein Gesendet-Ordner gefunden. Prüf bitte, ob dein Mailprogramm gesendete Mails auf dem Server speichert (IMAP, nicht POP3).")
     # SMTP prüfen, bei Fehlschlag Alternativen (587 STARTTLS / 465 SSL) probieren
-    for host, port, ssl in ((smtp_host, smtp_port, smtp_ssl), (smtp_host, 587, False), (smtp_host, 465, True)):
+    for host, port, ssl in ((smtp_host, smtp_port, smtp_ssl), (smtp_host, smtp_port, not smtp_ssl), (smtp_host, 587, False), (smtp_host, 465, True)):
         try:
             SmtpClient(host, port, ssl, username, password).test()
             return sent, f"{host}|{port}|{int(ssl)}"
@@ -68,6 +69,7 @@ def connect_mailbox(
     smtp_ssl: bool | None = None,
 ) -> ConnectionConfig:
     email = email.strip().lower()
+    username_given = bool(username and username.strip())
     username = (username or email).strip()
     provider = detect_provider(email)
     domain = email.rsplit("@", 1)[-1]
@@ -77,19 +79,37 @@ def connect_mailbox(
 
     candidates: list[tuple[str, int, bool, str, int, bool, tuple[str, ...]]] = []
     if imap_host:
-        # Vom Nutzer eingetragene Server haben Vorrang
+        # Vom Nutzer eingetragene Server haben Vorrang. Ohne Angabe immer verschlüsselt:
+        # 143 = STARTTLS (Pflicht), alles andere SSL; SMTP 465 = SSL, 25/587/2525 = STARTTLS (Pflicht)
         i_port = imap_port or 993
-        i_ssl = imap_ssl if imap_ssl is not None else (i_port == 993)
         s_host = smtp_host or imap_host.replace("imap", "smtp", 1)
         s_port = smtp_port or 465
-        s_ssl = smtp_ssl if smtp_ssl is not None else (s_port == 465)
-        candidates.append((imap_host, i_port, i_ssl, s_host, s_port, s_ssl, ()))
+        # Beide Varianten sind verschlüsselt: SSL oder STARTTLS (Pflicht, sonst kein Login). Bei Standardports ist klar, welche.
+        if imap_ssl is not None:
+            i_opts = [imap_ssl]
+        else:
+            i_opts = [True] if i_port == 993 else [False] if i_port == 143 else [True, False]
+        s_ssl = smtp_ssl if smtp_ssl is not None else (s_port not in (25, 587, 2525))
+        for i_ssl in i_opts:
+            candidates.append((imap_host, i_port, i_ssl, s_host, s_port, s_ssl, ()))
     elif provider:
         candidates.append((provider.imap_host, provider.imap_port, provider.imap_ssl, provider.smtp_host, provider.smtp_port, provider.smtp_ssl, provider.sent_folders))
     else:
+        # Eigene Domain: Server über Autoconfig/MX ermitteln, dann nur diesen einen mit dem Passwort ansprechen
         provider = guess_custom_provider(email)
-        for ih, sh in custom_host_candidates(domain):
-            candidates.append((ih, 993, True, sh, 465, True, provider.sent_folders))
+        resolved = autoconfig.resolve(email)
+        if resolved is not None and resolved.provider is not None and resolved.provider.oauth_only:
+            raise ConnectFailed(
+                f"Deine Domain liegt bei {resolved.provider.label}. Dort ist kein Passwort-Login möglich.",
+                hint=resolved.provider.hint, provider=resolved.provider,
+            )
+        if resolved is not None:
+            if resolved.provider is not None:
+                provider = resolved.provider
+            if resolved.username and not username_given:
+                username = resolved.username
+            sent = provider.sent_folders if resolved.provider is not None else guess_custom_provider(email).sent_folders
+            candidates.append((resolved.imap_host, resolved.imap_port, resolved.imap_ssl, resolved.smtp_host, resolved.smtp_port, resolved.smtp_ssl, sent))
 
     last_auth_error: MailAuthError | None = None
     for ih, ip, issl, sh, sp, sssl, sent_cands in candidates:

@@ -7,7 +7,7 @@ import socket
 from email.message import EmailMessage
 from email.utils import formataddr, formatdate, make_msgid
 
-from .imap import MailAuthError, MailConnectError
+from .imap import MailAuthError, MailConnectError, is_local_host, tls_context
 
 log = logging.getLogger(__name__)
 _TIMEOUT = 40
@@ -24,10 +24,13 @@ def build_message(
     references: list[str] | None = None,
     reply_to: str = "",
     domain: str | None = None,
+    cc: list[tuple[str, str]] | None = None,
 ) -> EmailMessage:
     msg = EmailMessage()
     msg["From"] = formataddr((from_name, from_addr)) if from_name else from_addr
     msg["To"] = formataddr((to_name, to_addr)) if to_name else to_addr
+    if cc:
+        msg["Cc"] = ", ".join(formataddr((n, a)) if n else a for n, a in cc)
     msg["Subject"] = subject
     msg["Date"] = formatdate(localtime=True)
     msg["Message-ID"] = make_msgid(domain=domain or from_addr.rsplit("@", 1)[-1])
@@ -50,13 +53,19 @@ class SmtpClient:
     def _connect(self) -> smtplib.SMTP:
         try:
             if self.ssl:
-                conn: smtplib.SMTP = smtplib.SMTP_SSL(self.host, self.port, timeout=_TIMEOUT)
+                conn: smtplib.SMTP = smtplib.SMTP_SSL(self.host, self.port, timeout=_TIMEOUT, context=tls_context())
             else:
                 conn = smtplib.SMTP(self.host, self.port, timeout=_TIMEOUT)
                 conn.ehlo()
                 if conn.has_extn("starttls"):
-                    conn.starttls()
+                    conn.starttls(context=tls_context())
                     conn.ehlo()
+                elif not is_local_host(self.host):
+                    # Kein Login im Klartext
+                    conn.close()
+                    raise MailConnectError(f"SMTP-Server {self.host}:{self.port} bietet keine Verschlüsselung (STARTTLS). Bitte Port 465 (SSL) oder 587 verwenden.")
+        except MailConnectError:
+            raise
         except (OSError, socket.timeout, smtplib.SMTPException) as exc:
             raise MailConnectError(f"SMTP-Server {self.host}:{self.port} nicht erreichbar: {exc}") from exc
         try:

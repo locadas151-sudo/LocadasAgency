@@ -31,6 +31,7 @@ WHATSAPP_TEMPLATE_DEFAULTS = {
     "opened": "locadas_opened",
     "replied": "locadas_reply",
     "approval": "locadas_approval",
+    "invoice_open": "locadas_invoice_open",
     "outcome_offer": "locadas_outcome_offer",
     "outcome_invoice": "locadas_outcome_invoice",
     "event": "locadas_event",
@@ -53,7 +54,7 @@ class Settings:
     base_url: str = field(default_factory=lambda: _env("BASE_URL", "http://localhost:8000").rstrip("/"))
     # Domain für den Dokument-Link in Kunden-Mails (später z. B. eine neutrale Domain), Standard wie BASE_URL
     view_base_url: str = field(default_factory=lambda: (_env("VIEW_BASE_URL") or _env("BASE_URL", "http://localhost:8000")).rstrip("/"))
-    secret_key: str = field(default_factory=lambda: _env("SECRET_KEY", "dev-secret-change-me"))
+    secret_key: str = field(default_factory=lambda: _env("SECRET_KEY", DEFAULT_SECRET_KEY))
     encryption_key: str | None = field(default_factory=lambda: _env("ENCRYPTION_KEY"))
     data_dir: Path = field(default_factory=lambda: Path(_env("DATA_DIR", "./data")))
     database_url: str | None = field(default_factory=lambda: _env("DATABASE_URL"))
@@ -62,6 +63,10 @@ class Settings:
     # Claude
     anthropic_api_key: str | None = field(default_factory=lambda: _env("ANTHROPIC_API_KEY"))
     claude_model: str = field(default_factory=lambda: _env("CLAUDE_MODEL", "claude-sonnet-5-5"))
+    # Günstiges Modell für Erkennung (PDF-Felder) und Zuordnung von Kundenmails; Texte schreibt CLAUDE_MODEL
+    claude_fast_model: str = field(default_factory=lambda: _env("CLAUDE_FAST_MODEL", "claude-haiku-5-5"))
+    # Nur für Entwicklung, Tests und Demo: Standard-Schlüssel und lokale Mailserver ohne TLS erlauben
+    allow_insecure_dev: bool = field(default_factory=lambda: _env_bool("ALLOW_INSECURE_DEV", False))
 
     # Scheduler
     scan_interval_minutes: int = field(default_factory=lambda: _env_int("SCAN_INTERVAL_MINUTES", 10))
@@ -74,8 +79,8 @@ class Settings:
         default_factory=lambda: tuple(int(x) for x in _env("INVOICE_FOLLOWUP_DAYS", "3,10,20").split(","))
     )
     default_invoice_due_days: int = field(default_factory=lambda: _env_int("DEFAULT_INVOICE_DUE_DAYS", 14))
-    # Wie viele Nachfass-Mails der Betrieb anfangs freigeben muss, bevor es automatisch läuft
-    approvals_before_auto: int = field(default_factory=lambda: _env_int("APPROVALS_BEFORE_AUTO", 0))
+    # Angebote über diesem Bruttobetrag gehen nur mit Freigabe raus (Standard je Betrieb, in den Einstellungen änderbar)
+    approval_threshold: float = field(default_factory=lambda: float(_env("APPROVAL_THRESHOLD", "10000")))
     # Morgen-Vorschau: so viele Stunden vor dem Versand bekommt der Betrieb die Liste mit Stopp-Links (0 = aus)
     preview_hours: int = field(default_factory=lambda: _env_int("PREVIEW_HOURS", 2))
     # Nach der letzten Stufe so viele Tage warten, dann „Auftrag bekommen? / Bezahlt?“ fragen
@@ -129,6 +134,35 @@ class Settings:
         d = self.data_dir / "pdf"
         d.mkdir(parents=True, exist_ok=True)
         return d
+
+
+DEFAULT_SECRET_KEY = "dev-secret-change-me"
+
+
+def insecure_config_problems(s: "Settings") -> list[str]:
+    """Was in Produktion fehlt. Leer = alles gut."""
+    problems = []
+    if not s.secret_key or s.secret_key == DEFAULT_SECRET_KEY:
+        problems.append("SECRET_KEY ist nicht gesetzt (Standardwert)")
+    if not s.encryption_key:
+        problems.append("ENCRYPTION_KEY ist nicht gesetzt")
+    return problems
+
+
+def check_startup(s: "Settings | None" = None) -> None:
+    """Beim Start: ohne eigene Schlüssel nicht hochfahren, außer DEBUG=1 oder ALLOW_INSECURE_DEV=1."""
+    import logging
+
+    s = s or settings
+    problems = insecure_config_problems(s)
+    if not problems:
+        return
+    if s.debug or s.allow_insecure_dev:
+        logging.getLogger(__name__).warning("Unsichere Konfiguration (nur für Entwicklung): %s", "; ".join(problems))
+        return
+    msg = "Start abgebrochen: " + "; ".join(problems) + ". Setz die Werte in der .env (siehe DEPLOY.md) oder für lokale Tests ALLOW_INSECURE_DEV=1."
+    logging.getLogger(__name__).critical(msg)
+    raise RuntimeError(msg)
 
 
 settings = Settings()

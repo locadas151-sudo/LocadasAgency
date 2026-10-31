@@ -46,7 +46,7 @@
 {% set body = f.body or (previews[f.id][1] if f.id in previews else '') %}
 <p class="sub"><b>Betreff:</b> {{ sub }}</p>
 <pre>{{ body }}</pre>
-{% if f.status == FollowUpStatus.AWAITING_APPROVAL %}<div class="btn-row" style="margin-top:12px"><a class="btn sm" href="/f/{{ f.approval_token }}/send">Jetzt senden</a><a class="btn ghost sm" href="/f/{{ f.approval_token }}/skip">Diesmal nicht</a></div>{% endif %}
+{% if f.status == FollowUpStatus.AWAITING_APPROVAL %}<div class="btn-row" style="margin-top:12px">{% if doc.kind == DocKind.INVOICE %}<a class="btn sm" href="/f/{{ f.approval_token }}/send">Noch offen: erinnern</a><a class="btn ghost sm" href="/f/{{ f.approval_token }}/done">Bezahlt</a>{% else %}<a class="btn sm" href="/f/{{ f.approval_token }}/send">Jetzt senden</a><a class="btn ghost sm" href="/f/{{ f.approval_token }}/skip">Diesmal nicht</a>{% endif %}</div>{% endif %}
 {% if f.error %}<p class="sub" style="color:#991b1b">{{ f.error }}</p>{% endif %}
 </details>
 {% endfor %}

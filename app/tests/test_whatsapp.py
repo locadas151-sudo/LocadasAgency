@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from locadas.config import settings
-from locadas.db import Business, DocStatus, Document, Event, FollowUp, FollowUpStatus, WhatsAppInbound, new_session, utcnow
+from locadas.db import Business, DocKind, DocStatus, Document, Event, FollowUp, FollowUpStatus, WhatsAppInbound, new_session, utcnow
 from locadas.engine import followups as fu
 from locadas.engine.scanner import scan_account
 from locadas.notify import Notification, messages, send, tokens
@@ -313,7 +313,9 @@ def test_reopen_after_reply(fresh_db, imap, smtp, graph):
 def test_approval_queue_send_skip_gone(fresh_db, imap, smtp, graph):
     with new_session() as s:
         b, offer, invoice = _business(s, imap, smtp)
+        b.review_mode = "all"  # jede Mail freigeben
         for d in (offer, invoice):
+            d.needs_review = False
             d.followups[0].due_at = WEEKDAY_10 - timedelta(hours=1)
         s.commit()
         n_mail = len(smtp.messages)
@@ -321,27 +323,35 @@ def test_approval_queue_send_skip_gone(fresh_db, imap, smtp, graph):
         s.commit()
         assert stats["approval"] == 2
         assert len(smtp.messages) == n_mail  # kam per WhatsApp, nicht per Mail
+        # Zuerst die Rechnung als Frage: noch offen?
         p = graph.last
         assert p["type"] == "interactive"
-        assert [x["reply"]["title"] for x in p["interactive"]["action"]["buttons"]] == ["Senden", "Diesmal nicht", "Hat sich gemeldet"]
+        assert [x["reply"]["title"] for x in p["interactive"]["action"]["buttons"]] == ["Noch offen", "Bezahlt"]
+        assert "Noch offen?" in p["interactive"]["body"]["text"]
         assert p["interactive"]["footer"]["text"].startswith("1 von 2")
         first = tokens.parse(p["interactive"]["action"]["buttons"][0]["reply"]["id"])
         assert first[0] == "send"
         first_fu = s.get(FollowUp, first[1][0])
-        first_doc, other_doc = first_fu.document_id, ({offer.id, invoice.id} - {first_fu.document_id}).pop()
+        assert first_fu.document_id == invoice.id
+        first_doc, other_doc = invoice.id, offer.id
     c = _client()
     _press(c, tokens.payload("send", first[1][0]))
     with new_session() as s:
         f = s.get(FollowUp, first[1][0])
-        assert f.status == FollowUpStatus.SENT and s.get(Business, f.document.business_id).approvals_done == 1
-    assert len(smtp.messages) == n_mail + 1  # die Nachfass-Mail an den Kunden
-    # Danach kommt sofort die nächste Freigabe
+        assert f.status == FollowUpStatus.SENT and "Laut meinen Unterlagen" in f.body
+    assert len(smtp.messages) == n_mail + 1  # die Zahlungserinnerung an den Kunden
+    assert any("Die Zahlungserinnerung an" in t for t in graph.texts()[-3:])
+    # Danach kommt sofort die nächste Freigabe, mit vollem Text
     nxt = graph.last
     assert nxt["type"] == "interactive"
+    assert [x["reply"]["title"] for x in nxt["interactive"]["action"]["buttons"]] == ["Senden", "Diesmal nicht", "Hat sich gemeldet"]
     action, (fu_id,) = tokens.parse(nxt["interactive"]["action"]["buttons"][1]["reply"]["id"])
     assert action == "skip"
     with new_session() as s:
-        assert s.get(FollowUp, fu_id).document_id == other_doc
+        of = s.get(FollowUp, fu_id)
+        assert of.document_id == other_doc
+        full = nxt["interactive"]["body"]["text"] + "\n".join(graph.texts()[-2:])
+        assert of.body.strip().splitlines()[-1] in full  # ganzer Text bis zur Signatur (ggf. als Nachricht davor)
     _press(c, tokens.payload("send", first[1][0]))  # doppelt
     assert "schon raus" in graph.texts()[-2] or "schon raus" in graph.texts()[-1]
     assert len(smtp.messages) == n_mail + 1
@@ -357,7 +367,7 @@ def test_approval_queue_send_skip_gone(fresh_db, imap, smtp, graph):
 def test_preview_template_pick_and_stop_by_number(fresh_db, imap, smtp, graph):
     with new_session() as s:
         b, offer, invoice = _business(s, imap, smtp, window=False)
-        b.auto_mode = True
+        invoice.kind = DocKind.OFFER  # zwei Angebote: Rechnungen kommen nie in die Vorschau, sondern als Frage
         for d in (offer, invoice):
             d.needs_review = False
             d.followups[0].due_at = WEEKDAY_10 - timedelta(hours=1)
@@ -369,7 +379,7 @@ def test_preview_template_pick_and_stop_by_number(fresh_db, imap, smtp, graph):
         p = graph.last
         assert p["type"] == "template" and p["template"]["name"] == "locadas_preview"
         params = [x["text"] for x in p["template"]["components"][0]["parameters"]]
-        assert params[0] == "Thomas" and params[1] == "12:00" and "Familie Schmidt" in params[2]
+        assert params[0] == "Thomas" and params[1] == "heute ab 12 Uhr" and "Familie Schmidt" in params[2]
         pick = [c for c in p["template"]["components"] if c["type"] == "button"][0]["parameters"][0]["payload"]
         assert tokens.parse(pick)[0] == "pick"
         assert all(f.announced_at is not None for d in (offer, invoice) for f in d.followups[:1])

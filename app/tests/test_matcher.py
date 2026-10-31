@@ -104,7 +104,7 @@ def test_context_free_mail_from_wife_is_matched(fresh_db, imap, smtp, claude):
         # Ein Aufruf, aktuelles Modell, ohne temperature, mit Mailtext und beiden Dokumenten
         assert len(claude.calls) == 1
         call = claude.calls[0]
-        assert call["model"] == settings.claude_model and "temperature" not in call
+        assert call["model"] == settings.claude_fast_model and "temperature" not in call
         assert "was ist denn jetzt mit der Küche" in claude.prompts[0]
         assert f"id={kueche.id}" in claude.prompts[0] and f"id={bad.id}" in claude.prompts[0]
         assert imap.text_fetches  # Text nur bei Bedarf geholt
@@ -121,7 +121,7 @@ def test_low_confidence_does_not_close(fresh_db, imap, smtp, claude):
         b, account = _setup(s, imap, smtp)
         kueche = _doc(s, b, account, DocKind.OFFER, "Familie Wolff", "thomas.wolff@gmx.de", "Einbauküche", "A-1", 10)
         claude.reply = {"doc_id": kueche.id, "confidence": 0.5, "intent": "question", "summary": "Jemand fragt nach einem Termin."}
-        imap.store.append("INBOX", make_mail("someone@web.de", USER, "Termin", "Wann hätten Sie Zeit?"))
+        imap.store.append("INBOX", make_mail("someone@web.de", USER, "Termin", "Wann hätten Sie Zeit für Wolff?"))
         assert scan_account(s, account)["replies"] == 0
         s.expire_all()
         assert s.get(Document, kueche.id).status == DocStatus.OPEN

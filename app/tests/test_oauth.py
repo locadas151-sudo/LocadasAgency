@@ -22,7 +22,7 @@ def test_oauth_google_flow(fresh_db, monkeypatch):
     monkeypatch.setattr(oauth.settings, "google_client_secret", "sec")
     client = TestClient(m.app)
     assert "Mit Google verbinden" in client.get("/verbinden").text
-    r = client.get("/oauth/google/start", params={"business_name": "Koch Elektro", "owner_name": "Sabine Koch"}, follow_redirects=False)
+    r = client.get("/oauth/google/start", params={"business_name": "Koch Elektro", "owner_name": "Sabine Koch", "avv": "1"}, follow_redirects=False)
     assert r.status_code == 303
     url = urlparse(r.headers["location"])
     assert url.netloc == "accounts.google.com"

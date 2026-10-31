@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..config import settings
-from ..db import Business, DocStatus, Document, FollowUp, FollowUpStatus, WhatsAppInbound, log_event, utcnow
+from ..db import Business, DocKind, DocStatus, Document, FollowUp, FollowUpStatus, WhatsAppInbound, log_event, utcnow
 from ..engine import followups as fe
 from . import messages as m
 from . import whatsapp as wa
@@ -146,11 +146,12 @@ def run_payload(session: Session, businesses: list[Business], value: str, now: d
                 reply = "Die ist schon raus."
             elif fu.status != FollowUpStatus.AWAITING_APPROVAL:
                 reply = "Diese Freigabe ist nicht mehr offen."
-            elif doc.needs_review:
+            elif doc.needs_review and doc.kind != DocKind.INVOICE:
                 fe.release_review(session, fu)
                 reply = f"Alles klar, ich fasse bei {m.who(doc)} nach. Den Text bekommst du vorher noch zu sehen."
             elif fe.approve(session, fu):
-                reply = f"Gesendet. Die Mail an {m.who(doc)} ist in deinem Namen raus."
+                what = "Zahlungserinnerung" if doc.kind == DocKind.INVOICE else "Mail"
+                reply = f"Gesendet. Die {what} an {m.who(doc)} ist in deinem Namen raus."
             else:
                 reply = f"Das hat nicht geklappt: {fu.error or 'unbekannter Fehler'}"
         elif action == "skip":
@@ -234,8 +235,7 @@ def next_approval(session: Session, business: Business) -> Notification | None:
         return None
     fu = pending[0]
     subject, body = fe._approval_mail(business, fu)
-    left = max(0, settings.approvals_before_auto - business.approvals_done) if business.needs_approval else None
-    n = m.approval(business, fu, 1, len(pending), subject, body, left)
+    n = m.approval(business, fu, 1, len(pending), subject, body)
     n.footer = f"Noch {len(pending)} offen" if len(pending) > 1 else n.footer
     return n
 

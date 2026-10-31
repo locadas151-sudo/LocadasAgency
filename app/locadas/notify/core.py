@@ -74,7 +74,12 @@ def _deliver_whatsapp(b: Business, n: Notification, now: datetime) -> bool:
     to = b.whatsapp_number
     if wa.in_window(b, now):
         text = f"*{n.title}*\n\n{n.text}" if n.title else n.text
-        wa.send_buttons(to, text, n.buttons, n.footer)
+        if len(text) > wa.BODY_MAX and n.buttons:
+            # Knopf-Nachrichten sind auf 1024 Zeichen begrenzt: vollständigen Text vorweg, dann kurz die Knöpfe
+            wa.send_text(to, text)
+            wa.send_buttons(to, f"*{n.title or 'Deine Entscheidung'}*\n\nDer vollständige Text steht direkt darüber.", n.buttons, n.footer)
+        else:
+            wa.send_buttons(to, text, n.buttons, n.footer)
         return True
     if n.template is None:
         return False

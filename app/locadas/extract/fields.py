@@ -89,7 +89,7 @@ def _claude_extract(kind_hint: DocKind | None, subject: str, recipients: str, ma
     )
     try:
         resp = client.messages.create(
-            model=settings.claude_model,
+            model=settings.claude_fast_model,
             max_tokens=2000,  # Platz für Denk-Blöcke, sonst kommt kein Text
             messages=[{"role": "user", "content": prompt}],
         )
@@ -200,19 +200,70 @@ def format_iban(iban: str) -> str:
     return " ".join(compact[i:i + 4] for i in range(0, len(compact), 4))
 
 
-def find_iban(text: str) -> str:
-    """Erste IBAN (DE/AT/CH/LI) mit gültiger Prüfsumme, in Vierergruppen; sonst leer."""
-    for m in _IBAN_CAND.finditer(text or ""):
+# Lastschrift: der Betrieb zieht den Betrag selbst ein, die IBAN im Dokument ist die des Kunden
+_DEBIT_RE = re.compile(
+    r"(?i)lastschrift|mandatsreferenz|mandats-?ref|gl(?:ä|ae)ubiger-?id|"
+    r"wird\s+(?:[^\n]{0,40}\s)?(?:eingezogen|abgebucht)|abbuchung\s+(?:von|vom)\s+ihrem\s+konto"
+)
+# Bankblock des Kunden (Mandat, „Ihre IBAN“), nie unsere Zahlungsadresse
+_CUSTOMER_BANK_CTX = re.compile(
+    r"(?i)mandat|lastschrift|\bihre?\s+(?:iban|bankverbindung|kontoverbindung|bank)\b|\bihr(?:em|es)?\s+konto|"
+    r"zahlungspflichtige|kunden-?iban|kunden-?konto|abbuchung|kontoinhaber(?:in)?\s*\(\s*kunde"
+)
+# Beschriftung unseres eigenen Bankblocks (meist in der Fußzeile)
+_OWN_BANK_CTX = re.compile(
+    r"(?i)bankverbindung|kontoverbindung|\biban\b|\bbank\b|kreditinstitut|geldinstitut|sparkasse|volksbank|raiffeisen|"
+    r"kontoinhaber|zahlungsempf(?:ä|ae)nger|überweis|ueberweis"
+)
+_GENERIC_NAME_WORDS = {"gmbh", "mbh", "und", "co", "kg", "ohg", "inh", "inhaber", "e.k.", "ek", "der", "die", "das", "von", "firma"}
+
+
+def _name_tokens(names) -> set[str]:
+    out: set[str] = set()
+    for n in names or ():
+        for w in re.findall(r"[a-zäöüß]{3,}", (n or "").lower()):
+            if w not in _GENERIC_NAME_WORDS:
+                out.add(w)
+    return out
+
+
+def _holder_is_own(holder: str, own_names) -> bool:
+    own = _name_tokens(own_names)
+    if not own or not holder:
+        return True  # nichts zum Vergleichen: nicht ablehnen
+    return bool(_name_tokens([holder]) & own)
+
+
+def find_iban(text: str, own_names=()) -> str:
+    """IBAN (DE/AT/CH/LI) mit gültiger Prüfsumme aus dem eigenen Bankblock des Betriebs, in Vierergruppen; sonst leer.
+
+    Nie aus einem Lastschrift-/Mandatsabschnitt des Kunden. Steht irgendwo ein Lastschrift-Hinweis, gibt es gar keine IBAN
+    (der Betrieb zieht ein, der Kunde soll nichts überweisen). Ist ein Kontoinhaber genannt, muss er zum Betrieb passen.
+    """
+    t = text or ""
+    if _DEBIT_RE.search(t):
+        return ""
+    for m in _IBAN_CAND.finditer(t):
         compact = re.sub(r"[ \u00a0]", "", m.group(0))
         cand = compact[: IBAN_LENGTH[m.group(1)]]
-        if iban_valid(cand):
-            return format_iban(cand)
+        if not iban_valid(cand):
+            continue
+        before = "\n".join(t[: m.start()].split("\n")[-3:])
+        if _CUSTOMER_BANK_CTX.search(before):
+            continue
+        if not _OWN_BANK_CTX.search(before):
+            continue
+        around = t[max(0, m.start() - 200): m.end() + 200]
+        hm = _HOLDER_RE.search(around)
+        if hm and not _holder_is_own(hm.group(1), own_names):
+            continue
+        return format_iban(cand)
     return ""
 
 
-def bank_details(text: str) -> dict[str, str]:
+def bank_details(text: str, own_names=()) -> dict[str, str]:
     t = text or ""
-    iban = find_iban(t)
+    iban = find_iban(t, own_names)
     out = {"iban": iban, "bic": "", "bank_name": "", "account_holder": ""}
     if not iban:
         return out
@@ -226,6 +277,33 @@ def bank_details(text: str) -> dict[str, str]:
     if m:
         out["account_holder"] = m.group(1).strip()[:200]
     return out
+
+
+# --- Schon bezahlt? -----------------------------------------------------------------
+
+_PAID_MARKERS: tuple[tuple[str, str], ...] = (
+    ("Betrag dankend erhalten", r"dankend\s+erhalten|betrag\s+(?:dankend\s+)?erhalten|zahlung\s+dankend"),
+    ("bereits bezahlt", r"bereits\s+(?:bezahlt|beglichen|gezahlt|überwiesen)|wurde\s+(?:bereits\s+)?(?:bar\s+)?beglichen"),
+    ("bar bezahlt", r"\b(?:in\s+)?bar\s+(?:bezahlt|erhalten|kassiert|gezahlt|beglichen)|\bbarzahlung\b|zahlungsart\s*:?\s*bar\b|\bbetrag\s+bar\b"),
+    ("mit EC-Karte bezahlt",
+     r"(?:per|mit|über)\s+(?:ec-?\s?karte|girocard|karte|kartenzahlung)\s+(?:bezahlt|gezahlt|beglichen)|"
+     r"(?:ec-?\s?karte|girocard)\s+(?:bezahlt|gezahlt)|bezahlt\s+(?:per|mit)\s+(?:ec|karte|girocard)|"
+     r"zahlungsart\s*:?\s*(?:ec\b|ec-?\s?karte|girocard|kartenzahlung)|kartenzahlung\s+erfolgt"),
+    ("Lastschrift", r"lastschrift|mandatsreferenz|wird\s+(?:[^\n]{0,40}\s)?(?:eingezogen|abgebucht)"),
+    ("per PayPal bezahlt",
+     r"(?:per|via|über|mit)\s+paypal\s+(?:bezahlt|gezahlt|beglichen|erhalten)|paypal[^\n]{0,30}(?:bezahlt|zahlung\s+erhalten)|"
+     r"zahlungsart\s*:?\s*paypal"),
+)
+_PAID_RES = tuple((label, re.compile(rx, re.I)) for label, rx in _PAID_MARKERS)
+
+
+def paid_marker(text: str) -> str:
+    """Hinweis im Rechnungstext oder in der Mail, dass nichts mehr zu überweisen ist (bar, EC, Lastschrift …). Leer, wenn keiner."""
+    for label, rx in _PAID_RES:
+        m = rx.search(text or "")
+        if m:
+            return f"{label} („{re.sub(r'\s+', ' ', m.group(0)).strip()}“)"
+    return ""
 
 
 # --- Heuristik ---------------------------------------------------------------
@@ -264,7 +342,7 @@ def _to_iso(d: str, m: str, y: str) -> str | None:
         return None
 
 
-def heuristic_extract(kind: DocKind, subject: str, recipients: list[tuple[str, str]], mail_date: datetime, text: str, filename: str = "") -> Extracted:
+def heuristic_extract(kind: DocKind, subject: str, recipients: list[tuple[str, str]], mail_date: datetime, text: str, filename: str = "", own_names=()) -> Extracted:
     t = text or ""
     amount: float | None = None
     # Betrag: Zeilen mit Gesamt-Label, Netto/MwSt-Zeilen auslassen; sonst größter Betrag
@@ -332,7 +410,7 @@ def heuristic_extract(kind: DocKind, subject: str, recipients: list[tuple[str, s
     title = " ".join(w for w in title.split() if not re.search(r"\d", w) and len(w) > 1)
     title = re.sub(r"\s+", " ", title).strip(" :-–")[:300]
 
-    bank = bank_details(t) if kind == DocKind.INVOICE else {}
+    bank = bank_details(t, own_names) if kind == DocKind.INVOICE else {}
     return Extracted(
         kind=kind.value,
         doc_term=detect_doc_term(kind, subject, filename, t),
@@ -351,9 +429,9 @@ def heuristic_extract(kind: DocKind, subject: str, recipients: list[tuple[str, s
     )
 
 
-def extract_fields(kind: DocKind, subject: str, recipients: list[tuple[str, str]], mail_date: datetime, text: str, filename: str = "") -> Extracted:
+def extract_fields(kind: DocKind, subject: str, recipients: list[tuple[str, str]], mail_date: datetime, text: str, filename: str = "", own_names=()) -> Extracted:
     """Claude zuerst, Heuristik als Netz. Kunden-Mail kommt notfalls aus dem Mail-Empfänger."""
-    heuristic = heuristic_extract(kind, subject, recipients, mail_date, text, filename)
+    heuristic = heuristic_extract(kind, subject, recipients, mail_date, text, filename, own_names)
     rec_str = ", ".join(f"{n} <{a}>" if n else a for n, a in recipients)
     result = _claude_extract(kind, subject, rec_str, mail_date, text) if text.strip() else None
     if result is None:
@@ -379,7 +457,7 @@ def extract_fields(kind: DocKind, subject: str, recipients: list[tuple[str, str]
     result.doc_term = heuristic.doc_term or result.doc_term
     # Bankverbindung nur per Regex mit Prüfsumme, nie geraten
     if result.kind == "invoice":
-        bank = heuristic if heuristic.iban else SimpleNamespace(**bank_details(text))
+        bank = heuristic if heuristic.iban else SimpleNamespace(**bank_details(text, own_names))
         result.iban, result.bic, result.bank_name = bank.iban, bank.bic, bank.bank_name
         result.account_holder = (bank.account_holder or result.account_holder) if result.iban else ""
     else:

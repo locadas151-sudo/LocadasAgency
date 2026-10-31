@@ -21,7 +21,7 @@ from locadas.engine.scanner import is_receipt_ack, scan_account
 from locadas.extract import fields as fx
 from locadas.notify import messages as wa_msgs
 from locadas.notify.tokens import parse
-from tests.conftest import USER
+from tests.conftest import USER, click
 from tests.fakemail import make_mail, make_pdf
 from tests.test_e2e import WEEKDAY_10, _seed_sent, _setup
 from tests.test_personalize import SIE_PROFILE, FakeAnthropic, fake_claude  # noqa: F401
@@ -183,7 +183,7 @@ def test_business_customers_get_at_least_sachlich():
     assert texts.invoice_tone(_doc(customer_name="Hausverwaltung Kraus")) == "sachlich"
     assert texts.invoice_tone(_doc(customer_name="Hausverwaltung Kraus", business=_biz(tone="bestimmt"))) == "bestimmt"
     gu = _doc(customer_name="Hochtief Hochbau Projekt GmbH", customer_email="rechnungseingang@gu-bauprojekt.de")
-    assert "liegt uns noch kein Zahlungseingang vor" in texts.body_for(gu, 1, NOW)
+    assert "ist laut meinen Unterlagen noch offen" in texts.body_for(gu, 1, NOW) and "Zahlungseingang" not in texts.body_for(gu, 1, NOW)
 
 
 def test_personalize_invoice_closing_and_soft_phrase_guard(fake_claude):
@@ -371,20 +371,20 @@ def test_needs_review_asks_question_first(fresh_db, imap, smtp):
         token, fid, doc_id = f.approval_token, f.id, inv.id
     m = email.message_from_bytes(smtp.messages[-1][2], policy=email.policy.default)
     text = m.get_content()
-    assert "Hallo Thomas Müller,\r\n\r\ndiese Rechnung R-2026-301 über 224,91 € hast du am" in text and "vor deinem Start bei uns. Ist sie schon bezahlt?" in text
+    assert "Hallo Thomas Müller,\r\n\r\nRechnung R-2026-301 an Peter Weber über 224,91 € ist seit 03.11.2026 fällig. Noch offen?" in text
     assert f"/f/{token}/done" in text and f"/f/{token}/send" in text and "Guten Tag" not in text
 
     from locadas.main import app
     client = TestClient(app)
-    r = client.get(f"/f/{token}/send")
-    assert r.status_code == 200 and "Wird nachgefasst" in r.text
+    n = len(smtp.messages)
+    r = click(client, f"/f/{token}/send")
+    assert r.status_code == 200 and "Gesendet" in r.text
     with new_session() as s:
         f = s.get(FollowUp, fid)
-        assert f.status == FollowUpStatus.SCHEDULED and not f.document.needs_review and f.document.status == DocStatus.OPEN
-        assert s.get(Document, doc_id).followups_sent == 0  # nichts gesendet, normaler Ablauf
-        # Ab jetzt normale Freigabe mit Text (Betrieb ist noch im Freigabe-Modus)
-        assert fu.process_due(s, now=WEEKDAY_10)["approval"] == 1
-        assert s.get(FollowUp, fid).body.startswith("Guten Tag Peter Weber,")
+        assert f.status == FollowUpStatus.SENT and not f.document.needs_review and f.document.status == DocStatus.OPEN
+        assert s.get(Document, doc_id).followups_sent == 1
+        assert f.body.startswith("Guten Tag Peter Weber,") and "Laut meinen Unterlagen ist die Rechnung noch offen." in f.body
+    assert len(smtp.messages) == n + 1 and smtp.messages[-1][1] == ["p.weber@web.de"]
 
 
 def test_needs_review_paid_button(fresh_db, imap, smtp):
@@ -394,7 +394,7 @@ def test_needs_review_paid_button(fresh_db, imap, smtp):
         fu.process_due(s, now=WEEKDAY_10)
         token, doc_id = inv.followups[0].approval_token, inv.id
     from locadas.main import app
-    r = TestClient(app).get(f"/f/{token}/done")
+    r = click(TestClient(app), f"/f/{token}/done")
     assert r.status_code == 200 and "Bezahlt" in r.text
     with new_session() as s:
         d = s.get(Document, doc_id)
@@ -410,10 +410,10 @@ def test_needs_review_whatsapp_question_and_buttons(fresh_db, imap, smtp):
         f = inv.followups[0]
         f.status = FollowUpStatus.AWAITING_APPROVAL
         n = wa_msgs.approval(b, f, 1, 1, "s", "b", None)
-        assert "Ist sie schon bezahlt?" in n.text and [lbl for lbl, _ in n.buttons] == ["Bezahlt", "Bitte nachfassen"]
-        assert n.template is None  # außerhalb des 24h-Fensters lieber per Mail als mit falschen Vorlagen-Knöpfen
-        assert parse(n.buttons[0][1]) == ("settle", [f.id]) and parse(n.buttons[1][1]) == ("send", [f.id])
-        reply, _ = run_payload(s, [b], n.buttons[0][1], WEEKDAY_10)
+        assert "ist seit 03.11.2026 fällig. Noch offen?" in n.text and [lbl for lbl, _ in n.buttons] == ["Noch offen", "Bezahlt"]
+        assert n.template == "invoice_open"
+        assert parse(n.buttons[0][1]) == ("send", [f.id]) and parse(n.buttons[1][1]) == ("settle", [f.id])
+        reply, _ = run_payload(s, [b], n.buttons[1][1], WEEKDAY_10)
         assert "Bezahlt" in reply and inv.status == DocStatus.PAID
         offer = s.scalars(select(Document).where(Document.document_number == "A-2026-118")).one()
         offer.needs_review = True
@@ -429,14 +429,19 @@ def test_mixed_approval_mail_bundles_questions_and_texts(fresh_db, imap, smtp):
     _seed_sent(imap)
     with new_session() as s:
         b, inv = _review_setup(s, imap, smtp)
+        b.review_mode = "all"
         offer = s.scalars(select(Document).where(Document.document_number == "A-2026-118")).one()
         offer.followups[0].due_at = WEEKDAY_10 - timedelta(hours=1)
         s.commit()
         assert fu.process_due(s, now=WEEKDAY_10)["approval"] == 2
+        body = offer.followups[0].body
     m = email.message_from_bytes(smtp.messages[-1][2], policy=email.policy.default)
     text = m.get_content()
-    assert "Frage und 1 Freigabe" in m["Subject"]
-    assert text.index("Ist sie schon bezahlt?") < text.index("Außerdem würde ich bei einem Kunden")
+    assert "1 Rechnung: noch offen?" in m["Subject"] and "1 Freigabe" in m["Subject"]
+    assert text.index("Noch offen?") < text.index("Außerdem würde ich bei einem Kunden")
+    # voller Text der Freigabe steht in der Mail
+    for line in body.splitlines():
+        assert line.strip() in text
     assert len(smtp.messages) == 1
 
 

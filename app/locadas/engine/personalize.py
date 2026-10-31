@@ -212,11 +212,13 @@ def step_goal(ctx: Context) -> str:
         }[step]
     tone = _INVOICE_TONE.get(ctx.tone, _INVOICE_TONE["freundlich"])
     ack = " Der Kunde hat den Eingang bestätigt, die Rechnung ist also angekommen." if "Kunde hat den Eingang automatisch bestätigt am" in ctx.facts else ""
+    offen = f"Der Inhaber hat gerade bestätigt, dass die {t} laut seinen Unterlagen noch offen ist. Sag das neutral, etwa: \"Laut meinen Unterlagen ist die {t} noch offen.\""
     base = {
-        1: f"Erste Zahlungserinnerung, Ton {tone}. Die {t} ist seit dem Fälligkeitsdatum offen, es ist noch keine Zahlung eingegangen.{ack}",
-        2: f"Zweite Zahlungserinnerung, Ton {tone}. Trotz der ersten Erinnerung noch kein Zahlungseingang.{ack} Bei Fragen zur {t} soll sich der Kunde melden.",
-        3: f"Dritte und letzte Zahlungserinnerung, Ton {tone}. Trotz zweier Erinnerungen noch offen. Sagen, dass nach Ablauf der Frist das Mahnverfahren eingeleitet wird. Das Wort \"Mahnverfahren\" muss vorkommen.",
+        1: f"Erste Zahlungserinnerung, Ton {tone}. Die {t} ist seit dem Fälligkeitsdatum fällig. {offen}{ack}",
+        2: f"Zweite Zahlungserinnerung, Ton {tone}. Trotz der ersten Erinnerung laut Unterlagen noch offen. {offen}{ack} Bei Fragen zur {t} soll sich der Kunde melden.",
+        3: f"Dritte und letzte Zahlungserinnerung, Ton {tone}. Trotz zweier Erinnerungen laut Unterlagen noch offen. Sagen, dass nach Ablauf der Frist das Mahnverfahren eingeleitet wird. Das Wort \"Mahnverfahren\" muss vorkommen.",
     }[step]
+    base += " Behaupte nie, du hättest keinen Zahlungseingang gefunden, festgestellt oder gesehen, und schreib nicht, dass keine Zahlung eingegangen sei."
     if ctx.tone == "bestimmt" and step == 2:
         base += " Sagen, dass der Kunde im Zahlungsverzug ist und bei Fristablauf Mahnkosten berechnet werden. Das Wort \"Mahnkosten\" muss vorkommen."
     return base + " Nicht sagen, die Rechnung sei vielleicht untergegangen, und nicht anbieten, die Nachricht zu ignorieren. Schildere nur kurz die Lage und biete an, dass sich der Kunde bei Fragen meldet. Keine eigene Zahlungsaufforderung, keine Frist, keine Bankverbindung und kein Hinweis wie \"siehe unten\": Die Zahlungsaufforderung folgt direkt im automatisch angehängten Absatz."
@@ -284,6 +286,12 @@ _SOFT_INVOICE_RE = re.compile(r"untergegangen|ignorieren|ignorier|übersehen|ver
 _LAST_MESSAGE_RE = re.compile(r"letzte[nrs]?\s+(?:nachricht|mail|e-mail|mal|erinnerung)|ja, nein oder|ja oder nein", re.I)
 _PRESSURE_RE = re.compile(r"entscheid|zusage|noch keine rückmeldung|nichts (?:mehr )?(?:von ihnen |von dir )?gehört|bitte (?:um )?(?:eine )?(?:kurze )?rückmeldung|planen", re.I)
 _TRACKING_RE = re.compile(r"geöffnet|angesehen|angeschaut|reingeschaut|durchgesehen|ich sehe,? dass|wie ich sehe|gesehen,? dass|bemerkt", re.I)
+# Wir sehen das Konto des Betriebs nicht: keine Behauptung über (fehlende) Zahlungseingänge
+_PAYMENT_CLAIM_RE = re.compile(
+    r"zahlungseingang|zahlung (?:ist )?(?:bisher |noch )*(?:nicht )?eingegangen|kein geld|"
+    r"nicht (?:finden|feststellen|sehen)|(?:finden|feststellen|sehen) (?:konnte|können|kann)|nicht verbucht",
+    re.I,
+)
 _LEGAL_RE = re.compile(r"mahn|inkasso|anwalt|gericht|rechtliche|verzugszins", re.I)
 _SIE_FORMS_RE = re.compile(r"\b(?:du|dich|dir|dein|deine|deinen|deinem|deiner|deines|euch|euer|eure)\b", re.I)
 _DU_FORMAL_RE = re.compile(r"\b(?:Ihnen|Ihre|Ihren|Ihrem|Ihrer|Ihres)\b|[a-zäöüß,] Sie\b")
@@ -398,6 +406,9 @@ def validate(text: str, ctx: Context) -> list[str]:
         problems.append("Mahnung/rechtliche Schritte zu früh")
     if ctx.closing and re.search(r"\bunten\b|nachfolgend|im folgenden|weiter unten", body, re.I):
         problems.append("Verweis auf den angehängten Absatz")
+    m = _PAYMENT_CLAIM_RE.search(body) if ctx.doc.kind == DocKind.INVOICE else None
+    if m:
+        problems.append(f'Behauptung über Zahlungseingang ("{m.group(0)}")')
     m = _SOFT_INVOICE_RE.search(body)
     if ctx.doc.kind == DocKind.INVOICE and m:
         problems.append(f'zu weich ("{m.group(0)}")')
