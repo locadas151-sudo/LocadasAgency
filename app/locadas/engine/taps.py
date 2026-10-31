@@ -43,6 +43,17 @@ MAX_CTA_PER_DAY = 5               # so viele „In WhatsApp öffnen“-Nachricht
 CONFIRM_AFTER = timedelta(hours=24)
 EXPIRE_AFTER = timedelta(hours=72)
 ACTIONS = ("sent", "replied", "paid", "skip")
+# Tipp-Arten (FollowUp.tap_kind): "" / "wa" = wa.me, "mailto" = fertige Mail im eigenen Mailprogramm, "manual" = Text kopieren
+TAP_SENT_VIA = {"mailto": "mail_tap", "manual": "manual_tap"}
+
+
+def tap_noun(fu: FollowUp) -> str:
+    return {"mailto": "Nachfass-Mail", "manual": "Nachfass-Nachricht"}.get(fu.tap_kind or "", "WhatsApp-Nachricht")
+
+
+def open_label(fu: FollowUp) -> str:
+    """Beschriftung des Tipp-Links (Knopf höchstens 20 Zeichen)."""
+    return {"mailto": "Mail öffnen", "manual": "Text kopieren"}.get(fu.tap_kind or "", "In WhatsApp öffnen")
 
 
 # --- Kanal --------------------------------------------------------------------------------
@@ -179,7 +190,7 @@ def confirm_sent(session: Session, fu: FollowUp, now: datetime | None = None, as
     if fu.status == FollowUpStatus.AWAITING_TAP:
         fu.status = FollowUpStatus.SENT
         fu.sent_at = (fu.tapped_at if assumed and fu.tapped_at else now)
-        fu.sent_via = "whatsapp_tap"
+        fu.sent_via = TAP_SENT_VIA.get(fu.tap_kind or "", "whatsapp_tap")
         fu.subject = fu.subject or "WhatsApp"
         fu.body = fu.body or fu.wa_text
         doc.followups_sent += 1
@@ -190,7 +201,7 @@ def confirm_sent(session: Session, fu: FollowUp, now: datetime | None = None, as
         fu.sent_via = "mail+whatsapp_tap"
     fu.tap_state = "sent"
     how = "Du hast den Link geöffnet, ich werte sie als gesendet" if assumed else "Du hast bestätigt"
-    log_event(session, doc.business_id, "sent", f"WhatsApp-Nachricht {fu.step} für {_ref(doc)} an {who}: {how}.", doc.id)
+    log_event(session, doc.business_id, "sent", f"{tap_noun(fu)} {fu.step} für {_ref(doc)} an {who}: {how}.", doc.id)
     return True
 
 
@@ -404,8 +415,10 @@ def bundle_mail(b: Business, new: list[FollowUp], reminders: list[FollowUp]) -> 
         prev = _prev_wa(fu)
         if prev is not None and prev.sent_at:
             out.append(f"  Die letzte Nachricht ging am {prev.sent_at.astimezone(ZoneInfo(settings.timezone)).strftime('%d.%m.')} per WhatsApp raus. Hat {who} dort geantwortet? Dann unten auf „Kunde hat schon geantwortet“.")
+        if fu.tap_kind == "manual":
+            out.append(f"  Mir fehlt die Handynummer oder Mailadresse. Trag sie hier ein oder kopier den Text: {tap_url(fu)}")
         out += ["  ---", *[f"  {ln}" if ln else "" for ln in (fu.wa_text or "").splitlines()], "  ---",
-                f"  In WhatsApp öffnen:          {tap_url(fu)}",
+                f"  {(open_label(fu) + ':').ljust(28)} {tap_url(fu)}",
                 f"  Abgeschickt:                 {action_url(fu, 'sent')}"]
         if d.kind == DocKind.INVOICE:
             out.append(f"  Ist schon bezahlt:           {action_url(fu, 'paid')}")
@@ -415,8 +428,11 @@ def bundle_mail(b: Business, new: list[FollowUp], reminders: list[FollowUp]) -> 
 
     if new:
         lines += [
-            f"heute {'ist bei diesem Kunden' if len(new) == 1 else f'sind bei diesen {len(new)} Kunden'} die nächste Nachfass-Nachricht per WhatsApp dran. "
-            "Der Link öffnet deinen WhatsApp-Chat mit dem Kunden, der Text steht schon drin. Abschicken und kurz auf „Abgeschickt“ klicken.",
+            (f"heute {'ist bei diesem Kunden' if len(new) == 1 else f'sind bei diesen {len(new)} Kunden'} die nächste Nachfass-Nachricht per WhatsApp dran. "
+             "Der Link öffnet deinen WhatsApp-Chat mit dem Kunden, der Text steht schon drin. Abschicken und kurz auf „Abgeschickt“ klicken.")
+            if not any(f.tap_kind for f in new) else
+            (f"heute {'ist bei diesem Kunden' if len(new) == 1 else f'sind bei diesen {len(new)} Kunden'} die nächste Nachfass-Nachricht dran. "
+             "Der Link öffnet die fertige Nachricht in WhatsApp oder deinem Mailprogramm. Abschicken und kurz auf „Abgeschickt“ klicken."),
             "",
         ]
         lines[2] = lines[2][0].upper() + lines[2][1:]
@@ -427,8 +443,10 @@ def bundle_mail(b: Business, new: list[FollowUp], reminders: list[FollowUp]) -> 
         for fu in reminders:
             lines += block(fu)
     lines += [f"Alles auf einer Seite, auch fürs Handy: {base}/dashboard#whatsapp", ""]
-    if any(f.status == FollowUpStatus.AWAITING_TAP for f in new + reminders):
+    if any(f.status == FollowUpStatus.AWAITING_TAP and not f.tap_kind for f in new + reminders):
         lines += ["Per Mail schicke ich diesen Kunden nichts, das machst du per WhatsApp.", ""]
+    elif any(f.tap_kind for f in new + reminders):
+        lines += ["Ich schicke selbst nichts an deine Kunden, das machst du mit einem Tipp von deinem Handy oder Mailprogramm.", ""]
     lines.append("Locadas Nachfasser")
     names = ", ".join((f.document.customer_name or f.document.customer_email) for f in (new or reminders)[:3])
     more = " …" if len(new or reminders) > 3 else ""

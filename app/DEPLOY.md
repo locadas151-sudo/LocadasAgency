@@ -25,10 +25,43 @@ Ohne `AWS_HOST` läuft der Workflow nur die Tests und überspringt den Deploy (m
 
 ## 2. Einmalig: Server und DNS
 
-- Security Group: Port 22 (nur deine IP), 80 und 443 (alle) offen.
+- Security Group: Port 22 (nur deine IP), 80, 443 und 25 (alle) offen. Port 25 nur für die Weiterleitungsadressen, siehe 2a.
 - DNS: `A`-Record `app.locadas.de` → Server-IP. Caddy holt das Zertifikat selbst (Let's Encrypt), sobald DNS steht.
 - Docker wird vom Workflow installiert, falls es fehlt (braucht `sudo` ohne Passwort, bei Ubuntu-AMIs Standard).
 - **Läuft auf dem Server schon etwas auf Port 80/443** (altes Marktplatz-Backend)? Dann in `docker-compose.yml` den `caddy`-Dienst entfernen und die App stattdessen hinter den vorhandenen Reverse-Proxy hängen (`ports: ["127.0.0.1:8000:8000"]` beim `app`-Dienst, Proxy auf `http://127.0.0.1:8000`).
+
+## 2a. Testen ohne Postfach (`/testen`, Weiterleitungsadressen)
+
+Tester melden sich nur mit Name, Betrieb und Handynummer an und bekommen eine Adresse wie `mueller-haustechnik-k3x9pq@angebot.locadas.de`. Mails an diese Adressen nimmt die App selbst an (eingebauter SMTP-Empfänger, `aiosmtpd`) oder über einen Mail-Anbieter per Webhook. Ein Weg reicht.
+
+**Weg A: eigener SMTP-Empfänger (Standard in `docker-compose.yml`)**
+- DNS: `MX`-Record für `angebot.locadas.de` → `app.locadas.de` (Priorität 10). Dazu muss `app.locadas.de` einen `A`-Record auf den Server haben (gibt es schon). Kein SPF/DKIM nötig, wir senden von dieser Domain nichts.
+- AWS Security Group: **Port 25 eingehend** für alle (0.0.0.0/0) öffnen. Ausgehend braucht es Port 25 nicht.
+- `docker-compose.yml` mappt außen 25 auf 2525 im Container (`INBOUND_SMTP_PORT=2525`), die App läuft weiter ohne Root.
+- Auf dem Server darf nichts anderes auf Port 25 lauschen (`sudo ss -ltnp | grep :25`, ggf. `sudo systemctl disable --now postfix`).
+- Sicherheit: Angenommen wird nur bei `RCPT TO` an eine existierende Adresse `@angebot.locadas.de`, alles andere wird mit 550 abgelehnt (kein offenes Relay). Höchstens 25 MB je Mail, höchstens 20 Mails je Adresse und Stunde (`INBOUND_PER_HOUR`).
+- Prüfen: `swaks --to <adresse>@angebot.locadas.de --server app.locadas.de --attach angebot.pdf` (oder einfach eine Mail weiterleiten). Im Log steht `Eingang per SMTP: created`.
+- Hinweis: Der Empfänger bietet noch kein STARTTLS an. Große Anbieter (Gmail, GMX, Outlook) liefern trotzdem zu, die Verbindung zum Server ist dann aber unverschlüsselt. Wer das nicht will, nimmt Weg B.
+
+**Weg B: Mail-Anbieter mit Rohmail-Webhook (Mailgun, Amazon SES, Postmark)**
+- Beim Anbieter die Domain `angebot.locadas.de` als Empfangsdomain einrichten (MX-Records laut Anbieter) und eine Route „alles an `*@angebot.locadas.de`“ → `POST https://app.locadas.de/inbound/raw` mit der **Rohmail (MIME) als Body**.
+- Header `X-Inbound-Secret: <INBOUND_WEBHOOK_SECRET>` mitschicken, optional `X-Envelope-To: <Empfänger>` (für BCC) und `X-Authentication-Results`.
+- Antworten: 200 verarbeitet, 404 unbekannte Adresse, 403 falsches Secret, 413 zu groß, 429 Rate-Limit.
+- Dann in `docker-compose.yml` das `ports: "25:2525"` entfernen.
+
+**Umgebungsvariablen** (GitHub: Secrets bzw. Variables, siehe Workflow):
+
+| Variable | Inhalt |
+|---|---|
+| `INBOUND_DOMAIN` | Standard `angebot.locadas.de` |
+| `INBOUND_SMTP_PORT` | Port des SMTP-Empfängers im Container, Standard `2525` (leer = aus) |
+| `INBOUND_WEBHOOK_SECRET` | Secret, langer Zufallswert (`python3 -c "import secrets;print(secrets.token_urlsafe(32))"`). Leer = Webhook aus |
+| `WHATSAPP_DISPLAY_NUMBER` | Nummer des WhatsApp-Sekretärs für den Link „Chat mit dem Sekretär öffnen“ auf `/testen/los` (E.164 ohne +, z. B. `4921519999999`). Leer = nur Weiterleiten |
+| `SYSTEM_SMTP_HOST`, `SYSTEM_SMTP_PORT`, `SYSTEM_SMTP_USER`, `SYSTEM_SMTP_PASSWORD`, `SYSTEM_FROM` | Versand an Tester, die kein WhatsApp-Fenster offen haben und eine Mailadresse angegeben haben (z. B. ein Postfach `info@locadas.de`). Ohne: nur WhatsApp |
+| `CALENDLY_URL` | Standard `https://calendly.com/julius-locadas/julius-komorek` |
+| `TRIAL_MAX_DOCS`, `TRIAL_WINDOW_DAYS`, `TRIAL_DELETE_AFTER_DAYS` | Standard 10 Dokumente je 30 Tage, Löschen nach 60 Tagen ohne Aktivität (Scheduler alle 12 Stunden) |
+
+**WhatsApp**: Für PDFs und Fotos an den Sekretär muss im Meta-Webhook das Feld `messages` abonniert sein (ist es schon). Die App lädt die Datei über `GET /{media-id}` und dann die URL mit demselben Token. Fotos liest Claude (`CLAUDE_FAST_MODEL`), ohne `ANTHROPIC_API_KEY` bitten wir um ein PDF. Außerhalb des 24h-Fensters nutzt der Test die Vorlage `locadas_event` (keine neue Vorlage nötig).
 
 ## 3. Deploy auslösen
 

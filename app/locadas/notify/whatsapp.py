@@ -51,6 +51,38 @@ def http_post(url: str, payload: dict, token: str) -> dict:
         raise WhatsAppError(f"Graph API nicht erreichbar: {exc}") from exc
 
 
+def http_get(url: str, token: str, limit: int | None = None) -> bytes:
+    """GET mit Bearer-Token (Medien-Infos und -Download). Tests ersetzen genau diese Funktion."""
+    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}", "User-Agent": "Locadas/1.0"}, method="GET")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = resp.read((limit + 1) if limit else -1)
+    except urllib.error.HTTPError as exc:
+        raise WhatsAppError(f"Graph API {exc.code}: {exc.read().decode('utf-8', 'replace')[:300]}") from exc
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        raise WhatsAppError(f"Graph API nicht erreichbar: {exc}") from exc
+    if limit and len(data) > limit:
+        raise WhatsAppError("Datei zu groß")
+    return data
+
+
+def download_media(media_id: str, limit: int) -> tuple[bytes, str]:
+    """Eingehendes Dokument/Bild: GET /{media_id} liefert die URL, die dann mit demselben Token geladen wird."""
+    if not settings.whatsapp_enabled:
+        raise WhatsAppError("WhatsApp ist nicht eingerichtet")
+    if not re.fullmatch(r"[\w.-]{1,100}", media_id or ""):
+        raise WhatsAppError("Ungültige Medien-ID")
+    token = settings.whatsapp_token or ""
+    info = json.loads(http_get(f"{GRAPH}/{settings.whatsapp_api_version}/{media_id}", token).decode("utf-8") or "{}")
+    url = info.get("url") or ""
+    if not url.startswith("https://"):
+        raise WhatsAppError("Keine Medien-URL")
+    size = int(info.get("file_size") or 0)
+    if size and size > limit:
+        raise WhatsAppError("Datei zu groß")
+    return http_get(url, token, limit), str(info.get("mime_type") or "")
+
+
 def _send(payload: dict) -> str:
     if not settings.whatsapp_enabled:
         raise WhatsAppError("WhatsApp ist nicht eingerichtet")

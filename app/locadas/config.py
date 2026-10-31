@@ -121,6 +121,23 @@ class Settings:
     # Namen der freigegebenen Vorlagen, überschreibbar per WHATSAPP_TEMPLATES="preview=meine_vorschau,event=..."
     whatsapp_templates: dict[str, str] = field(default_factory=lambda: _templates(_env("WHATSAPP_TEMPLATES", "")))
 
+    # Nummer des WhatsApp-Sekretärs für wa.me-Links auf /testen (E.164 ohne „+“), leer = WhatsApp-Weg ausblenden
+    whatsapp_display_number: str = field(default_factory=lambda: "".join(c for c in (_env("WHATSAPP_DISPLAY_NUMBER", "") or "") if c.isdigit()))
+
+    # Testen ohne Postfach (engine/trial.py, engine/inbound_mail.py): Weiterleitungsadressen <slug>-<6 Zeichen>@INBOUND_DOMAIN
+    inbound_domain: str = field(default_factory=lambda: (_env("INBOUND_DOMAIN", "angebot.locadas.de") or "").strip().lower())
+    # Eingebauter SMTP-Empfänger (aiosmtpd), nur wenn ein Port gesetzt ist (im Container z. B. 2525, außen 25)
+    inbound_smtp_port: int | None = field(default_factory=lambda: int(_env("INBOUND_SMTP_PORT")) if _env("INBOUND_SMTP_PORT") else None)
+    inbound_smtp_host: str = field(default_factory=lambda: _env("INBOUND_SMTP_HOST", "0.0.0.0"))
+    # Webhook POST /inbound/raw (Mailgun, SES, Postmark): Header X-Inbound-Secret muss passen, leer = Webhook aus
+    inbound_webhook_secret: str | None = field(default_factory=lambda: _env("INBOUND_WEBHOOK_SECRET"))
+    inbound_max_bytes: int = field(default_factory=lambda: _env_int("INBOUND_MAX_BYTES", 25 * 1024 * 1024))
+    inbound_per_hour: int = field(default_factory=lambda: _env_int("INBOUND_PER_HOUR", 20))   # Mails je Adresse und Stunde
+    trial_max_docs: int = field(default_factory=lambda: _env_int("TRIAL_MAX_DOCS", 10))         # je TRIAL_WINDOW_DAYS
+    trial_window_days: int = field(default_factory=lambda: _env_int("TRIAL_WINDOW_DAYS", 30))
+    trial_delete_after_days: int = field(default_factory=lambda: _env_int("TRIAL_DELETE_AFTER_DAYS", 60))
+    calendly_url: str = field(default_factory=lambda: _env("CALENDLY_URL", "https://calendly.com/julius-locadas/julius-komorek"))
+
     @property
     def whatsapp_enabled(self) -> bool:
         return bool(self.whatsapp_token and self.whatsapp_phone_number_id and self.whatsapp_app_secret)

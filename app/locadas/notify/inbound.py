@@ -83,6 +83,15 @@ def handle_message(session: Session, msg: dict, now: datetime) -> bool:
         b.whatsapp_last_inbound_at = now  # 24h-Fenster geht auf
     kind = msg.get("type")
     pl, text = "", ""
+    if kind in ("document", "image"):
+        reply = handle_media(session, businesses[0], msg, now)
+        session.flush()
+        if reply and businesses[0].whatsapp_number:
+            try:
+                wa.send_text(businesses[0].whatsapp_number, reply)
+            except wa.WhatsAppError as exc:
+                log.warning("Antwort per WhatsApp fehlgeschlagen: %s", exc)
+        return True
     if kind == "interactive":
         pl = ((msg.get("interactive") or {}).get("button_reply") or {}).get("id", "")
     elif kind == "button":  # Knopf einer Vorlage
@@ -142,8 +151,28 @@ def run_payload(session: Session, businesses: list[Business], value: str, now: d
         fu = own_fu(ids[0]) if ids else None
         if fu is None:
             return "Diesen Vorgang finde ich nicht mehr.", None
+        was_open = fu.tap_state == "open"
         title, text = taps.handle(session, fu, action[1:], now)
-        return text, None
+        follow = None
+        b = fu.document.business
+        if b.is_trial:
+            from ..engine import trial
+
+            trial.touch(b, now)
+            if action == "tsent" and was_open and fu.tap_state == "sent":
+                follow = trial.claim_upgrade(b, now)  # einmal: „Soll das künftig automatisch laufen?“
+        return text, follow
+
+    if action == "wrong":
+        doc = own_doc(ids[0]) if ids else None
+        if doc is None:
+            return "Diesen Vorgang finde ich nicht mehr.", None
+        from ..web import auth
+
+        log_event(session, doc.business_id, "edit", f"{doc.kind_label} {doc.document_number or doc.title}: als falsch erkannt gemeldet.", doc.id)
+        link = f"{settings.base_url}/login/{auth.login_link_token(doc.business_id)}?next=/dokument/{doc.id}"
+        return ("Danke für den Hinweis. Hier kannst du Kunde, Betrag und Nummer korrigieren (Link 2 Stunden gültig):\n" + link
+                + "\n\nOder schick mir einfach die Handynummer bzw. Mailadresse des Kunden, wenn die gefehlt hat."), None
 
     if action in ("send", "skip", "gone", "settle"):
         fu = own_fu(ids[0]) if ids else None
@@ -347,4 +376,79 @@ def run_text(session: Session, b: Business, text: str, now: datetime) -> tuple[s
             b.whatsapp_context = json.dumps(ctx)
             log_event(session, b.id, "edit", f"Neue Mailadresse für {m.who(doc)} per WhatsApp: {addr}.", doc.id)
             return f"Danke, ich fasse bei {m.who(doc)} ab jetzt unter {addr} nach.{_next_hint(doc)}", None
+    from ..engine import trial
+
+    contact = trial.reply_contact(session, b, text)
+    if contact:
+        return contact, None
+    if b.is_trial:
+        trial.touch(b, now)
+        if re.match(r"(?i)^\s*hier\s+(?:ist\s+)?mein\s+angebot", text or ""):
+            return "Super, schick mir jetzt einfach das Angebot als PDF oder ein Foto davon. Ich sage dir gleich, was ich erkannt habe.", None
+        return TRIAL_HELP, None
     return m.HELP, None
+
+
+TRIAL_HELP = (
+    "Ich bin dein Locadas-Sekretär. Schick mir ein Angebot als PDF oder Foto, oder leite die Mail mit dem PDF an deine "
+    "persönliche Adresse weiter. Ich erkenne Kunde und Betrag und melde mich mit der fertigen Nachfass-Nachricht, wenn sie dran ist.\n\n"
+    "Fehlt mir die Nummer oder Mailadresse eines Kunden, schick sie mir einfach hier.\n"
+    "„abmelden“ beendet die Nachrichten hier."
+)
+
+
+# --- Dokumente und Fotos (Testen ohne Postfach, auch für verbundene Betriebe) --------------------------------
+
+MEDIA_ASYNC = True  # Webhook schnell beantworten, Download und Erkennung im Hintergrund (Tests stellen auf False)
+
+
+def handle_media(session: Session, b: Business, msg: dict, now: datetime) -> str:
+    """PDF (type document) oder Foto/Screenshot (type image): herunterladen, erkennen, wie eine Weiterleitung anlegen.
+    Gibt die sofortige Antwort zurück (leer, wenn die Erkennung selbst Bescheid gibt)."""
+    kind = msg.get("type")
+    part = msg.get(kind) or {}
+    media_id = str(part.get("id") or "")
+    mime = str(part.get("mime_type") or "")
+    filename = str(part.get("filename") or ("foto.jpg" if kind == "image" else "dokument.pdf"))
+    caption = str(part.get("caption") or "")
+    if not media_id:
+        return ""
+    if not (mime == "application/pdf" or mime.startswith("image/") or filename.lower().endswith(".pdf")):
+        return "Diese Datei kann ich nicht lesen. Schick mir das Angebot als PDF oder als Foto."
+    if MEDIA_ASYNC:
+        import threading
+
+        threading.Thread(target=_media_job, args=(b.id, media_id, filename, mime, caption, now), daemon=True).start()
+        return "Danke, ich schaue es mir an …"
+    _media_in(session, b, media_id, filename, mime, caption, now)
+    return ""
+
+
+def _media_job(business_id: int, media_id: str, filename: str, mime: str, caption: str, now: datetime) -> None:
+    from ..db import new_session
+
+    with new_session() as s:
+        b = s.get(Business, business_id)
+        if b is not None:
+            try:
+                _media_in(s, b, media_id, filename, mime, caption, now)
+            except Exception:  # pragma: no cover
+                s.rollback()
+                log.exception("WhatsApp-Datei nicht verarbeitet")
+
+
+def _media_in(session: Session, b: Business, media_id: str, filename: str, mime: str, caption: str, now: datetime) -> None:
+    from ..engine import inbound_mail
+
+    try:
+        data, real_mime = wa.download_media(media_id, settings.inbound_max_bytes)
+    except wa.WhatsAppError as exc:
+        log.warning("WhatsApp-Datei nicht geladen: %s", exc)
+        inbound_mail._tell(session, b, "Datei nicht geladen", "Die Datei konnte ich nicht laden. Schick sie mir bitte noch einmal.")
+        session.commit()
+        return
+    ctype = real_mime or mime or ("application/pdf" if filename.lower().endswith(".pdf") else "image/jpeg")
+    if data[:4] == b"%PDF":
+        ctype = "application/pdf"
+    inbound_mail.ingest_file(session, b, data, filename, ctype, caption=caption, now=now)
+    session.commit()

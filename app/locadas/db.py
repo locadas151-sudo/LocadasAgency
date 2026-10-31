@@ -142,6 +142,14 @@ class Business(Base):
     plan: Mapped[str] = mapped_column(String(10), default="free", server_default="free")
     # Monatsbilanz (engine/summary.py): letzter Monat, für den sie raus ist bzw. ohne Aktivität übersprungen wurde ("2026-10")
     summary_sent_for: Mapped[str] = mapped_column(String(7), default="", server_default="")
+    # "connected" = Postfach verbunden (Standard, auch für alle bestehenden), "trial" = Testen ohne Postfach (engine/trial.py)
+    mode: Mapped[str] = mapped_column(String(12), default="connected", server_default="connected")
+    # Persönliche Weiterleitungsadresse <slug>-<6 Zeichen>@INBOUND_DOMAIN (eindeutig, Index ux_business_inbound)
+    inbound_address: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    trial_active_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)   # letzte Aktivität (Löschen nach 60 Tagen)
+    trial_aha_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)      # erste „Erkannt“-Nachricht
+    upgrade_prompt_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True) # „Soll das künftig automatisch laufen?“ (einmal)
+    trial_limit_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)    # Limit-Hinweis zuletzt
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     last_login_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
 
@@ -149,6 +157,18 @@ class Business(Base):
     documents: Mapped[list["Document"]] = relationship(back_populates="business", cascade="all, delete-orphan")
     events: Mapped[list["Event"]] = relationship(back_populates="business", cascade="all, delete-orphan")
     customers: Mapped[list["Customer"]] = relationship(back_populates="business", cascade="all, delete-orphan")
+
+    __table_args__ = (Index("ux_business_inbound", "inbound_address", unique=True),)
+
+    @property
+    def is_trial(self) -> bool:
+        return self.mode == "trial"
+
+    @property
+    def owner_email(self) -> str:
+        """Echte Mailadresse des Betriebs, leer bei Testern ohne Mail (Platzhalter *.invalid)."""
+        e = (self.email or "").strip().lower()
+        return "" if not e or e.endswith(".invalid") else e
 
     @property
     def needs_approval(self) -> bool:
@@ -203,7 +223,8 @@ class Document(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
-    account_id: Mapped[int] = mapped_column(ForeignKey("mail_accounts.id"), index=True)
+    # None = ohne Postfach eingegangen (Testen per Weiterleitung oder WhatsApp, siehe engine/inbound_mail.py)
+    account_id: Mapped[int | None] = mapped_column(ForeignKey("mail_accounts.id"), index=True, nullable=True)
     kind: Mapped[DocKind] = mapped_column(Enum(DocKind))
     status: Mapped[DocStatus] = mapped_column(Enum(DocStatus), default=DocStatus.OPEN, index=True)
     # Ursprungsmail
@@ -265,10 +286,14 @@ class Document(Base):
     last_opened_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     open_count: Mapped[int] = mapped_column(Integer, default=0)
     notes: Mapped[str] = mapped_column(Text, default="")
+    # Herkunft: mailbox (Gesendet-Ordner) | forward | cc | forward_unverified (Absender ist nicht der Betrieb) | whatsapp
+    source: Mapped[str] = mapped_column(String(24), default="mailbox", server_default="mailbox")
+    inbound_from: Mapped[str] = mapped_column(String(320), default="", server_default="")   # Absender der Weiterleitung
+    inbound_auth: Mapped[str] = mapped_column(Text, default="", server_default="")          # Authentication-Results des Anbieters
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
     business: Mapped[Business] = relationship(back_populates="documents")
-    account: Mapped[MailAccount] = relationship()
+    account: Mapped[MailAccount | None] = relationship()
     followups: Mapped[list["FollowUp"]] = relationship(
         back_populates="document", cascade="all, delete-orphan", order_by="FollowUp.step"
     )
@@ -361,6 +386,8 @@ class FollowUp(Base):
     tapped_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)   # Link „In WhatsApp öffnen“ geöffnet
     tap_reminded_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     wa_read_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)    # per WhatsApp (eigene Nummer) gelesen, echte Lesebestätigung
+    # Art des Tipps: "" bzw. "wa" = wa.me, "mailto" = fertige Mail im eigenen Mailprogramm, "manual" = Text kopieren (Kontakt fehlt)
+    tap_kind: Mapped[str] = mapped_column(String(10), default="", server_default="")
 
     document: Mapped[Document] = relationship(back_populates="followups")
 
@@ -389,6 +416,22 @@ class WhatsAppInbound(Base):
     wamid: Mapped[str] = mapped_column(String(200), unique=True, index=True)
     business_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class InboundMail(Base):
+    """Eingegangene Mails an Weiterleitungsadressen (Rate-Limit, Dubletten, Nachvollziehbarkeit). Kein Mailtext."""
+
+    __tablename__ = "inbound_mails"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), index=True)
+    address: Mapped[str] = mapped_column(String(320), default="", index=True)
+    message_id: Mapped[str] = mapped_column(String(500), default="", index=True)
+    sender: Mapped[str] = mapped_column(String(320), default="")
+    result: Mapped[str] = mapped_column(String(40), default="")
+    document_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    auth_results: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, index=True)
 
 
 class SeenMessage(Base):
@@ -541,6 +584,59 @@ def init_db() -> None:
     Base.metadata.create_all(get_engine())
     _add_missing_columns()
     _ensure_unique_seen()
+    _documents_account_nullable()
+    _ensure_indexes()
+
+
+def _ensure_indexes() -> None:
+    """Indizes auf neuen Spalten bestehender Tabellen (create_all legt sie nur bei neuen Tabellen an)."""
+    from sqlalchemy import text
+
+    with get_engine().begin() as conn:
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ux_business_inbound ON businesses (inbound_address)"))
+
+
+def _documents_account_nullable() -> None:
+    """Bestehende SQLite-Datenbanken: documents.account_id war NOT NULL. Tabelle einmal neu aufbauen (Daten bleiben).
+
+    Vorgehen wie in der SQLite-Doku empfohlen: neue Tabelle anlegen, kopieren, alte löschen, umbenennen.
+    Fremdschlüssel sind dabei kurz aus, damit followups/events nicht auf die alte Tabelle umgebogen werden."""
+    eng = get_engine()
+    if eng.dialect.name != "sqlite":
+        return
+    from sqlalchemy import inspect
+    from sqlalchemy.schema import CreateTable
+
+    cols = {c["name"]: c for c in inspect(eng).get_columns("documents")}
+    if "account_id" not in cols or cols["account_id"].get("nullable", True):
+        return
+    table = Document.__table__
+    ddl = str(CreateTable(table).compile(eng)).strip()
+    ddl = ddl.replace("CREATE TABLE documents", "CREATE TABLE documents_new", 1)
+    names = ", ".join(f'"{c}"' for c in cols if c in table.c)
+    raw = eng.raw_connection()
+    try:
+        cur = raw.cursor()
+        cur.execute("PRAGMA foreign_keys=OFF")
+        raw.commit()
+        cur.execute("BEGIN")
+        cur.execute("DROP TABLE IF EXISTS documents_new")
+        cur.execute(ddl)
+        cur.execute(f"INSERT INTO documents_new ({names}) SELECT {names} FROM documents")
+        cur.execute("DROP TABLE documents")
+        cur.execute("ALTER TABLE documents_new RENAME TO documents")
+        raw.commit()
+    except Exception:
+        raw.rollback()
+        raise
+    finally:
+        try:
+            raw.cursor().execute("PRAGMA foreign_keys=ON")
+        finally:
+            raw.close()
+    with eng.begin() as conn:
+        for idx in table.indexes:
+            idx.create(conn, checkfirst=True)
 
 
 def _ensure_unique_seen() -> None:

@@ -16,7 +16,7 @@ from . import whatsapp as wa
 
 log = logging.getLogger(__name__)
 
-KINDS = {"preview", "opened", "replied", "bounced", "outcome", "approval", "login", "info", "completion", "tap", "summary", "connection"}
+KINDS = {"preview", "opened", "replied", "bounced", "outcome", "approval", "login", "info", "completion", "tap", "summary", "connection", "trial"}
 
 
 @dataclass
@@ -109,7 +109,7 @@ def send_email(session: Session, business: Business, subject: str, body: str) ->
 
     account = next((a for a in business.accounts if a.status.value != "disconnected"), None)
     if account is None:
-        return False
+        return send_system_email(business.owner_email, business.owner_name or business.name, subject, body)
     if not acc.is_down(account):
         msg = build_message(
             from_name="Locadas Nachfasser",

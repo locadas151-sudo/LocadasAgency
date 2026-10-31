@@ -1,23 +1,43 @@
 {% extends "base.html" %}
 {% block title %}Locadas Nachfasser · Kein Angebot versandet mehr{% endblock %}
 {% block content %}
-<section class="hero hero-app" id="hero">
+<section class="hero hero-trial" id="hero">
 <div class="wrap">
 <div class="hero-in">
 <div class="eyebrow"><span class="dot" aria-hidden="true"></span><span>Kostenlos für Handwerksbetriebe</span></div>
-<h1 class="h1">Kein Angebot <em>versandet</em> mehr.<br>Keine Rechnung bleibt liegen.</h1>
-<div class="trust"><svg class="ic"><use href="#i-shield"/></svg><span><b>Verbinde dein Postfach.</b> Ab jetzt wird jedes Angebot und jede Rechnung nachgefasst, bis der Kunde antwortet. In deinem Namen, ohne dass du etwas tun musst.</span></div>
-<div class="anfrage">
-<div class="anfrage-field"><svg class="ic"><use href="#i-mail"/></svg><span>Egal ob Gmail, GMX, WEB.DE, IONOS, T-Online oder eigene Domain. Zwei Minuten, dann läuft es.</span></div>
-<a class="anfrage-cta" href="/verbinden">Postfach verbinden <svg class="ic"><use href="#i-arrow"/></svg></a>
+<h1 class="h1">Du schickst das Angebot. <em>Wir haken nach,</em> bis der Kunde antwortet.</h1>
+<p class="hero-sub">Mehr Aufträge aus denselben Angeboten. Kostenlos.</p>
+<div class="cta-stack">
+<a class="cta-main" href="/testen" id="cta-test">Ohne Anmeldung testen <svg class="ic"><use href="#i-arrow"/></svg></a>
+<p class="cta-note"><svg class="ic"><use href="#i-fwd"/></svg><span><b>Ohne Anmeldung testen:</b> Leite uns dein letztes Angebot weiter. Kein Passwort, kein Postfach, eine Minute.</span></p>
+<a class="cta-second" href="/verbinden">Lieber gleich das Postfach verbinden <svg class="ic"><use href="#i-arrow"/></svg></a>
 </div>
-<p class="branchen">Angebote · Rechnungen · Nachfassen · Antworten erkennen · Nichts umstellen</p>
-<div class="demo rv">
-<div class="msg"><b>Du, Dienstag 16:40</b>Angebot_2026-118_Bad_Mueller.pdf an familie.mueller@gmx.de</div>
-<div class="msg"><b>Nachfasser, Freitag 09:10</b>Guten Tag Familie Müller, am 03.11. habe ich Ihnen unser Angebot geschickt … (von dir, in deinem Namen)</div>
-<div class="msg"><b>Nachfasser, Freitag 10:37</b>Familie Müller hat dein Angebot geöffnet. Guter Moment für einen Anruf.</div>
-<div class="msg"><b>Nachfasser, Freitag 11:52</b>Familie Müller hat geantwortet. Ich fasse dort nicht mehr nach.</div>
 </div>
+<div class="chat rv" aria-label="So sieht der Test auf WhatsApp aus">
+<div class="chat-top"><img src="/static/logo.png" alt="" width="34" height="34"><div><b>Locadas Sekretär</b><span>WhatsApp</span></div></div>
+<div class="bubble me"><div class="file"><i>PDF</i><div>Angebot_A-123_Brandt.pdf<small>2 Seiten</small></div></div><span class="time">16:41</span></div>
+<div class="bubble"><b>Angebot erkannt</b><br>Erkannt: Angebot A-123 an Familie Brandt über 3.724,70 €.<br>Ich melde mich am Freitag, 06.11. mit der fertigen Nachfass-Nachricht. Du musst nichts tun.<span class="time">16:41</span></div>
+<div class="bubble-btns"><span>Passt</span><span>Falsch erkannt</span></div>
+<div class="bubble"><b>Familie Brandt nachfassen</b><br>Tipp auf „In WhatsApp öffnen“, der Text steht schon drin. Nur noch abschicken.<span class="time">Fr 09:02</span></div>
+</div>
+</div>
+</section>
+
+<section class="section" id="testen" style="padding-top:8px">
+<div class="wrap">
+<div class="sec-head rv" style="margin-bottom:8px">
+<div class="sec-eyebrow">Test in einer Minute</div>
+<h2 class="h2">Erst sehen, <em>dann</em> verbinden.</h2>
+<p class="sec-sub">Du brauchst nur deine Handynummer. Dein Postfach bleibt zu, bis du es selbst willst.</p>
+</div>
+<div class="steps3">
+<div class="s rv"><span class="n">1</span><b>Angebot weiterleiten</b><p>An deine persönliche Adresse, in CC beim nächsten Angebot oder als PDF bzw. Foto per WhatsApp.</p></div>
+<div class="s rv rv-d1"><span class="n">2</span><b>Wir erkennen alles</b><p>Kunde, Nummer, Betrag. Du bekommst sofort eine WhatsApp, was wir erkannt haben und wann wir uns melden.</p></div>
+<div class="s rv rv-d2"><span class="n">3</span><b>Nachhaken mit einem Tipp</b><p>Am Tag X kommt die fertige Nachricht. Ein Tipp öffnet WhatsApp oder dein Mailprogramm, du drückst nur noch Senden.</p></div>
+</div>
+<div class="ziel rv" style="margin-top:28px">
+<p class="ziel-text">Danach richten wir es in 15 Minuten gemeinsam ein, dann läuft es ganz von allein.</p>
+<a class="ziel-cta" href="/testen">Ohne Anmeldung testen <svg class="ic"><use href="#i-arrow"/></svg></a>
 </div>
 </div>
 </section>
@@ -62,6 +82,7 @@
 <p class="faq-sub">Das Wichtigste, bevor du dein Postfach verbindest.</p>
 </div>
 <div class="faq-list">
+<details class="faq-item"><summary>Wie funktioniert der Test ohne Anmeldung?</summary><p class="faq-body">Du gibst Name, Betrieb und Handynummer an und bekommst eine persönliche Weiterleitungsadresse. Leite ein Angebot mit PDF dorthin weiter, setz sie beim nächsten Angebot in CC oder schick das PDF bzw. ein Foto an unseren WhatsApp-Sekretär. Wir erkennen Kunde, Nummer und Betrag und melden uns, wenn das Nachhaken dran ist. Weil wir dein Postfach nicht kennen, schickst du die fertige Nachricht selbst mit einem Tipp. Im Test gehen bis zu 10 Dokumente in 30 Tagen. Nach 60 Tagen ohne Aktivität löschen wir alles.</p></details>
 <details class="faq-item"><summary>Ihr lest mein Postfach?</summary><p class="faq-body">Im Gesendet-Ordner lesen wir Mails mit PDF-Anhang, um Angebote und Rechnungen zu erkennen. Dazu kommen die Texte von bis zu 15 Mails an deine Kunden, damit die Nachfass-Mails nach dir klingen (die Textproben löschen wir nach der Auswertung). Im Posteingang lesen wir Absender und Betreff. Den Text einer Mail lesen wir nur, wenn sie zu einem offenen Vorgang passen kann: Antwort im selben Verlauf, Absender ist dein Kunde oder seine Firma, oder Nummer bzw. Name des Kunden steht drin. Abwesenheitsnotizen lesen wir, um das Rückkehrdatum zu erkennen. Für die Auswertung schicken wir diese Texte und die PDFs an Anthropic (KI-Modell Claude, USA, abgesichert mit EU-Standardvertragsklauseln, kein Training mit deinen Daten). Gespeichert werden nur die erkannten Angaben und eine Kurzfassung der Kundenantwort. Deine Zugangsdaten liegen verschlüsselt auf einem Server in Deutschland. Trennst du die Verbindung, ist alles gelöscht.</p></details>
 <details class="faq-item"><summary>Was bekommt mein Kunde zu sehen?</summary><p class="faq-body">Eine normale Mail von dir, aus deinem Postfach, mit deinem Namen, als Antwort auf die Mail mit dem Angebot. Wer damals in CC stand, bekommt sie wieder. Darin ein Link, unter dem er das Angebot noch einmal ansehen kann. Öffnet er ihn, siehst du das (der Link zählt nur Aufrufe, wir setzen keine Cookies und kein Zählpixel). Statt Link kannst du das PDF anhängen oder nichts beifügen, das stellst du in den Einstellungen ein.</p></details>
 <details class="faq-item"><summary>Was, wenn der Kunde schon zugesagt hat, am Telefon?</summary><p class="faq-body">Jeden Morgen bekommst du eine Vorschau, bei wem ich nachfasse, mit Stopp-Knopf pro Kunde. Schickst du dem Kunden selbst eine Mail oder eine Auftragsbestätigung, merken wir das: Bei einer Mail warten wir länger, bei Auftragsbestätigung oder Rechnung ist das Angebot gewonnen. Antwortet der Kunde per Mail, erkennen wir das von selbst.</p></details>

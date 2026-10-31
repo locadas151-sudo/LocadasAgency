@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Ohne Anmeldung testen · Locadas Nachfasser{% endblock %}
+{% block description %}Leite uns dein letztes Angebot weiter. Wir erkennen Kunde und Betrag und haken nach, bis der Kunde antwortet. Kostenlos, ohne Passwort.{% endblock %}
+{% block content %}
+<section class="hero trial-page">
+<div class="wrap wrap--narrow">
+<div class="trial-grid">
+<div>
+<div class="trial-head">
+<div class="eyebrow"><span class="dot" aria-hidden="true"></span><span>Ohne Anmeldung testen</span></div>
+<h1 class="h2">Leite uns dein letztes <em>Angebot</em> weiter.</h1>
+<p>Du siehst sofort, was wir erkannt haben. Wenn Nachhaken dran ist, kommt die fertige Nachricht aufs Handy. Kein Passwort, kein Postfach.</p>
+</div>
+{% if already %}
+<div class="card accent" id="already">
+<h3 class="h3">Du bist schon dabei</h3>
+<p style="margin:0">Zu dieser Nummer gibt es schon einen Zugang. Wir haben dir gerade einen Login-Link geschickt, per WhatsApp oder Mail. Er ist zwei Stunden gültig.</p>
+</div>
+{% else %}
+<form class="form-card" method="post" action="/testen" id="trial-form" autocomplete="on">
+{% if error %}<div class="note err"><b>{{ error }}</b></div>{% endif %}
+<div class="fields2">
+<div class="field"><label for="owner_name">Dein Name</label><input id="owner_name" name="owner_name" value="{{ values.owner_name or '' }}" placeholder="Thomas Müller" required autocomplete="name"></div>
+<div class="field"><label for="business_name">Betrieb</label><input id="business_name" name="business_name" value="{{ values.business_name or '' }}" placeholder="Müller Haustechnik" required autocomplete="organization"></div>
+</div>
+<div class="field"><label for="whatsapp">Handynummer <small>(WhatsApp)</small></label><input id="whatsapp" name="whatsapp" type="tel" inputmode="tel" value="{{ values.whatsapp or '' }}" placeholder="0171 2345678" required autocomplete="tel"></div>
+<div class="field"><label for="email">E-Mail <small>(optional)</small></label><input id="email" name="email" type="email" inputmode="email" value="{{ values.email or '' }}" placeholder="info@mueller-haustechnik.de" autocomplete="email"></div>
+<div class="hp" aria-hidden="true"><label for="website">Website</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
+<button class="btn wide" type="submit" id="trial-submit">Weiter zu meiner Adresse <svg class="ic"><use href="#i-arrow"/></svg></button>
+<p class="fineprint">Dein Locadas-Sekretär schreibt dir an diese Nummer per WhatsApp. Abmelden jederzeit mit „abmelden“. Im Test gehen bis zu 10 Dokumente in 30 Tagen. Nach 60 Tagen ohne Aktivität löschen wir deine Testdaten. <a href="/datenschutz">Datenschutz</a></p>
+</form>
+{% endif %}
+</div>
+<aside>
+<div class="chat" aria-label="Beispiel">
+<div class="chat-top"><img src="/static/logo.png" alt="" width="34" height="34"><div><b>Locadas Sekretär</b><span>WhatsApp</span></div></div>
+<div class="bubble me"><div class="file"><i>PDF</i><div>Angebot_A-123_Brandt.pdf<small>Weitergeleitet</small></div></div><span class="time">16:41</span></div>
+<div class="bubble"><b>Angebot erkannt</b><br>Erkannt: Angebot A-123 an Familie Brandt über 3.724,70 €.<br>Ich melde mich am Freitag, 06.11. mit der fertigen Nachfass-Nachricht. Du musst nichts tun.<span class="time">16:41</span></div>
+<div class="bubble-btns"><span>Passt</span><span>Falsch erkannt</span></div>
+</div>
+<ul class="plain" style="margin-top:18px">
+<li>Weiterleiten, in CC setzen oder PDF bzw. Foto per WhatsApp</li>
+<li>Am Tag X die fertige Nachricht, ein Tipp und sie ist raus</li>
+<li>Danach auf Wunsch 15 Minuten Einrichtung mit Julius, kostenlos</li>
+</ul>
+</aside>
+</div>
+</div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){var f=document.getElementById('trial-form');if(!f)return;var b=document.getElementById('trial-submit');f.addEventListener('submit',function(){b.disabled=true;b.textContent='Einen Moment …';});})();
+</script>
+{% endblock %}

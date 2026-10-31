@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Gleich ausprobieren · Locadas Nachfasser{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<section class="hero trial-page">
+<div class="wrap wrap--narrow">
+<div class="trial-head">
+<div class="eyebrow"><span class="dot" aria-hidden="true"></span><span>Hallo {{ (business.owner_name or business.name).split(' ')[0] }}</span></div>
+<h1 class="h2">Fast geschafft. Jetzt dein <em>Angebot</em> schicken.</h1>
+</div>
+<div class="trial-grid">
+<div class="try" id="try">
+<h2>Gleich ausprobieren</h2>
+<p>Nimm dein letztes Angebot. Ein Weg reicht.</p>
+<div class="way">
+<div class="way-h"><svg class="ic"><use href="#i-fwd"/></svg>Per Mail weiterleiten</div>
+<div class="copy-row"><div class="copy-val" id="addr">{{ business.inbound_address.split("@")[0] }}<wbr>@{{ business.inbound_address.split("@")[1] }}</div><button class="copy-btn" type="button" data-copy="{{ business.inbound_address }}">Kopieren</button></div>
+<p>Mail mit dem PDF an diese Adresse weiterleiten. Oder beim nächsten Angebot einfach in CC oder BCC setzen, dann kennen wir auch gleich die Mailadresse deines Kunden.</p>
+</div>
+{% if wa_link %}
+<div class="or">oder</div>
+<div class="way">
+<div class="way-h"><svg class="ic"><use href="#i-wa"/></svg>Per WhatsApp schicken</div>
+<a class="wa-go" href="{{ wa_link }}" target="_blank" rel="noopener" id="wa-go"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-wa"/></svg>Chat mit dem Sekretär öffnen</a>
+<p>Dann das PDF anhängen oder ein Foto vom Angebot machen. Ein Screenshot geht auch.</p>
+</div>
+{% endif %}
+<div class="note" style="margin-top:16px">
+{% if docs %}<b>Angekommen:</b> {% for d in docs %}{{ d.term }} {{ d.document_number or d.title }}{% if d.customer_name %} an {{ d.customer_name }}{% endif %}{% if d.amount_gross %} über {{ d.amount_gross|money(d.currency) }}{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}. <a href="/dashboard">Zur Übersicht</a>
+{% else %}<div class="waiting"><span class="pulse" aria-hidden="true"></span><span>Wir warten auf dein Angebot. Sobald es da ist, bekommst du eine WhatsApp mit allem, was wir erkannt haben.</span></div>{% endif %}
+</div>
+</div>
+<aside>
+<div class="upgrade">
+<h3 class="h3">Danach: automatisch, ohne Weiterleiten</h3>
+<p>Gefällt dir, was du siehst? In 15 Minuten richten wir es gemeinsam ein. Dann erkennen wir jedes Angebot direkt in deinem Postfach und haken in deinem Namen nach. Kostenlos.</p>
+<div class="btn-row">
+<a class="btn" href="{{ settings.calendly_url }}" target="_blank" rel="noopener"><svg class="ic"><use href="#i-cal"/></svg>Termin mit Julius</a>
+<a class="btn ghost" href="{{ connect_url }}">Selbst verbinden</a>
+</div>
+</div>
+<ul class="plain" style="margin-top:18px">
+<li>Bis zu 10 Dokumente in 30 Tagen</li>
+<li>Wir schicken nichts an deine Kunden, das machst du mit einem Tipp</li>
+<li>Nach 60 Tagen ohne Aktivität löschen wir deine Testdaten</li>
+</ul>
+</aside>
+</div>
+</div>
+</section>
+{% endblock %}
+{% block scripts %}{% if not docs %}<script>setTimeout(function(){if(!document.hidden)location.reload();},20000);</script>{% endif %}{% endblock %}

@@ -1,0 +1,18 @@
+<div class="grid2" style="margin-bottom:20px" id="test">
+<div class="try" style="padding:20px 22px">
+<h3 class="h3" style="margin-bottom:6px">Dein Test</h3>
+<p class="small muted" style="margin:0 0 12px">Angebot an diese Adresse weiterleiten, in CC setzen{% if trial_ctx.wa_link %} oder <a href="{{ trial_ctx.wa_link }}" target="_blank" rel="noopener">per WhatsApp schicken</a>{% endif %}.</p>
+<div class="copy-row"><div class="copy-val">{{ business.inbound_address.split("@")[0] }}<wbr>@{{ business.inbound_address.split("@")[1] }}</div><button class="copy-btn" type="button" data-copy="{{ business.inbound_address }}">Kopieren</button></div>
+{% set used = trial_ctx.docs_used %}{% set cap = settings.trial_max_docs %}
+<div class="meter" aria-hidden="true"><i style="width:{{ [100, (used * 100 // cap) if cap else 0]|min }}%"></i></div>
+<p class="fineprint">{{ used }} von {{ cap }} Dokumenten in {{ settings.trial_window_days }} Tagen. Nach {{ settings.trial_delete_after_days }} Tagen ohne Aktivität löschen wir die Testdaten.</p>
+</div>
+<div class="upgrade">
+<h3 class="h3">Automatisch, ohne Weiterleiten</h3>
+<p>15 Minuten Einrichtung mit Julius, kostenlos. Danach erkennen wir jedes Angebot direkt in deinem Postfach und haken in deinem Namen nach. Deine Angebote aus dem Test bleiben.</p>
+<div class="btn-row">
+<a class="btn sm" href="{{ settings.calendly_url }}" target="_blank" rel="noopener">Termin buchen</a>
+<a class="btn ghost sm" href="{{ trial_ctx.connect_url }}">Selbst verbinden</a>
+</div>
+</div>
+</div>

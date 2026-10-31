@@ -6,8 +6,9 @@
 <div class="wrap">
 <div class="app-head">
 <div><h1 class="h2">{{ business.name }}</h1><p class="app-sub">{% if account %}{{ account.email }}{% if account.last_scan_at %} · zuletzt geprüft {{ account.last_scan_at|datetime }}{% endif %}{% endif %}</p></div>
-<form method="post" action="/jetzt-pruefen" class="inline-form"><button class="btn ghost sm" type="submit">Jetzt Postfach prüfen</button></form>
+{% if not business.is_trial %}<form method="post" action="/jetzt-pruefen" class="inline-form"><button class="btn ghost sm" type="submit">Jetzt Postfach prüfen</button></form>{% endif %}
 </div>
+{% if trial_ctx %}{% include "_trial_card.html" %}{% endif %}
 
 {% if account and account.status.value == 'error' %}
 <div class="card danger" style="margin-bottom:20px"><b>Dein Postfach {{ account.email }} ist nicht mehr verbunden.</b> Solange fasse ich nicht nach.{% if account.error_since %} Gestört seit {{ account.error_since|datetime }}.{% endif %}<br><span class="small">{{ account.last_error }}</span><br><a class="btn sm" href="{{ reconnect_link(account.id) }}" style="margin-top:10px">Neu verbinden</a></div>
@@ -49,14 +50,14 @@
 {% if wa_taps %}
 <div class="card wa-card" id="whatsapp" style="margin-bottom:20px">
 <h3 class="h3" style="margin:0 0 4px">Heute per WhatsApp ({{ wa_taps|length }})</h3>
-<p class="small muted" style="margin:0 0 12px">Tipp auf „In WhatsApp öffnen“, der Text steht schon im Chat mit dem Kunden. Abschicken und hier kurz auf „Gesendet“. Antworten per WhatsApp sehe ich nicht, sag mir dann „Hat geantwortet“.</p>
+<p class="small muted" style="margin:0 0 12px">{% if business.is_trial %}Ein Tipp öffnet die fertige Nachricht in WhatsApp oder deinem Mailprogramm. Abschicken und hier kurz auf „Gesendet“. Antworten sehe ich im Test nicht, sag mir dann „Hat geantwortet“.{% else %}Tipp auf „In WhatsApp öffnen“, der Text steht schon im Chat mit dem Kunden. Abschicken und hier kurz auf „Gesendet“. Antworten per WhatsApp sehe ich nicht, sag mir dann „Hat geantwortet“.{% endif %}</p>
 <ul class="wa-list">
 {% for f in wa_taps %}{% set d = f.document %}
 <li class="wa-item">
 <a class="t" href="/dokument/{{ d.id }}">{{ d.customer_name or d.customer_email }}</a>
-<div class="meta">{{ d.term }} {{ d.document_number or d.title }}{% if d.amount_gross %} · {{ d.amount_gross|money(d.currency) }}{% endif %} · Nachricht {{ f.step }} · {{ phone_pretty(d.customer_mobile) }}{% if f.status != FollowUpStatus.AWAITING_TAP %} · Mail ist schon raus{% endif %}{% if f.tapped_at %} · geöffnet {{ f.tapped_at|datetime }}{% endif %}</div>
+<div class="meta">{{ d.term }} {{ d.document_number or d.title }}{% if d.amount_gross %} · {{ d.amount_gross|money(d.currency) }}{% endif %} · Nachricht {{ f.step }} · {% if f.tap_kind == 'mailto' %}{{ d.customer_email }}{% elif f.tap_kind == 'manual' %}Kontakt fehlt{% else %}{{ phone_pretty(d.customer_mobile) }}{% endif %}{% if f.status != FollowUpStatus.AWAITING_TAP %} · Mail ist schon raus{% endif %}{% if f.tapped_at %} · geöffnet {{ f.tapped_at|datetime }}{% endif %}</div>
 <details><summary>Text ansehen</summary><pre>{{ f.wa_text }}</pre></details>
-<a class="wa-open" href="/t/{{ f.tap_token }}" target="_blank" rel="noopener">In WhatsApp öffnen</a>
+<a class="wa-open" href="/t/{{ f.tap_token }}" {% if f.tap_kind != 'mailto' %}target="_blank" rel="noopener"{% endif %}>{{ tap_label(f) }}</a>
 <div class="wa-actions">
 <form method="post" action="/w/{{ f.tap_token }}/sent"><input type="hidden" name="next" value="/dashboard"><button class="btn sm" type="submit">Gesendet</button></form>
 {% if d.kind == DocKind.INVOICE %}<form method="post" action="/w/{{ f.tap_token }}/paid"><input type="hidden" name="next" value="/dashboard"><button class="btn ghost sm" type="submit">Ist bezahlt</button></form>{% else %}<form method="post" action="/w/{{ f.tap_token }}/replied"><input type="hidden" name="next" value="/dashboard"><button class="btn ghost sm" type="submit">Hat geantwortet</button></form>{% endif %}
@@ -94,14 +95,14 @@
 </div>
 <div class="card">
 {% if not docs %}
-<p class="muted" style="margin:0">Hier ist noch nichts. Sobald ein Angebot oder eine Rechnung als PDF aus deinem Postfach rausgeht, taucht es hier auf.</p>
+<p class="muted" style="margin:0">{% if business.is_trial %}Hier ist noch nichts. Leite ein Angebot an {{ business.inbound_address }} weiter oder schick es per WhatsApp, dann taucht es hier auf.{% else %}Hier ist noch nichts. Sobald ein Angebot oder eine Rechnung als PDF aus deinem Postfach rausgeht, taucht es hier auf.{% endif %}</p>
 {% else %}
 <ul class="list">
 {% for d in docs %}
 <li class="row">
 <div>
-<a class="t" href="/dokument/{{ d.id }}">{{ d.customer_name or d.customer_email }}</a>
-<div class="meta"><span class="pill kind">{{ d.kind_label }}{% if d.document_number %} {{ d.document_number }}{% endif %}</span>{% if d.title %}<span>{{ d.title }}</span>{% endif %}<span>gesendet {{ d.sent_at|date }}</span>{% if d.kind == DocKind.INVOICE and d.due_date %}<span>fällig {{ d.due_date|date }}</span>{% endif %}</div>
+<a class="t" href="/dokument/{{ d.id }}">{{ d.customer_name or d.customer_email or 'Kunde unbekannt' }}</a>
+<div class="meta"><span class="pill kind">{{ d.kind_label }}{% if d.document_number %} {{ d.document_number }}{% endif %}</span>{% if d.source == 'forward_unverified' %}<span class="pill warn" title="Weitergeleitet von {{ d.inbound_from }}">Absender nicht bestätigt</span>{% elif d.source in ('forward', 'cc', 'whatsapp') %}<span class="pill muted">{{ 'per WhatsApp' if d.source == 'whatsapp' else ('per Kopie' if d.source == 'cc' else 'weitergeleitet') }}</span>{% endif %}{% if d.title %}<span>{{ d.title }}</span>{% endif %}<span>gesendet {{ d.sent_at|date }}</span>{% if d.kind == DocKind.INVOICE and d.due_date %}<span>fällig {{ d.due_date|date }}</span>{% endif %}</div>
 {% if d.reply_summary %}<div class="meta"><span>{{ d.reply_intent_label }}: {{ d.reply_summary }}</span></div>{% endif %}
 </div>
 <div class="right">
@@ -138,6 +139,18 @@
 </ul>
 <a class="btn ghost sm" href="/einstellungen" style="margin-top:12px">Einstellungen</a>
 </div>
+{% if not business.is_trial %}
+<div class="card" id="kopie" style="margin-top:16px">
+<h3 class="h3">Kopie-Adresse</h3>
+{% if business.inbound_address %}
+<p class="small muted" style="margin-top:0">Für Angebote, die nicht über dein Postfach rausgehen (sevDesk, lexoffice „Kopie an“, POP3): diese Adresse in CC oder BCC setzen.</p>
+<div class="copy-row"><div class="copy-val">{{ business.inbound_address.split("@")[0] }}<wbr>@{{ business.inbound_address.split("@")[1] }}</div><button class="copy-btn" type="button" data-copy="{{ business.inbound_address }}">Kopieren</button></div>
+{% else %}
+<p class="small muted" style="margin-top:0">Schickst du Angebote auch aus sevDesk, lexoffice oder per POP3? Dann bekommst du eine Adresse für „Kopie an“.</p>
+<form method="post" action="/weiterleitung/adresse"><button class="btn ghost sm" type="submit">Kopie-Adresse anlegen</button></form>
+{% endif %}
+</div>
+{% endif %}
 </div>
 </div>
 </div>
