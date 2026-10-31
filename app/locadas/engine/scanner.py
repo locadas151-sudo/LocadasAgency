@@ -647,17 +647,26 @@ def scan_inbox(session: Session, account: MailAccount, client: ImapClient) -> in
     return replies
 
 
-def scan_account(session: Session, account: MailAccount) -> dict[str, int]:
+def scan_account(session: Session, account: MailAccount, now: datetime | None = None, force: bool = False) -> dict[str, int]:
+    """Gesendet und Posteingang lesen. Gestörte Postfächer nur stündlich (force: sofort, z. B. „Jetzt prüfen“);
+    gelingt das Lesen wieder, wird vor dem Entwarnen auch der Versand (SMTP-Login) geprüft."""
     stats = {"new": 0, "replies": 0}
     if account.status.value == "disconnected":
+        return stats
+    now = now or utcnow()
+    if not force and not acc.retry_due(account, now):
+        acc.remind_if_due(session, account, now)
+        session.commit()
         return stats
     try:
         with acc.imap_for(account) as client:
             stats["new"] = scan_sent(session, account, client)
             stats["replies"] = scan_inbox(session, account, client)
-        acc.mark_ok(account)
+        if acc.is_down(account):
+            acc.smtp_for(account).test()  # Entwarnung erst, wenn auch der Versand wieder geht
+        acc.mark_ok(account, session, now)
     except (MailAuthError, MailConnectError) as exc:
-        acc.mark_error(session, account, str(exc))
+        acc.record_failure(session, account, exc, now)
         log.warning("Scan für %s fehlgeschlagen: %s", account.email, exc)
     account.last_scan_at = utcnow()
     session.commit()

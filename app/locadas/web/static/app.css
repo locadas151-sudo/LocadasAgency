@@ -120,3 +120,12 @@ ul.plain li{margin:4px 0}
 .wa-actions form{margin:0}
 .wa-actions .btn{width:100%;min-height:44px;padding:8px 6px;font-size:14px}
 @media(max-width:480px){.wa-actions{grid-template-columns:1fr}}
+
+/* Einstellungen: Erweitert eingeklappt */
+details.settings-adv{margin-top:16px}
+details.settings-adv>summary{cursor:pointer;list-style:none;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+details.settings-adv>summary::-webkit-details-marker{display:none}
+details.settings-adv>summary:before{content:"+";font-weight:600;color:var(--g1)}
+details.settings-adv[open]>summary:before{content:"\2212"}
+.settings-adv-body{margin-top:16px;display:flex;flex-direction:column;gap:16px}
+.settings-adv-body .card{margin:0}

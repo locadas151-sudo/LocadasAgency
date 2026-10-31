@@ -242,10 +242,13 @@ def mark_complete(session: Session, c: Customer, now: datetime | None = None) ->
         to_name=c.name, to_addr=c.email, subject=subject, body=body,
     )
     try:
+        if acc.is_down(account):
+            raise MailConnectError(f"Postfach {account.email} ist nicht verbunden")
         acc.smtp_for(account).send(msg)
     except (MailAuthError, MailConnectError) as exc:
         c.completed_at = None  # nichts ging raus: später noch einmal möglich
-        acc.mark_error(session, account, str(exc))
+        if not acc.is_down(account):
+            acc.record_failure(session, account, exc, now)
         log_event(session, b.id, "error", f"Fertig-Meldung an {c.name or c.email} ging nicht raus: {exc}"[:500], ref.id if ref else None)
         session.commit()
         return "failed"
@@ -253,7 +256,7 @@ def mark_complete(session: Session, c: Customer, now: datetime | None = None) ->
         c.completed_at = None
         session.commit()
         raise
-    acc.mark_ok(account)
+    acc.mark_ok(account, session, now)
     from .followups import _copy_to_sent
 
     _copy_to_sent(account, msg)

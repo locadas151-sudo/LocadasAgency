@@ -218,6 +218,10 @@ def send_followup(session: Session, fu: FollowUp) -> bool:
         fu.status = FollowUpStatus.FAILED
         fu.error = "Keine Kundenadresse"
         return False
+    if acc.is_down(account):
+        log.info("Postfach %s gestört, Nachfass-Mail %s wartet", account.email, fu.id)
+        fu.error = f"Dein Postfach {account.email} ist nicht verbunden. Verbinde es neu, dann geht es weiter."
+        return False  # kein SMTP-Versuch, solange das Postfach nicht verbunden ist (Verbindungs-Wächter)
     _prepare(fu)
     before = _claim(session, fu)
     if before is None:
@@ -240,10 +244,15 @@ def send_followup(session: Session, fu: FollowUp) -> bool:
         _attach_pdf(msg, doc)
         fu.message_id = acc.smtp_for(account).send(msg)
     except (MailAuthError, MailConnectError) as exc:
-        fu.status = FollowUpStatus.FAILED
+        # Nichts ging raus (Login oder Verbindung): Stufe bleibt, wie sie war. Der nächste Durchlauf probiert es
+        # noch einmal, nach einer Störung verteilt der Verbindungs-Wächter sie neu (accounts.resume_followups).
+        from sqlalchemy.orm.attributes import flag_modified
+
+        fu.status = before
+        flag_modified(fu, "status")
         fu.sent_at = None
         fu.error = str(exc)[:1000]
-        acc.mark_error(session, account, str(exc))
+        acc.record_failure(session, account, exc)
         log.warning("Versand fehlgeschlagen für Dokument %s: %s", doc.id, exc)
         session.commit()
         return False
@@ -255,9 +264,10 @@ def send_followup(session: Session, fu: FollowUp) -> bool:
         fu.sent_at = None
         session.commit()
         raise
-    acc.mark_ok(account)
+    acc.mark_ok(account, session)
     _copy_to_sent(account, msg)
     fu.status = FollowUpStatus.SENT
+    fu.error = ""
     fu.sent_at = utcnow()
     fu.sent_via = "mail"
     doc.followups_sent += 1
@@ -538,6 +548,9 @@ def process_due(session: Session, now: datetime | None = None, business_id: int 
             continue  # Mail-Stufen erst, wenn sie wirklich fällig sind
         if doc.status != DocStatus.OPEN or business.paused:
             stats["skipped"] += 1
+            continue
+        if acc.is_down(doc.account):
+            stats["skipped"] += 1  # Postfach gestört: nicht nachfassen, nach dem Neu-Verbinden neu verteilt
             continue
         if doc.kind == DocKind.OFFER and not business.followup_offers:
             fu.status = FollowUpStatus.SKIPPED

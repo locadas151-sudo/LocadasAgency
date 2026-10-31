@@ -9,6 +9,7 @@ from sqlalchemy import select
 from ..config import settings
 from ..db import AccountStatus, MailAccount, new_session
 from .followups import finish_exhausted, process_due
+from . import summary
 from .scanner import scan_account
 
 log = logging.getLogger(__name__)
@@ -55,5 +56,6 @@ def start_scheduler():
 
     sched = BackgroundScheduler(timezone="UTC")
     sched.add_job(run_cycle, "interval", minutes=settings.scan_interval_minutes, id="cycle", max_instances=1, coalesce=True)
+    sched.add_job(summary.run_monthly, "cron", day=1, hour=summary.SEND_HOUR, minute=0, timezone=settings.timezone, id="summary", coalesce=True, misfire_grace_time=6 * 3600)
     sched.start()
     return sched

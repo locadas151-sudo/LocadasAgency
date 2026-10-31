@@ -78,3 +78,27 @@ def doc_id_from_link(token: str) -> int | None:
         return int(_doc_serializer().loads(token, max_age=DOC_LINK_MAX_AGE))
     except (BadSignature, SignatureExpired, ValueError, TypeError):
         return None
+
+
+RECONNECT_MAX_AGE = 60 * 60 * 24 * 30  # „Neu verbinden“-Link 30 Tage (Erinnerungen bringen einen frischen)
+
+
+def _reconnect_serializer() -> URLSafeTimedSerializer:
+    return URLSafeTimedSerializer(settings.secret_key, salt="locadas-reconnect")
+
+
+def reconnect_token(account_id: int) -> str:
+    return _reconnect_serializer().dumps(int(account_id))
+
+
+def reconnect_link(account_id: int) -> str:
+    return f"{settings.base_url}/verbinden?reconnect={reconnect_token(account_id)}"
+
+
+def account_id_from_reconnect(token: str) -> int | None:
+    if not token:
+        return None
+    try:
+        return int(_reconnect_serializer().loads(token, max_age=RECONNECT_MAX_AGE))
+    except (BadSignature, SignatureExpired, ValueError, TypeError):
+        return None

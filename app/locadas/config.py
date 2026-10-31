@@ -36,6 +36,8 @@ WHATSAPP_TEMPLATE_DEFAULTS = {
     "outcome_invoice": "locadas_outcome_invoice",
     "event": "locadas_event",
     "tap": "locadas_tap",
+    "summary": "locadas_summary",
+    "connection": "locadas_connection",
 }
 
 

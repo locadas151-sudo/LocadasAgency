@@ -12,68 +12,76 @@
 {% if msg == 'wa_ungueltig' %}<div class="note warn" style="margin-bottom:16px">Die WhatsApp-Nummer konnten wir nicht lesen. Bitte als Handynummer eingeben, zum Beispiel 0171 2345678.</div>{% endif %}
 {% if msg == 'review_ungueltig' %}<div class="note warn" style="margin-bottom:16px">Der Bewertungslink muss eine Google-Adresse sein, zum Beispiel https://g.page/r/…/review oder https://search.google.com/local/writereview?placeid=… Der Rest ist gespeichert.</div>{% endif %}
 {% if msg == 'bestaetigen' %}<div class="note warn" style="margin-bottom:16px">Zum Trennen bitte „ja“ ins Feld schreiben.</div>{% endif %}
-<div class="grid2">
-<form class="form-card" method="post" action="/einstellungen" style="max-width:none">
+{% if account and account.status.value == 'error' %}<div class="note warn" style="margin-bottom:16px"><b>Dein Postfach {{ account.email }} ist nicht mehr verbunden.</b> Solange fasse ich nicht nach. <a href="{{ reconnect_link(account.id) }}">Neu verbinden</a></div>{% endif %}
+<form class="form-card" id="settings" method="post" action="/einstellungen" style="max-width:none">
 <div class="fields2">
 <div class="field"><label>Betrieb <small>(Absendername)</small></label><input name="name" value="{{ business.name }}" required></div>
 <div class="field"><label>Dein Name</label><input name="owner_name" value="{{ business.owner_name }}"></div>
 </div>
 <div class="field"><label>Telefon</label><input name="phone" value="{{ business.phone }}"></div>
+<div class="field"><label>Grußformel und Signatur <small>(leer = „Viele Grüße“, Name, Betrieb, Telefon)</small></label><textarea name="signature" placeholder="Viele Grüße&#10;Thomas Müller&#10;Müller Haustechnik GmbH&#10;0171 2345678">{{ business.signature }}</textarea></div>
+<div class="field"><label>Nachfassen per</label><select name="followup_channel">
+<option value="mail" {% if (business.followup_channel or 'mail') == 'mail' %}selected{% endif %}>Mail</option>
+<option value="whatsapp_tap" {% if business.followup_channel == 'whatsapp_tap' %}selected{% endif %}>WhatsApp mit einem Tipp</option>
+<option value="both" {% if business.followup_channel == 'both' %}selected{% endif %}>Beides</option>
+</select></div>
+<p class="small muted" style="margin:-6px 0 0">Bei WhatsApp schreibe ich dir die fertige Nachricht. Ein Tipp öffnet deinen Chat mit dem Kunden und du drückst nur noch auf Senden. Ohne Handynummer des Kunden fasse ich per Mail nach. Bei „Beides“ geht die Mail automatisch raus und du bekommst dazu den WhatsApp-Vorschlag.</p>
+<label class="toggle"><input type="checkbox" name="paused" value="1" {% if business.paused %}checked{% endif %}><div><b>Pausieren</b><span>Urlaub oder Baustelle: Ich lese weiter mit, schicke aber nichts.</span></div></label>
 {% include "_whatsapp_fields.html" %}
 <div class="field" id="bewertung"><input type="hidden" name="review_field" value="1"><label>Google-Bewertungslink <small>(optional)</small></label><input name="google_review_url" type="url" inputmode="url" value="{{ business.google_review_url }}" placeholder="https://g.page/r/…/review"></div>
 <p class="small muted" style="margin:-6px 0 0">Wenn du einen Auftrag fertig meldest, bekommt der Kunde eine Abschluss-Mail mit diesem Link. So findest du ihn: im Google Unternehmensprofil auf „Rezensionen erhalten“ bzw. „Mehr Rezensionen erhalten“ tippen und den Link kopieren. Oder mit deiner Place-ID: https://search.google.com/local/writereview?placeid=DEINE_PLACE_ID. Jeder Kunde bekommt denselben Link, ohne Vorauswahl, so wie Google es verlangt.</p>
-<div class="field"><label>Grußformel und Signatur <small>(leer = „Viele Grüße“, Name, Betrieb, Telefon)</small></label><textarea name="signature" placeholder="Viele Grüße&#10;Thomas Müller&#10;Müller Haustechnik GmbH&#10;0171 2345678">{{ business.signature }}</textarea></div>
+<button class="btn" type="submit">Speichern</button>
+</form>
+
+<details class="card settings-adv" id="erweitert"{% if msg in ('bestaetigen', 'wab_getrennt', 'wab_vorlagen') %} open{% endif %}>
+<summary><b>Erweitert</b> <span class="small muted">Rhythmus, Freigaben, Ton, Benachrichtigungen, Postfach</span></summary>
+<div class="settings-adv-body">
 <div>
-<label class="toggle"><input type="checkbox" name="followup_offers" value="1" {% if business.followup_offers %}checked{% endif %}><div><b>Angebote nachfassen</b><span>{{ settings.offer_followup_days|join(', ') }} Tage nach Versand, bis der Kunde antwortet.</span></div></label>
-<label class="toggle"><input type="checkbox" name="followup_invoices" value="1" {% if business.followup_invoices %}checked{% endif %}><div><b>Rechnungen nachfassen</b><span>{{ settings.invoice_followup_days|join(', ') }} Tage nach Fälligkeit. Freundlich, dann deutlicher.</span></div></label>
+<label class="toggle"><input form="settings" type="checkbox" name="followup_offers" value="1" {% if business.followup_offers %}checked{% endif %}><div><b>Angebote nachfassen</b><span>{{ settings.offer_followup_days|join(', ') }} Tage nach Versand, bis der Kunde antwortet.</span></div></label>
+<label class="toggle"><input form="settings" type="checkbox" name="followup_invoices" value="1" {% if business.followup_invoices %}checked{% endif %}><div><b>Rechnungen nachfassen</b><span>{{ settings.invoice_followup_days|join(', ') }} Tage nach Fälligkeit. Freundlich, dann deutlicher.</span></div></label>
+</div>
 <div class="fields2">
-<div class="field"><label>Angebote nachfassen</label><select name="review_mode">
+<div class="field"><label>Angebote nachfassen</label><select form="settings" name="review_mode">
 <option value="auto" {% if business.review_mode != 'all' %}selected{% endif %}>Automatisch senden (Vorschau am Morgen mit Stopp)</option>
 <option value="all" {% if business.review_mode == 'all' %}selected{% endif %}>Ich gebe jede Mail frei</option>
 </select></div>
-<div class="field"><label>Freigabe ab Betrag <small>(brutto)</small></label><input name="approval_threshold" inputmode="decimal" value="{{ '%.0f'|format(business.threshold) }}"></div>
+<div class="field"><label>Freigabe ab Betrag <small>(brutto)</small></label><input form="settings" name="approval_threshold" inputmode="decimal" value="{{ '%.0f'|format(business.threshold) }}"></div>
 </div>
-<p class="small muted" style="margin:-6px 0 14px">Angebote über diesem Betrag bekommst du immer mit dem vollen Text zur Freigabe. Rechnungen erinnere ich nie automatisch: Vorher frage ich dich „Noch offen?“, weil ich dein Konto nicht sehe.</p>
+<p class="small muted" style="margin:-6px 0 0">Angebote über diesem Betrag bekommst du immer mit dem vollen Text zur Freigabe. Rechnungen erinnere ich nie automatisch: Vorher frage ich dich „Noch offen?“, weil ich dein Konto nicht sehe.</p>
 <div class="fields2">
-<div class="field"><label>Dokument in Nachfass-Mails</label><select name="doc_delivery">
+<div class="field"><label>Dokument in Nachfass-Mails</label><select form="settings" name="doc_delivery">
 <option value="link" {% if business.include_view_link and business.doc_delivery != 'attachment' %}selected{% endif %}>Link zum PDF (du siehst, wann geöffnet)</option>
 <option value="attachment" {% if business.include_view_link and business.doc_delivery == 'attachment' %}selected{% endif %}>PDF noch einmal anhängen</option>
 <option value="none" {% if not business.include_view_link %}selected{% endif %}>Nichts beifügen</option>
 </select></div>
-<div class="field"><label>Ton bei Zahlungserinnerungen</label><select name="tone">
+<div class="field"><label>Ton bei Zahlungserinnerungen</label><select form="settings" name="tone">
 <option value="freundlich" {% if business.tone == 'freundlich' %}selected{% endif %}>Freundlich</option>
 <option value="sachlich" {% if business.tone == 'sachlich' %}selected{% endif %}>Sachlich</option>
 <option value="bestimmt" {% if business.tone == 'bestimmt' %}selected{% endif %}>Bestimmt (Verzug, Mahnkosten)</option>
 </select></div>
 </div>
-<p class="small muted" style="margin:-6px 0 14px">Firmenkunden bekommen immer mindestens sachliche Erinnerungen. Jede Erinnerung nennt ein Zahlungsdatum und deine Bankverbindung aus der Rechnung.</p>
-<div class="field"><label>Nachfassen per</label><select name="followup_channel">
-<option value="mail" {% if (business.followup_channel or 'mail') == 'mail' %}selected{% endif %}>Mail (Standard)</option>
-<option value="whatsapp_tap" {% if business.followup_channel == 'whatsapp_tap' %}selected{% endif %}>WhatsApp mit einem Tipp, wenn ich die Handynummer kenne</option>
-<option value="both" {% if business.followup_channel == 'both' %}selected{% endif %}>Mail automatisch und dazu ein WhatsApp-Vorschlag</option>
-</select></div>
-<p class="small muted" style="margin:-6px 0 14px">Bei WhatsApp schreibe ich dir die fertige Nachricht. Ein Tipp öffnet deinen Chat mit dem Kunden und du drückst nur noch auf Senden, von deiner eigenen Nummer. Die Handynummer lese ich aus dem Angebot oder der Mail-Signatur des Kunden. Ohne Handynummer fasse ich per Mail nach. Je Kunde umstellbar auf der Seite des Dokuments.</p>
-<label class="toggle"><input type="checkbox" name="personalize" value="1" {% if business.personalize %}checked{% endif %}><div><b>Nachfass-Mails in deinem Stil schreiben</b><span>Wir lernen Anrede, Ton und Grußformel aus deinen gesendeten Mails. Jeder Text wird geprüft, sonst gilt die feste Vorlage.</span></div></label>
-<label class="toggle"><input type="checkbox" name="notify_opened" value="1" {% if business.notify_opened %}checked{% endif %}><div><b>Bescheid geben, wenn ein Kunde öffnet oder antwortet</b><span>Kurze Nachricht per WhatsApp oder Mail, wenn der Kunde den Link zum ersten Mal öffnet oder antwortet.</span></div></label>
-<label class="toggle"><input type="checkbox" name="paused" value="1" {% if business.paused %}checked{% endif %}><div><b>Alles pausieren</b><span>Urlaub oder Baustelle: Wir lesen weiter mit, schicken aber nichts.</span></div></label>
-</div>
-<button class="btn" type="submit">Speichern</button>
-</form>
-
+<p class="small muted" style="margin:-6px 0 0">Firmenkunden bekommen immer mindestens sachliche Erinnerungen. Jede Erinnerung nennt ein Zahlungsdatum und deine Bankverbindung aus der Rechnung.</p>
 <div>
+<label class="toggle"><input form="settings" type="checkbox" name="personalize" value="1" {% if business.personalize %}checked{% endif %}><div><b>Nachfass-Mails in deinem Stil schreiben</b><span>Wir lernen Anrede, Ton und Grußformel aus deinen gesendeten Mails. Jeder Text wird geprüft, sonst gilt die feste Vorlage.</span></div></label>
+<label class="toggle"><input form="settings" type="checkbox" name="notify_opened" value="1" {% if business.notify_opened %}checked{% endif %}><div><b>Bescheid geben, wenn ein Kunde öffnet oder antwortet</b><span>Kurze Nachricht per WhatsApp oder Mail, wenn der Kunde den Link zum ersten Mal öffnet oder antwortet.</span></div></label>
+</div>
+<button class="btn ghost" type="submit" form="settings">Speichern</button>
+
+{% include "_wa_business_card.html" %}
+
 <div class="card">
 <h3 class="h3">Postfach</h3>
 {% if account %}
-<p style="margin:0 0 4px"><b>{{ account.email }}</b> <span class="pill {% if account.status.value == 'active' %}good{% else %}bad{% endif %}">{{ 'verbunden' if account.status.value == 'active' else 'Fehler' }}</span></p>
+<p style="margin:0 0 4px"><b>{{ account.email }}</b> <span class="pill {% if account.status.value == 'active' %}good{% else %}bad{% endif %}">{{ 'verbunden' if account.status.value == 'active' else 'nicht verbunden' }}</span></p>
 <p class="small muted" style="margin:0">{{ account.imap_host }} · Ordner „{{ account.sent_folder }}“{% if account.last_scan_at %} · zuletzt geprüft {{ account.last_scan_at|datetime }}{% endif %}</p>
 {% if account.last_error %}<p class="small" style="color:#991b1b">{{ account.last_error }}</p>{% endif %}
-<a class="btn ghost sm" href="/verbinden" style="margin-top:12px">Neu verbinden</a>
+<a class="btn ghost sm" href="{{ reconnect_link(account.id) }}" style="margin-top:12px">Neu verbinden</a>
 {% else %}
 <p class="muted">Kein Postfach verbunden.</p><a class="btn sm" href="/verbinden">Postfach verbinden</a>
 {% endif %}
 </div>
-{% include "_wa_business_card.html" %}
-<div class="card danger" style="margin-top:16px">
+
+<div class="card danger">
 <h3 class="h3">Verbindung trennen</h3>
 <p class="small" style="margin:0 0 10px">Löscht Zugangsdaten, alle erkannten Dokumente, PDFs und den Verlauf. Sofort und endgültig. Geplante Nachfass-Mails werden nicht mehr geschickt.</p>
 <form method="post" action="/einstellungen/trennen" class="btn-row">
@@ -82,7 +90,7 @@
 </form>
 </div>
 </div>
-</div>
+</details>
 </div>
 </section>
 {% endblock %}

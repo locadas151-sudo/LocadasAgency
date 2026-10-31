@@ -140,6 +140,8 @@ class Business(Base):
     followup_channel: Mapped[str] = mapped_column(String(20), default="mail", server_default="mail")
     # Paket: "free" | "pro" (WhatsApp über die eigene Nummer braucht "pro", siehe channels/usage.py)
     plan: Mapped[str] = mapped_column(String(10), default="free", server_default="free")
+    # Monatsbilanz (engine/summary.py): letzter Monat, für den sie raus ist bzw. ohne Aktivität übersprungen wurde ("2026-10")
+    summary_sent_for: Mapped[str] = mapped_column(String(7), default="", server_default="")
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     last_login_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
 
@@ -184,6 +186,12 @@ class MailAccount(Base):
     status: Mapped[AccountStatus] = mapped_column(Enum(AccountStatus), default=AccountStatus.ACTIVE)
     last_error: Mapped[str] = mapped_column(Text, default="")
     last_scan_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    # Verbindungs-Wächter (engine/accounts.py): Fehler in Folge (höchstens einer je Durchlauf), seit wann gestört,
+    # wann der Betrieb zuletzt Bescheid bekam (None = in dieser Störung noch nicht)
+    consecutive_errors: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    last_failure_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    error_since: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    error_notified_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
     business: Mapped[Business] = relationship(back_populates="accounts")

@@ -10,8 +10,9 @@
 </div>
 
 {% if account and account.status.value == 'error' %}
-<div class="card danger" style="margin-bottom:20px"><b>Postfach-Verbindung gestört:</b> {{ account.last_error }}<br><span class="small">Meist hilft es, das Postfach <a href="/verbinden">neu zu verbinden</a> (bei geändertem Passwort).</span></div>
+<div class="card danger" style="margin-bottom:20px"><b>Dein Postfach {{ account.email }} ist nicht mehr verbunden.</b> Solange fasse ich nicht nach.{% if account.error_since %} Gestört seit {{ account.error_since|datetime }}.{% endif %}<br><span class="small">{{ account.last_error }}</span><br><a class="btn sm" href="{{ reconnect_link(account.id) }}" style="margin-top:10px">Neu verbinden</a></div>
 {% endif %}
+{% if msg == 'neu_verbunden' %}<div class="note" style="margin-bottom:20px">Wieder verbunden, alles läuft. Was liegen geblieben ist, verteile ich auf die nächsten Tage.</div>{% endif %}
 {% if msg == 'fertig' %}<div class="note" style="margin-bottom:20px">Abschluss-Mail ist raus.</div>{% elif msg == 'fertig_fehler' %}<div class="note err" style="margin-bottom:20px">Die Abschluss-Mail ging nicht raus. Prüf bitte die Postfach-Verbindung.</div>{% elif msg == 'fertig_schon' %}<div class="note" style="margin-bottom:20px">Wurde schon gemeldet.</div>{% endif %}
 {% if msg == 'laeuft' %}
 <div class="card" style="margin-bottom:20px">Gerade läuft schon eine Prüfung. In ein paar Minuten ist alles aktuell.</div>
@@ -27,6 +28,22 @@
 <div class="kpi"><span class="kpi-num">{{ counts.won }}</span><span class="kpi-lbl">Aufträge und Zahlungen</span></div>
 <div class="kpi"><span class="kpi-num">{{ counts.review_clicks }}</span><span class="kpi-lbl">Bewertungs-Klicks{% if not business.google_review_url %} · <a href="/einstellungen#bewertung">Link hinterlegen</a>{% endif %}</span></div>
 </div>
+{% if month %}
+<div class="card month-card" id="monat" style="margin-bottom:20px">
+<div class="app-head" style="margin-bottom:6px"><h3 class="h3" style="margin:0">Dein Monat</h3><span class="small muted">{{ month.label }} bis heute</span></div>
+{% if month.active %}
+<div class="kpis kpis4" style="margin:0">
+<div class="kpi"><span class="kpi-num">{{ month.followups }}×</span><span class="kpi-lbl">nachgefasst{% if month.followups %} · {{ month.via_mail }} Mail, {{ month.via_whatsapp }} WhatsApp{% endif %}</span></div>
+<div class="kpi"><span class="kpi-num">{{ month.replied }}</span><span class="kpi-lbl">{{ 'Kunde hat' if month.replied == 1 else 'Kunden haben' }} geantwortet</span></div>
+<div class="kpi"><span class="kpi-num">{{ month.won_count }}</span><span class="kpi-lbl">{{ 'Auftrag' if month.won_count == 1 else 'Aufträge' }}{% if month.won_sum %} über {{ euro(month.won_sum) }}{% endif %}</span></div>
+<div class="kpi"><span class="kpi-num">{{ month.paid_count }}</span><span class="kpi-lbl">{{ 'Rechnung' if month.paid_count == 1 else 'Rechnungen' }}{% if month.paid_sum %} über {{ euro(month.paid_sum) }}{% endif %} bezahlt</span></div>
+</div>
+<p class="small muted" style="margin:10px 0 0">Gezählt wird nur, was nach mindestens einer Nachfass-Nachricht kam. Offen sind gerade {{ month.open_offers }} {{ 'Angebot' if month.open_offers == 1 else 'Angebote' }} und {{ month.open_invoices }} {{ 'Rechnung' if month.open_invoices == 1 else 'Rechnungen' }}. Am 1. bekommst du die Bilanz für den ganzen Monat.</p>
+{% else %}
+<p class="small muted" style="margin:0">In diesem Monat habe ich noch nicht nachgefasst. Sobald etwas passiert, siehst du hier, was es gebracht hat. Am 1. bekommst du die Bilanz für den ganzen Monat.</p>
+{% endif %}
+</div>
+{% endif %}
 {% include "_wa_business_dashboard.html" %}
 
 {% if wa_taps %}

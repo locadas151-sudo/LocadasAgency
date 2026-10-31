@@ -16,7 +16,7 @@ from . import whatsapp as wa
 
 log = logging.getLogger(__name__)
 
-KINDS = {"preview", "opened", "replied", "bounced", "outcome", "approval", "login", "info", "completion", "tap"}
+KINDS = {"preview", "opened", "replied", "bounced", "outcome", "approval", "login", "info", "completion", "tap", "summary", "connection"}
 
 
 @dataclass
@@ -101,23 +101,48 @@ def _deliver_whatsapp(b: Business, n: Notification, now: datetime) -> bool:
 
 
 def send_email(session: Session, business: Business, subject: str, body: str) -> bool:
-    """Mail an den Betrieb in sein eigenes Postfach, über sein eigenes SMTP."""
+    """Mail an den Betrieb in sein eigenes Postfach, über sein eigenes SMTP.
+
+    Ist das Postfach gestört (Verbindungs-Wächter), wird es gar nicht erst probiert. In dem Fall oder wenn es
+    fehlschlägt geht die Mail über den Locadas-Systemversand (SYSTEM_SMTP_*), falls eingerichtet."""
     from ..engine import accounts as acc  # spät, vermeidet Import-Kreis
 
     account = next((a for a in business.accounts if a.status.value != "disconnected"), None)
     if account is None:
         return False
-    msg = build_message(
-        from_name="Locadas Nachfasser",
-        from_addr=account.email,
-        to_name=business.owner_name or business.name,
-        to_addr=account.email,
-        subject=subject,
-        body=body,
-    )
+    if not acc.is_down(account):
+        msg = build_message(
+            from_name="Locadas Nachfasser",
+            from_addr=account.email,
+            to_name=business.owner_name or business.name,
+            to_addr=account.email,
+            subject=subject,
+            body=body,
+        )
+        try:
+            acc.smtp_for(account).send(msg)
+            return True
+        except (MailAuthError, MailConnectError) as exc:
+            acc.record_failure(session, account, exc)
+    return send_system_email(account.email or business.email, business.owner_name or business.name, subject, body)
+
+
+def send_system_email(to_addr: str, to_name: str, subject: str, body: str) -> bool:
+    """Versand über Locadas selbst, nur wenn SYSTEM_SMTP_HOST gesetzt ist (z. B. „Postfach nicht verbunden“)."""
+    if not settings.system_smtp_host or not to_addr:
+        return False
+    from email.utils import parseaddr
+
+    from ..mail.smtp import SmtpClient
+
+    from_name, from_addr = parseaddr(settings.system_from)
+    msg = build_message(from_name=from_name or "Locadas", from_addr=from_addr or "info@locadas.de", to_name=to_name, to_addr=to_addr, subject=subject, body=body)
     try:
-        acc.smtp_for(account).send(msg)
+        SmtpClient(
+            settings.system_smtp_host, settings.system_smtp_port, settings.system_smtp_port == 465,
+            settings.system_smtp_user or "", settings.system_smtp_password or "",
+        ).send(msg)
         return True
     except (MailAuthError, MailConnectError) as exc:
-        acc.mark_error(session, account, str(exc))
+        log.warning("Systemversand an %s fehlgeschlagen: %s", to_addr, exc)
         return False

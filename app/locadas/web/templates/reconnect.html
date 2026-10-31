@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Postfach neu verbinden · Locadas Nachfasser{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap wrap--narrow" style="max-width:560px">
+<div class="app-head"><div><h1 class="h2">Postfach <em>neu verbinden</em></h1><p class="app-sub">Deine Vorgänge bleiben alle erhalten. Danach fasse ich wieder nach.</p></div></div>
+{% if provider %}
+<div class="form-card">
+<p style="margin:0">Dein Postfach <b>{{ email }}</b> ist über {{ provider.label }} angebunden. Melde dich dort einmal neu an.</p>
+<a class="btn" href="/oauth/{{ provider.key }}/start?avv=1">Mit {{ 'Google' if provider.key == 'google' else 'Microsoft' }} neu verbinden</a>
+</div>
+{% else %}
+<form class="form-card" method="post" action="/verbinden/neu" autocomplete="on" id="reconnect">
+{% if error %}<div class="note err"><b>{{ error }}</b></div>{% endif %}
+<input type="hidden" name="token" value="{{ token }}">
+<div class="field"><label for="email">Postfach</label><input id="email" name="email" type="email" value="{{ email }}" readonly autocomplete="email"></div>
+<div class="field"><label for="password">Neues Passwort des Postfachs</label><input id="password" name="password" type="password" required autocomplete="current-password" autofocus>
+<p class="small muted" style="margin:0">Das Passwort, mit dem du dich auch in deinem Mailprogramm anmeldest. Hast du ein App-Passwort, nimm ein neues.</p></div>
+<button class="btn" type="submit">Neu verbinden <svg class="ic"><use href="#i-arrow"/></svg></button>
+{% if account.last_error %}<p class="small muted" style="margin:0">Meldung des Mailservers: {{ account.last_error[:300] }}</p>{% endif %}
+</form>
+{% endif %}
+</div>
+</section>
+{% endblock %}

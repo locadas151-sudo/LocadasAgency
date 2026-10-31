@@ -239,6 +239,57 @@ def info(b: Business, title: str, text: str, subject: str = "", body: str = "") 
     )
 
 
+def connection_lost(b: Business, account, reminder: bool = False) -> Notification:
+    """Verbindungs-Wächter: Postfach nicht mehr verbunden. Ein Knopf „Neu verbinden“ mit vorausgefüllter Adresse."""
+    from .tokens import reconnect_link, reconnect_token
+
+    link = reconnect_link(account.id)
+    text = f"Dein Postfach {account.email} ist nicht mehr verbunden (Passwort geändert?). Solange fasse ich nicht nach."
+    if reminder and account.error_since:
+        text = f"Dein Postfach {account.email} ist seit {fmt_day(account.error_since)} nicht mehr verbunden (Passwort geändert?). Solange fasse ich nicht nach."
+    body = (
+        f"Hallo {hello(b)},\n\n{text}\n\n"
+        f"Neu verbinden (deine Adresse ist schon eingetragen, du brauchst nur das Passwort):\n{link}\n\n"
+        "Deine Vorgänge bleiben alle erhalten. Danach fasse ich wieder nach, verteilt auf die nächsten Tage.\n\n"
+        f"Fehlermeldung des Mailservers: {(account.last_error or '-')[:300]}\n\nLocadas Nachfasser"
+    )
+    return Notification(
+        business=b, kind="connection", title=("Erinnerung: " if reminder else "") + "Postfach nicht verbunden",
+        text=f"{text}\n\nTipp auf „Neu verbinden“, deine Adresse ist schon eingetragen. Deine Vorgänge bleiben erhalten.",
+        cta=("Neu verbinden", link),
+        email_subject=f"{'Erinnerung: ' if reminder else ''}Dein Postfach ist nicht mehr verbunden", email_body=body,
+        template="connection", template_params=[hello(b), account.email], template_url=reconnect_token(account.id), template_buttons=[],
+    )
+
+
+def connection_back(b: Business, account) -> Notification:
+    text = "Wieder verbunden, alles läuft."
+    more = f"Dein Postfach {account.email} ist wieder verbunden. Was liegen geblieben ist, verteile ich auf die nächsten Tage."
+    return Notification(
+        business=b, kind="connection", title="Postfach wieder verbunden", text=f"{text} {more}",
+        buttons=[button("Alles klar", "ok")],
+        email_subject="Wieder verbunden, alles läuft", email_body=f"Hallo {hello(b)},\n\n{text}\n\n{more}\n\nLocadas Nachfasser",
+        template="event", template_params=[hello(b), f"{text} {more}"],
+    )
+
+
+def summary(b: Business, text: str, subject: str, body: str) -> Notification:
+    """Monatsbilanz (engine/summary.py), eine Nachricht im Monat."""
+    return Notification(
+        business=b, kind="summary", title="Deine Monatsbilanz", text=text,
+        buttons=[button("Alles klar", "ok")], email_subject=subject, email_body=body,
+        template="summary", template_params=[hello(b), text],
+    )
+
+
+def fmt_day(dt) -> str:
+    from zoneinfo import ZoneInfo
+
+    from ..config import settings
+
+    return dt.astimezone(ZoneInfo(settings.timezone)).strftime("%d.%m.")
+
+
 HELP = (
     "Ich bin dein Locadas-Sekretär und melde mich hier, wenn\n"
     "• ich heute bei Kunden nachfasse (du kannst stoppen, wenn jemand angerufen hat)\n"

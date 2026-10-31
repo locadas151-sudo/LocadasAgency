@@ -1,6 +1,6 @@
 # WhatsApp-Sekretär einrichten
 
-Alles, was an den Betrieb geht (Morgen-Vorschau, Kunde hat geöffnet, Kunde hat geantwortet, Mail kam nicht an, Freigaben, WhatsApp-Nachfassen mit einem Tipp, „Wie ist es ausgegangen?“, Login-Link), läuft über einen Kanal (`locadas/notify/`):
+Alles, was an den Betrieb geht (Morgen-Vorschau, Kunde hat geöffnet, Kunde hat geantwortet, Mail kam nicht an, Freigaben, WhatsApp-Nachfassen mit einem Tipp, „Wie ist es ausgegangen?“, Login-Link, Monatsbilanz, Postfach nicht verbunden), läuft über einen Kanal (`locadas/notify/`):
 
 1. **WhatsApp**, wenn der Server eingerichtet ist (`WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`) und der Betrieb seine Nummer hinterlegt und das Häkchen gesetzt hat.
 2. Sonst, oder wenn WhatsApp fehlschlägt: **Mail ins eigene Postfach** wie bisher.
@@ -115,6 +115,27 @@ Beispiel: {{1}} = Thomas, {{2}} = Herr Dieter Lange, {{3}} = Angebot 17/2026 üb
 
 Der dynamische Teil der URL ist das Token der Nachfass-Stufe. `/t/{token}` merkt sich den Tipp und leitet auf `https://wa.me/<Kundennummer>?text=<Text>` weiter. Die Nachricht selbst ist höchstens 400 Zeichen lang und passt damit immer in {{4}}.
 
+### locadas_summary
+Monatsbilanz (`engine/summary.py`), am 1. jedes Monats um 9 Uhr, nur wenn im Vormonat etwas passiert ist.
+
+Text:
+> Hallo {{1}}, hier ist deine Monatsbilanz: {{2}} Gezählt wird nur, was nach mindestens einer Nachfass-Nachricht kam.
+
+Knöpfe: `Alles klar`
+Beispiel: {{1}} = Thomas, {{2}} = Dein Oktober mit Locadas: 14× nachgefasst, 6 Kunden haben geantwortet, 3 Aufträge über 21.400 €, 2 Rechnungen über 3.120 € bezahlt. Offen: 5 Angebote.
+
+### locadas_connection
+Verbindungs-Wächter (`engine/accounts.py`): Das Postfach des Betriebs lässt sich nicht mehr lesen oder nichts mehr senden (Passwort geändert, Zugang widerrufen, Server mehrmals hintereinander nicht erreichbar). Einmal je Störung, solange es gestört bleibt höchstens alle 3 Tage eine Erinnerung. Die Mail-Fassung geht über den Systemversand (`SYSTEM_SMTP_*`), weil das eigene Postfach ja gerade nicht geht.
+
+Text:
+> Hallo {{1}}, dein Postfach {{2}} ist nicht mehr verbunden (Passwort geändert?). Solange fasse ich nicht nach. Tipp auf „Neu verbinden“, deine Adresse ist schon eingetragen und deine Vorgänge bleiben erhalten.
+
+Knopf: **URL-Knopf** (Website, dynamisch): Text `Neu verbinden`, URL `https://app.locadas.de/verbinden?reconnect={{1}}`, Beispielwert `eyJhbGciOiJIUzI1NiJ9.MTI.AbCdEf`
+
+Beispiel: {{1}} = Thomas, {{2}} = info@mueller-haustechnik.de
+
+Der dynamische Teil der URL ist ein signiertes Token (30 Tage gültig) für dieses Postfach. Die Seite fragt nur nach dem neuen Passwort und ersetzt die Zugangsdaten, Dokumente und Verlauf bleiben. Läuft es wieder, kommt „Wieder verbunden, alles läuft.“ (über `locadas_event`).
+
 ### locadas_event
 Text:
 > Hallo {{1}}, kurze Info von deinem Locadas-Sekretär: {{2}} Bei Fragen schreib mir einfach hier.
@@ -140,4 +161,6 @@ Beispiel: {{1}} = Thomas, {{2}} = Die Mail an Familie Schmidt zu Angebot A-2026-
 - Höchstens eine Vorschau pro Tag (gebündelt), „Kunde hat geöffnet“ höchstens einmal pro Dokument.
 - WhatsApp mit einem Tipp: alle an einem Tag fälligen Kunden kommen mit der ersten Runde am Morgen, höchstens 5 „In WhatsApp öffnen“-Nachrichten pro Tag (eine URL je Nachricht erlaubt Meta), der Rest steht im Dashboard unter „Heute per WhatsApp“. Ohne Bestätigung nach 24 Stunden: Link geöffnet heißt gesendet, sonst einmal erinnern, nach 72 Stunden fällt die Stufe weg. Per Mail geht in diesem Kanal nie automatisch etwas an den Kunden.
 - Freigaben und Abschlussfragen kommen einzeln nacheinander: die nächste erst, wenn die vorige beantwortet ist.
+- Monatsbilanz einmal im Monat am 1. um 9 Uhr, Monate ohne Aktivität fallen aus.
+- Postfach nicht verbunden: einmal Bescheid, dann höchstens alle 3 Tage eine Erinnerung, bis es wieder läuft.
 - Alles andere nur, wenn etwas passiert.

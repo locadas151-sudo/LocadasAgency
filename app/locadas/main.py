@@ -23,7 +23,7 @@ from .db import AccountStatus, Business, Customer, DocKind, DocStatus, Document,
 from .engine import accounts as acc
 from .engine import customers as cust
 from .engine import followups as fu_engine
-from .engine import taps
+from .engine import summary, taps
 from .extract import phones as phone_x
 from .engine.scanner import scan_account
 from .engine.scheduler import run_cycle, start_scheduler
@@ -119,6 +119,7 @@ templates.env.globals.update(
     FollowUpStatus=FollowUpStatus, settings=settings, PROVIDERS=PROVIDERS, version=__version__,
     review_question=fu_engine.review_question, channel_for=taps.channel_for, CHANNEL_LABEL=taps.CHANNEL_LABEL,
     phone_pretty=phone_x.pretty, configured_channel=taps.configured_channel,
+    reconnect_link=lambda account_id: wa_tokens.reconnect_link(account_id), euro=lambda v: summary.euro(v),
     oauth_providers=lambda: [p for p in oauth.providers().values() if p.enabled],
 )
 
@@ -230,7 +231,9 @@ def health():
 
 
 @app.get("/verbinden", response_class=HTMLResponse)
-def connect_form(request: Request, business: Business | None = Depends(current_business), email: str = "", avv: str = ""):
+def connect_form(request: Request, business: Business | None = Depends(current_business), email: str = "", avv: str = "", reconnect: str = ""):
+    if reconnect:  # Verbindungs-Wächter: „Neu verbinden“ aus der Nachricht an den Betrieb
+        return _reconnect_page(request, reconnect)
     if business and business.accounts:
         return RedirectResponse("/dashboard", status_code=303)
     provider = detect_provider(email) if email else None
@@ -298,6 +301,50 @@ def connect_submit(
     # Erst-Scan im Hintergrund, damit die Seite sofort da ist
     threading.Thread(target=_background_scan, args=(account.id,), daemon=True).start()
     return set_session(RedirectResponse("/start", status_code=303), business)
+
+
+# --- Neu verbinden (Verbindungs-Wächter) ------------------------------------------------
+
+def _reconnect_account(session: Session, token: str) -> MailAccount | None:
+    account_id = wa_tokens.account_id_from_reconnect(token)
+    account = session.get(MailAccount, account_id) if account_id else None
+    if account is None or account.status == AccountStatus.DISCONNECTED:
+        return None
+    return account
+
+
+def _reconnect_page(request: Request, token: str, error: str | None = None, status_code: int = 200):
+    with new_session() as session:
+        account = _reconnect_account(session, token)
+        if account is None:
+            return render(request, "error.html", title="Link abgelaufen", message="Dieser Link ist abgelaufen oder ungültig. Melde dich an und verbinde dein Postfach in den Einstellungen neu.", status_code=400)
+        provider = oauth.get(account.provider) if account.auth_type == "oauth" else None
+        return render(request, "reconnect.html", token=token, email=account.email, account=account, provider=provider, error=error, status_code=status_code)
+
+
+@app.post("/verbinden/neu", response_class=HTMLResponse)
+def reconnect_submit(request: Request, session: Session = Depends(get_db), token: str = Form(...), password: str = Form("")):
+    """Neues Passwort für dasselbe Postfach: Zugangsdaten werden ersetzt, Dokumente und Verlauf bleiben."""
+    if rate_limited(request, "verbinden"):
+        return _too_many(request)
+    account = _reconnect_account(session, token)
+    if account is None:
+        return _reconnect_page(request, token)
+    if not password:
+        return _reconnect_page(request, token, error="Bitte gib das Passwort deines Postfachs ein.")
+    try:
+        cfg = connect_mailbox(
+            account.email, password, imap_host=account.imap_host, imap_port=account.imap_port,
+            smtp_host=account.smtp_host, smtp_port=account.smtp_port, username=account.username,
+            imap_ssl=account.imap_ssl, smtp_ssl=account.smtp_ssl,
+        )
+    except ConnectFailed as exc:
+        return _reconnect_page(request, token, error=f"{exc.message} {exc.hint}".strip())
+    acc.reconnect(session, account, cfg, password)
+    business = account.business
+    business.last_login_at = utcnow()
+    session.commit()
+    return set_session(RedirectResponse("/dashboard?msg=neu_verbunden", status_code=303), business)
 
 
 def _background_scan(account_id: int) -> None:
@@ -384,7 +431,8 @@ def dashboard(request: Request, business: Business = Depends(require_business), 
     counts["review_clicks"] = sum(1 for c in customers.values() if c.review_clicked_at)
     account = next((a for a in business.accounts if a.status != AccountStatus.DISCONNECTED), None)
     wa_taps = taps.open_taps(session, business.id)
-    return render(request, "dashboard.html", business=business, docs=docs, pending=pending, events=events, counts=counts, open_amount=open_amount, account=account, filter=filter, msg=msg, customers=customers, wa_taps=wa_taps)
+    month = summary.current_month(session, business.id)
+    return render(request, "dashboard.html", business=business, docs=docs, pending=pending, events=events, counts=counts, open_amount=open_amount, account=account, filter=filter, msg=msg, customers=customers, wa_taps=wa_taps, month=month)
 
 
 @app.get("/freigaben", response_class=HTMLResponse)
@@ -1007,6 +1055,14 @@ def oauth_callback(request: Request, key: str, session: Session = Depends(get_db
         smtp_host=p.smtp_host, smtp_port=p.smtp_port, smtp_ssl=p.smtp_ssl, sent_folder=sent,
     )
     business = auth.business_by_email(session, email)
+    same = next((a for a in business.accounts if a.email == email and a.status != AccountStatus.DISCONNECTED), None) if business else None
+    if same is not None and tok.get("refresh_token"):
+        # Dasselbe Postfach noch einmal (z. B. nach „Neu verbinden“): Zugang ersetzen, Dokumente und Verlauf bleiben
+        acc.reconnect(session, same, cfg, tok["refresh_token"], auth_type="oauth")
+        oauth._cache[f"acc:{same.id}"] = (tok["access_token"], __import__("time").time() + int(tok.get("expires_in", 3600)))
+        business.last_login_at = utcnow()
+        session.commit()
+        return set_session(RedirectResponse("/dashboard?msg=neu_verbunden", status_code=303), business)
     if business is None:
         business = Business(name=values["business_name"] or email.split("@")[0], owner_name=values["owner_name"], email=email, phone=values["phone"])
         session.add(business)
@@ -1203,7 +1259,7 @@ def scan_now(business: Business = Depends(require_business), session: Session = 
     try:
         for a in business.accounts:
             if a.status != AccountStatus.DISCONNECTED:
-                scan_account(session, a)
+                scan_account(session, a, force=True)
         fu_engine.process_due(session, business_id=business.id)
         session.commit()
     finally:
