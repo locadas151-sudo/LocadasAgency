@@ -1,0 +1,78 @@
+{# Stufe 2: WhatsApp-Nachfasser über die eigene Nummer (Coexistence). Nur sichtbar, wenn freigeschaltet. #}
+{% set wab = wab_state(business) %}
+{% if wab.enabled %}
+<div class="card" id="whatsapp-nachfasser" style="margin-bottom:16px">
+<h3 class="h3">WhatsApp-Nachfasser (über deine eigene Nummer)</h3>
+{% if msg == 'wab_getrennt' %}<div class="note" style="margin-bottom:12px">Getrennt. Nachfassen läuft wieder nur per Mail.</div>{% endif %}
+{% if msg == 'wab_vorlagen' %}<div class="note" style="margin-bottom:12px">Vorlagen mit Meta abgeglichen.</div>{% endif %}
+{% if not wab.plan_ok %}
+<p class="small" style="margin:0 0 8px">Locadas fasst dann direkt per WhatsApp bei deinen Kunden nach. Die Nachrichten kommen von deiner Nummer und stehen in deiner WhatsApp Business App.</p>
+<p class="small muted" style="margin:0">Das gibt es im Pro-Paket. Schreib uns kurz, dann schalten wir es frei.</p>
+{% elif wab.conn %}
+{% set c = wab.conn %}
+<p style="margin:0 0 6px"><b>{{ c.display_phone or 'Deine Nummer' }}</b>{% if c.verified_name %} · {{ c.verified_name }}{% endif %}
+<span class="pill {% if c.status == 'active' %}good{% elif c.status == 'error' %}bad{% else %}muted{% endif %}">{{ {'active': 'verbunden', 'error': 'Fehler', 'pending': 'wird eingerichtet'}.get(c.status, c.status) }}</span></p>
+{% if c.last_error %}<p class="small" style="color:#991b1b;margin:0 0 6px">{{ c.last_error }}</p>{% endif %}
+<p class="small muted" style="margin:0 0 10px">{% if c.connected_at %}Seit {{ c.connected_at|date }}{% endif %}{% if c.quality_rating %} · Qualität laut Meta: {{ c.quality_rating }}{% endif %}{% if c.messaging_limit_tier %} · Limit: {{ c.messaging_limit_tier }}{% endif %}</p>
+{% if wab.usage %}<p class="small" style="margin:0 0 10px">WhatsApp-Nachrichten diesen Monat: <b>{{ wab.usage.total }}</b> (ca. {{ wab.usage.eur_text }})</p>{% endif %}
+{% if wab.templates %}
+<p class="small" style="margin:0 0 4px"><b>Nachfass-Vorlagen bei Meta</b></p>
+<ul class="small" style="margin:0 0 10px;padding-left:18px">
+{% for t in wab.templates %}<li>{{ {'offer_1': 'Angebot, 1. Nachfassung', 'offer_2': 'Angebot, 2. Nachfassung', 'offer_3': 'Angebot, letzte Nachfassung', 'invoice_1': 'Rechnung, 1. Erinnerung', 'invoice_2': 'Rechnung, 2. Erinnerung', 'invoice_3': 'Rechnung, letzte Erinnerung'}.get(t.key, t.key) }}: {{ WAB_TEMPLATE_STATUS.get(t.status, t.status) }}{% if t.category == 'MARKETING' %} (als Werbung eingestuft){% endif %}</li>{% endfor %}
+</ul>
+{% endif %}
+<div class="btn-row">
+<form method="post" action="/wa-business/vorlagen" class="inline-form"><button class="btn ghost sm" type="submit">Vorlagen abgleichen</button></form>
+<form method="post" action="/wa-business/trennen" class="inline-form"><button class="btn ghost sm" type="submit" onclick="return confirm('WhatsApp-Nachfasser trennen? Deine WhatsApp Business App läuft normal weiter.')">Trennen</button></form>
+</div>
+{% else %}
+<p class="small" style="margin:0 0 8px">Locadas fasst dann direkt per WhatsApp bei deinen Kunden nach, von deiner eigenen Nummer. Die Nachrichten stehen in deiner WhatsApp Business App und Antworten siehst du dort wie gewohnt. Wir stoppen das Nachfassen automatisch, sobald der Kunde antwortet. Und du siehst, wann er die Nachricht gelesen hat.</p>
+<ul class="small" style="margin:0 0 10px;padding-left:18px">
+<li>Du brauchst die <b>WhatsApp Business App</b> (nicht das normale WhatsApp) in einer aktuellen Version, schon eine Weile in Benutzung.</li>
+<li>Dauert etwa <b>5 Minuten</b>: Facebook-Anmeldung, Nummer auswählen, QR-Code in der App scannen.</li>
+<li>Öffne die App danach mindestens alle 14 Tage, sonst trennt Meta die Verbindung.</li>
+<li>Kunden bekommen nur Nachrichten, wenn sie dir schon auf WhatsApp geschrieben haben oder einverstanden sind. „STOP“ meldet sie ab.</li>
+<li>Meta berechnet pro Nachricht ein paar Cent, wir zeigen dir hier die Summe des Monats.</li>
+</ul>
+<div id="wab-msg" class="small" style="margin:0 0 8px"></div>
+<button class="btn sm" type="button" id="wab-start">Mit WhatsApp verbinden</button>
+<script>
+(function(){
+  var cfg = {appId: {{ wab.app_id|tojson }}, configId: {{ wab.config_id|tojson }}, version: {{ wab.graph_version|tojson }},
+             featureType: {{ wab.feature_type|tojson }}, sessionInfoVersion: {{ wab.session_info_version|tojson }}};
+  var code = null, info = null, sent = false, out = document.getElementById('wab-msg'), btn = document.getElementById('wab-start');
+  function say(t, bad){ out.textContent = t; out.style.color = bad ? '#991b1b' : ''; }
+  function submit(){
+    if (sent || !code || !info || !info.waba_id) return;
+    sent = true; say('Verbinde, einen Moment…');
+    fetch('/wa-business/connect', {method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'same-origin',
+      body: JSON.stringify({code: code, waba_id: info.waba_id, phone_number_id: info.phone_number_id || '', event: info.event || ''})})
+      .then(function(r){ return r.json(); })
+      .then(function(d){ say(d.message || '', !d.ok); if (d.ok) { setTimeout(function(){ location.reload(); }, 800); } else { sent = false; code = null; } })
+      .catch(function(){ sent = false; say('Das hat nicht geklappt. Bitte noch einmal versuchen.', true); });
+  }
+  window.addEventListener('message', function(ev){
+    if (typeof ev.origin !== 'string' || !/(^|\.)facebook\.com$/.test(ev.origin.replace(/^https:\/\//, ''))) return;
+    var d; try { d = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data; } catch (e) { return; }
+    if (!d || d.type !== 'WA_EMBEDDED_SIGNUP') return;
+    if (d.event && d.event.indexOf('FINISH') === 0) { info = Object.assign({}, d.data || {}, {event: d.event}); submit(); }
+    else if (d.event === 'CANCEL') { say('Abgebrochen. Du kannst es jederzeit noch einmal starten.', true); }
+    else if (d.event === 'ERROR') { say('Meta meldet einen Fehler: ' + ((d.data && d.data.error_message) || 'unbekannt'), true); }
+  });
+  window.fbAsyncInit = function(){ FB.init({appId: cfg.appId, autoLogAppEvents: true, xfbml: true, version: cfg.version}); };
+  var s = document.createElement('script'); s.async = true; s.defer = true; s.crossOrigin = 'anonymous';
+  s.src = 'https://connect.facebook.net/de_DE/sdk.js'; document.head.appendChild(s);
+  btn.addEventListener('click', function(){
+    if (typeof FB === 'undefined') { say('Facebook lädt noch, bitte gleich noch einmal tippen.', true); return; }
+    say('');
+    FB.login(function(resp){
+      if (resp && resp.authResponse && resp.authResponse.code) { code = resp.authResponse.code; submit(); }
+      else if (!info) { say('Nicht abgeschlossen. Du kannst es jederzeit noch einmal starten.', true); }
+    }, {config_id: cfg.configId, response_type: 'code', override_default_response_type: true,
+        extras: {setup: {}, featureType: cfg.featureType, sessionInfoVersion: cfg.sessionInfoVersion}});
+  });
+})();
+</script>
+{% endif %}
+</div>
+{% endif %}

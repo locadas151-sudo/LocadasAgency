@@ -38,6 +38,8 @@ from .notify import tokens as wa_tokens
 from .notify import whatsapp as wa
 from .notify.phone import normalize_phone
 from .web import auth, ratelimit
+from .channels import web as wab_web
+from .channels import webhook as wab_webhook
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG if settings.debug else logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -134,6 +136,9 @@ def require_business(request: Request, session: Session = Depends(get_db)) -> Bu
     if b is None:
         raise HTTPException(status_code=303, headers={"Location": "/login?next=" + request.url.path})
     return b
+
+
+wab_web.install(app, templates, get_db, require_business)  # Stufe 2: WhatsApp über die eigene Nummer (aus ohne Konfiguration)
 
 
 def render(request: Request, name: str, **ctx) -> HTMLResponse:
@@ -808,13 +813,16 @@ def whatsapp_verify(request: Request):
 @app.post("/webhook/whatsapp")
 async def whatsapp_webhook(request: Request, session: Session = Depends(get_db)):
     body = await request.body()
-    if not wa.valid_signature(body, request.headers.get("x-hub-signature-256")):
+    sig = request.headers.get("x-hub-signature-256")
+    if not (wa.valid_signature(body, sig) or wab_webhook.valid_signature(body, sig)):
         return JSONResponse({"ok": False}, status_code=403)
     try:
         data = json.loads(body.decode("utf-8") or "{}")
     except ValueError:
         return JSONResponse({"ok": False}, status_code=400)
-    handled = wa_inbound.process_webhook(session, data)
+    data, handled = wab_webhook.route(session, data)  # Stufe 2: Nummern der Betriebe (sonst unverändert)
+    if data:
+        handled += wa_inbound.process_webhook(session, data)
     session.commit()
     return {"ok": True, "handled": handled}
 

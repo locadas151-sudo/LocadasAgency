@@ -1,0 +1,5 @@
+{# Stufe 2: Monatszähler im Dashboard. Nur bei verbundener Nummer. #}
+{% set wab = wab_state(business) %}
+{% if wab.conn and wab.usage %}
+<p class="small muted" style="margin:-8px 0 20px">WhatsApp-Nachrichten diesen Monat: <b>{{ wab.usage.total }}</b> (ca. {{ wab.usage.eur_text }}){% if wab.conn.status != 'active' %} · <a href="/einstellungen#whatsapp-nachfasser">WhatsApp prüfen</a>{% endif %}</p>
+{% endif %}
