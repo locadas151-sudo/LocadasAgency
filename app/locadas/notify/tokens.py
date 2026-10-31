@@ -18,6 +18,7 @@ ACTIONS = {
     "gone",     # wie stop, aus einer Freigabe heraus (danach kommt die nächste Freigabe)
     "send",     # Freigabe: senden
     "skip",     # Freigabe: diesmal nicht
+    "settle",   # Vorgang von vor dem Start: schon bezahlt / erledigt
     "won", "lost", "paid", "unpaid",  # Abschlussfrage
     "call",     # Kontaktdaten zum Anrufen schicken
     "done",     # erledigt, nur abhaken

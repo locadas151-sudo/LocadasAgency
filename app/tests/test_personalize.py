@@ -181,7 +181,7 @@ def test_du_link_and_own_signature(fake_claude):
     doc = _doc(customer="Peter Weber", business=b)
     fake_claude.replies = ["Moin Peter,\n\nhast du dir unser Angebot A-2026-118 schon anschauen können? Wenn du Fragen hast, meld dich einfach bei mir."]
     body = pz.generate(doc, 1, DU_PROFILE)
-    assert body is not None and "Hier kannst du das Angebot" in body
+    assert body is not None and "Das Angebot als PDF: http://testserver/a/tok123" in body
     assert body.endswith("LG\nThomas\nMüller Haustechnik")
 
 
@@ -211,17 +211,18 @@ def test_validate_accepts_good_text():
 
 
 def test_invoice_step_rules():
-    inv = _doc(kind=DocKind.INVOICE, document_number="R-2026-301", amount_gross=224.91, due_date=NOW)
-    ctx3 = pz.build_context(inv, 3, SIE_PROFILE)
-    no_mahn = "Guten Tag Herr Weber,\n\nunsere Rechnung R-2026-301 über 224,91 € ist weiter offen. Bitte überweisen Sie den Betrag innerhalb von 7 Tagen."
+    inv = _doc(kind=DocKind.INVOICE, document_number="R-2026-301", amount_gross=224.91, due_date=NOW, customer_email="p.weber@web.de")
+    ctx3 = pz.build_context(inv, 3, SIE_PROFILE, now=NOW)
+    no_mahn = "Guten Tag Herr Weber,\n\nunsere Rechnung R-2026-301 über 224,91 € ist weiter offen."
     assert any("Mahnverfahren" in p for p in pz.validate(no_mahn, ctx3))
     ok3 = no_mahn + " Danach muss ich das Mahnverfahren einleiten."
     assert pz.validate(ok3, ctx3) == []
-    ctx1 = pz.build_context(inv, 1, SIE_PROFILE)
+    ctx1 = pz.build_context(inv, 1, SIE_PROFILE, now=NOW)
     early = "Guten Tag Herr Weber,\n\nunsere Rechnung R-2026-301 ist offen. Sonst folgt das Mahnverfahren."
     assert any("zu früh" in p for p in pz.validate(early, ctx1))
-    # Frist "7" ist erst ab Schritt 2 ein bekannter Fakt
+    # Fristen in Tagen erfindet Claude nicht, die Frist steht als Datum im angehängten Absatz
     assert any("erfundene Zahl" in p for p in pz.validate("Guten Tag Herr Weber,\n\nunsere Rechnung R-2026-301 ist offen. Bitte zahlen Sie in 7 Tagen.", ctx1))
+    assert any("Frist erfunden" in p for p in pz.validate("Guten Tag Herr Weber,\n\nunsere Rechnung R-2026-301 ist offen. Bitte zahlen Sie in sieben Tagen.", ctx1))
 
 
 def test_rejected_twice_falls_back_to_template(fake_claude):
@@ -267,7 +268,7 @@ def test_prepare_uses_personalized_body(fake_claude):
     fake_claude.replies = [GOOD_OFFER_1]
     fu = SimpleNamespace(document=doc, step=1, subject="", body="")
     followups._prepare(fu)
-    assert fu.subject == "AW: Angebot Gastherme"
+    assert fu.subject == "Angebot Gastherme"
     assert fu.body.startswith("Guten Tag Herr Weber,\n\nvor ein paar Tagen")
 
 

@@ -4,6 +4,7 @@ Die Mail-Texte (Fallback) baut die jeweilige Stelle im Engine-Code wie bisher un
 """
 from __future__ import annotations
 
+from .. import fmt
 from ..db import Business, DocKind, Document, FollowUp
 from .core import Notification
 from .tokens import button, payload
@@ -20,11 +21,15 @@ def who(d: Document) -> str:
 
 
 def ref(d: Document) -> str:
-    return f"{d.kind_label} {d.document_number or d.title}".strip()
+    return f"{getattr(d, 'term', '') or d.kind_label} {d.document_number or d.title}".strip()
 
 
-def money(v) -> str:
-    return f" über {v:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".") if v else ""
+def money(v, currency: str | None = "EUR") -> str:
+    return fmt.over(v, currency)
+
+
+def dmoney(d: Document) -> str:
+    return fmt.over(d.amount_gross, getattr(d, "currency", "EUR"))
 
 
 def _pos(i: int, total: int) -> str:
@@ -35,7 +40,7 @@ def preview(b: Business, fus: list[FollowUp], send_time: str, subject: str, body
     docs = [f.document for f in fus]
     lines = [f"Heute ab {send_time} Uhr fasse ich hier nach:", ""]
     for i, (f, d) in enumerate(zip(fus, docs), start=1):
-        lines.append(f"{i}. {who(d)}: {ref(d)}{money(d.amount_gross)} (Mail {f.step})")
+        lines.append(f"{i}. {who(d)}: {ref(d)}{dmoney(d)} (Mail {f.step})")
     lines += ["", "Hat sich schon jemand gemeldet, zum Beispiel am Telefon? Dann tipp auf den Namen."]
     if len(docs) > PREVIEW_BUTTONS_PER_DOC:
         lines.append(f"Für die anderen schreib einfach „Stopp {PREVIEW_BUTTONS_PER_DOC + 1}“ usw.")
@@ -67,11 +72,26 @@ def pick(b: Business, docs: list[Document]) -> Notification:
     )
 
 
+def review(b: Business, fu: FollowUp, index: int, total: int, subject: str, body: str) -> Notification:
+    """Vorgang von vor dem Start: erst fragen. Keine Vorlage (Knöpfe passen nicht), außerhalb des 24h-Fensters per Mail."""
+    from ..engine.followups import review_labels, review_question
+
+    d = fu.document
+    done, go = review_labels(d)
+    return Notification(
+        business=b, kind="approval", title=f"{who(d)}: schon {'bezahlt' if d.kind == DocKind.INVOICE else 'erledigt'}?",
+        text=f"{review_question(d)}\n\nNachgefasst wird nur, wenn du „{go}“ tippst. Den Text siehst du vorher noch.",
+        buttons=[button(done, "settle", fu.id), button(go, "send", fu.id)],
+        email_subject=subject, email_body=body, doc_ids=[d.id], footer=_pos(index, total),
+    )
+
+
 def approval(b: Business, fu: FollowUp, index: int, total: int, subject: str, body: str, approvals_left: int | None) -> Notification:
     d = fu.document
-    hint = "\nÄlter als dein Start bei uns, vielleicht schon erledigt?" if d.needs_review else ""
+    if d.needs_review:
+        return review(b, fu, index, total, subject, body)
     text = (
-        f"{ref(d)}{money(d.amount_gross)}, gesendet {d.sent_at.strftime('%d.%m.')}{hint}\n\n"
+        f"{ref(d)}{dmoney(d)}, gesendet {d.sent_at.strftime('%d.%m.')}\n\n"
         f"Diesen Text würde ich in deinem Namen schicken:\n\n{_quote(fu.body, 650)}"
     )
     footer_parts = [_pos(index, total)]
@@ -81,7 +101,7 @@ def approval(b: Business, fu: FollowUp, index: int, total: int, subject: str, bo
         business=b, kind="approval", title=f"Nachfassen bei {who(d)}?", text=text,
         buttons=[button("Senden", "send", fu.id), button("Diesmal nicht", "skip", fu.id), button("Hat sich gemeldet", "gone", fu.id)],
         email_subject=subject, email_body=body, doc_ids=[d.id], footer=" · ".join(p for p in footer_parts if p),
-        template="approval", template_params=[hello(b), who(d), f"{ref(d)}{money(d.amount_gross)}", fu.body],
+        template="approval", template_params=[hello(b), who(d), f"{ref(d)}{dmoney(d)}", fu.body],
     )
 
 
@@ -89,7 +109,7 @@ def opened(d: Document, subject: str, body: str) -> Notification:
     b = d.business
     return Notification(
         business=b, kind="opened", title=f"{who(d)} hat dein {d.kind_label} geöffnet",
-        text=f"{ref(d)}{money(d.amount_gross)} wurde gerade geöffnet. Guter Moment für einen kurzen Anruf.",
+        text=f"{ref(d)}{dmoney(d)} wurde gerade geöffnet. Guter Moment für einen kurzen Anruf.",
         buttons=[button("Jetzt anrufen", "call", d.id), button("Erledigt", "done", d.id)],
         email_subject=subject, email_body=body, doc_ids=[d.id],
         template="opened", template_params=[hello(b), who(d), ref(d)],
@@ -130,9 +150,9 @@ def outcome(d: Document, index: int, total: int, subject: str, body: str) -> Not
         question, buttons, tpl = "Ist die Rechnung bezahlt?", [button("Ist bezahlt", "paid", d.id), button("Nicht bezahlt", "unpaid", d.id)], "outcome_invoice"
     return Notification(
         business=b, kind="outcome", title="Wie ist es ausgegangen?",
-        text=f"{who(d)}: {ref(d)}{money(d.amount_gross)}\nIch habe alles nachgefasst, per Mail kam keine Antwort. {question}",
+        text=f"{who(d)}: {ref(d)}{dmoney(d)}\nIch habe alles nachgefasst, per Mail kam keine Antwort. {question}",
         buttons=buttons, email_subject=subject, email_body=body, doc_ids=[d.id], footer=_pos(index, total),
-        template=tpl, template_params=[hello(b), who(d), f"{ref(d)}{money(d.amount_gross)}"],
+        template=tpl, template_params=[hello(b), who(d), f"{ref(d)}{dmoney(d)}"],
     )
 
 

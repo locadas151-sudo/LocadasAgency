@@ -111,7 +111,7 @@ def test_texts_anrede_and_subject():
     doc = SimpleNamespace(kind=DocKind.OFFER, customer_name="Herr Weber", document_number="A-1", title="Bad", subject="Angebot Bad", sent_at=NOW, amount_gross=1000.0, business=b, valid_until=None, due_date=None, kind_label="Angebot")
     body = texts.body_for(doc, 1)
     assert body.startswith("Guten Tag Herr Weber,") and "A-1" in body and body.rstrip().endswith("0171")
-    assert texts.subject_for(doc, 1) == "AW: Angebot Bad"
+    assert texts.subject_for(doc, 1) == "Angebot Bad"
     doc.customer_name = "Bau GmbH & Co. KG"
     assert texts.body_for(doc, 2).startswith("Guten Tag,")
     doc.kind = DocKind.INVOICE

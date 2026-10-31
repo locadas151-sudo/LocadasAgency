@@ -215,7 +215,7 @@ def classify_mail(mail: ParsedMail, body_text: str, docs: list[Document], known:
         client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
         resp = client.messages.create(
             model=settings.claude_model,
-            max_tokens=300,
+            max_tokens=1500,  # Denk-Blöcke zählen mit
             messages=[{"role": "user", "content": prompt}],
         )
         raw = "".join(getattr(b, "text", "") for b in resp.content)

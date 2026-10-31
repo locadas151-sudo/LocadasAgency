@@ -108,6 +108,10 @@ class Business(Base):
     paused: Mapped[bool] = mapped_column(Boolean, default=False)
     notify_opened: Mapped[bool] = mapped_column(Boolean, default=True)
     include_view_link: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Dokument in Nachfass-Mails: "link" (mit Öffnen-Info) oder "attachment" (PDF erneut anhängen, kein Tracking)
+    doc_delivery: Mapped[str] = mapped_column(String(20), default="link", server_default="link")
+    # Ton der Zahlungserinnerungen: "freundlich" | "sachlich" | "bestimmt" (Firmenkunden mindestens sachlich)
+    tone: Mapped[str] = mapped_column(String(20), default="freundlich", server_default="freundlich")
     # Personalisierte Nachfass-Texte im Stil des Betriebs
     personalize: Mapped[bool] = mapped_column(Boolean, default=True)
     style_json: Mapped[str] = mapped_column(Text, default="")          # abgeleitetes Stilprofil
@@ -189,6 +193,13 @@ class Document(Base):
     valid_until: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     pdf_path: Mapped[str] = mapped_column(String(500), default="")
     pdf_filename: Mapped[str] = mapped_column(String(300), default="")
+    # Begriff aus dem Dokument selbst („Offerte“, „Kostenvoranschlag“, „Abschlagsrechnung“ …), leer = Angebot/Rechnung
+    doc_term: Mapped[str] = mapped_column(String(40), default="", server_default="")
+    # Bankverbindung aus der Rechnung (IBAN mit Prüfsumme geprüft)
+    iban: Mapped[str] = mapped_column(String(40), default="", server_default="")
+    bic: Mapped[str] = mapped_column(String(20), default="", server_default="")
+    bank_name: Mapped[str] = mapped_column(String(100), default="", server_default="")
+    account_holder: Mapped[str] = mapped_column(String(200), default="", server_default="")
     extraction_source: Mapped[str] = mapped_column(String(20), default="")  # claude | heuristic
     confidence: Mapped[float] = mapped_column(Float, default=0.0)
     # Nachfassen
@@ -205,6 +216,8 @@ class Document(Base):
     outcome_asked_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     # Beim ersten Scan gefundene ältere Dokumente: Nachfassen nur mit Freigabe (könnte schon erledigt sein)
     needs_review: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Kunde hat den Eingang automatisch bestätigt (z. B. Rechnungseingang eines GU)
+    ack_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     # Lese-Tracking über den Link in den Nachfass-Mails
     view_token: Mapped[str] = mapped_column(String(64), default=lambda: __import__("secrets").token_urlsafe(18), index=True)
     first_opened_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
@@ -226,6 +239,11 @@ class Document(Base):
     @property
     def kind_label(self) -> str:
         return "Angebot" if self.kind == DocKind.OFFER else "Rechnung"
+
+    @property
+    def term(self) -> str:
+        """Begriff, den der Kunde aus dem Dokument kennt."""
+        return self.doc_term or self.kind_label
 
     @property
     def reply_intent_label(self) -> str:

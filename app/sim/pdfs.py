@@ -97,7 +97,7 @@ def _lines(d: Doc) -> list[str]:
         L += [f"Total exkl. MWST CHF {ch(d.net)}", f"MWST 8.1 % CHF {ch(d.gross - d.net)}", f"Total inkl. MWST CHF {ch(d.gross)}"]
     L.append("")
     L += d.terms
-    L += ["", d.extra.get("footer", "Bankverbindung: Sparkasse · IBAN DE12 3456 7890 1234 5678 90 · USt-IdNr. DE123456789")]
+    L += ["", d.extra.get("footer", "Bankverbindung: Sparkasse · IBAN DE89 3704 0044 0532 0130 00 · BIC COBADEFFXXX · USt-IdNr. DE123456789")]
     return L
 
 

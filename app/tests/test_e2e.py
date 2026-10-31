@@ -129,7 +129,7 @@ def test_full_flow(fresh_db, imap, smtp):
         assert mail_from == USER
         assert "Müller Haustechnik" in str(email.header.make_header(email.header.decode_header(m["From"])))
         assert m["In-Reply-To"] == offer.message_id
-        assert m["Subject"].startswith("AW:")
+        assert m["Subject"] == "Angebot Gastherme"  # Originalbetreff, kein vorgetäuschtes „AW:“
         assert "A-2026-118" in m.get_content()
         b = s.get(Business, b.id)
         assert b.approvals_done == 1

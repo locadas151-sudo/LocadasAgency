@@ -297,6 +297,16 @@ def run_persona(p: Persona, days: int = 22) -> dict:
             opened = s.scalars(select(Document).where(Document.business_id == bid, Document.first_opened_at.is_not(None))).all()
         check(len(opened) >= len(opened_tokens) > 0 if opened_tokens else True, f"Geöffnet-Status sichtbar ({len(opened)} Dokumente geöffnet, {len(opened_tokens)} Klicks)")
         check(any("geöffnet" in subj for _, subj, _ in notifications) if opened_tokens else True, "Betrieb bekommt Mail „… hat geöffnet“")
+    # Texte an Kunden: ehrlicher Betreff, Frist mit Datum, kein Weichspüler, keine Drohung, richtige Währung
+    chf = any(d["currency"] == "CHF" for d in detected)
+    for day_label, to, subj, body in customer_mails:
+        check(not subj.lower().startswith(("aw:", "re:")), f"{day_label}: Betreff ohne vorgetäuschtes „AW:“ ({subj})")
+        if subj.startswith(("Zahlungserinnerung", "Letzte Zahlungserinnerung")):
+            check(re.search(r"bis \d{2}\.\d{2}\.\d{4}", body) is not None, f"{day_label}: Zahlungserinnerung mit Datum ({subj})")
+        bad = re.search(r"untergegangen|ignorieren|letzte Nachricht|Ja, Nein oder", body)
+        check(bad is None, f"{day_label}: keine Weichspüler-/Drohformel in „{subj}“ ({bad.group(0) if bad else ''})")
+        if chf:
+            check("€" not in body, f"{day_label}: CHF-Betrieb ohne €-Zeichen ({subj})")
     per_day: dict[str, int] = {}
     for day_label, *_ in notifications:
         per_day[day_label] = per_day.get(day_label, 0) + 1

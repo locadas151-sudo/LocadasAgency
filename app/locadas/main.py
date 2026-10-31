@@ -16,7 +16,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from . import __version__
+from . import __version__, fmt
 from .config import settings
 from .db import AccountStatus, Business, DocKind, DocStatus, Document, Event, FollowUp, FollowUpStatus, MailAccount, init_db, log_event, new_session, utcnow
 from .engine import accounts as acc
@@ -58,10 +58,8 @@ def fmt_date(value: datetime | None, with_time: bool = False) -> str:
     return local.strftime("%d.%m.%Y %H:%M" if with_time else "%d.%m.%Y")
 
 
-def fmt_money(value: float | None) -> str:
-    if value is None:
-        return ""
-    return f"{value:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
+def fmt_money(value: float | None, currency: str | None = "EUR") -> str:
+    return fmt.money(value, currency)
 
 
 def rel_date(value: datetime | None) -> str:
@@ -112,6 +110,7 @@ templates.env.filters["rel"] = rel_date
 templates.env.globals.update(
     STATUS_LABEL=STATUS_LABEL, STATUS_CLASS=STATUS_CLASS, FU_LABEL=FU_LABEL, DocStatus=DocStatus, DocKind=DocKind,
     FollowUpStatus=FollowUpStatus, settings=settings, PROVIDERS=PROVIDERS, version=__version__,
+    review_question=fu_engine.review_question,
     oauth_providers=lambda: [p for p in oauth.providers().values() if p.enabled],
 )
 
@@ -342,6 +341,8 @@ async def approvals_submit(request: Request, business: Business = Depends(requir
             fu_engine.close_document(session, f.document, DocStatus.REPLIED, "Vom Betrieb als erledigt markiert")
         elif value == "skip":
             fu_engine.skip(session, f)
+        elif value == "settle":
+            fu_engine.settle(session, f.document)
         session.commit()
     return RedirectResponse("/dashboard", status_code=303)
 
@@ -434,6 +435,7 @@ def customer_view(request: Request, token: str, session: Session = Depends(get_d
         doc.last_opened_at = now
         if first:
             doc.first_opened_at = now
+            fu_engine.on_first_open(session, doc, now)  # Kunde schaut rein: ihm Zeit lassen
             log_event(session, doc.business_id, "opened", f"{doc.customer_name or doc.customer_email} hat {doc.kind_label} {doc.document_number or doc.title} geöffnet.", doc.id)
         session.commit()
         if first and doc.business.notify_opened:
@@ -477,7 +479,15 @@ def approval_link(request: Request, token: str, action: str, session: Session = 
     if fu is None:
         raise HTTPException(404)
     doc = fu.document
-    if action == "send":
+    if action == "send" and doc.needs_review:
+        if fu_engine.release_review(session, fu):
+            title, text = "Wird nachgefasst", f"Ich fasse bei {doc.customer_name or doc.customer_email} nach. Den Text bekommst du vorher noch zu sehen."
+        else:
+            title, text = "Nicht mehr offen", "Diese Frage ist schon beantwortet."
+    elif action == "done":
+        label = fu_engine.settle(session, doc)
+        title, text = ("Notiert", f"{doc.customer_name or doc.customer_email}: {label}. Ich fasse dort nicht nach.") if label else ("Schon erledigt", f"Bei {doc.customer_name or doc.customer_email} wird nicht mehr nachgefasst.")
+    elif action == "send":
         if fu.status == FollowUpStatus.SENT:
             title, text = "Schon gesendet", "Diese Nachfass-Mail ist bereits raus."
         elif fu_engine.approve(session, fu):
@@ -619,7 +629,7 @@ def settings_save(
     business: Business = Depends(require_business), session: Session = Depends(get_db),
     name: str = Form(""), owner_name: str = Form(""), phone: str = Form(""), signature: str = Form(""),
     followup_offers: str = Form(""), followup_invoices: str = Form(""), paused: str = Form(""), auto_mode: str = Form(""), notify_opened: str = Form(""),
-    include_view_link: str = Form(""), personalize: str = Form(""),
+    include_view_link: str = Form(""), personalize: str = Form(""), doc_delivery: str | None = Form(None), tone: str | None = Form(None),
     whatsapp_number: str | None = Form(None), whatsapp_opt_in: str = Form(""),
 ):
     b = session.get(Business, business.id)
@@ -632,7 +642,14 @@ def settings_save(
     b.paused = bool(paused)
     b.auto_mode = bool(auto_mode)
     b.notify_opened = bool(notify_opened)
-    b.include_view_link = bool(include_view_link)
+    if doc_delivery is not None:  # Auswahl im Formular: Link / PDF anhängen / nichts
+        b.include_view_link = doc_delivery in fu_engine.texts.DELIVERY
+        if doc_delivery in fu_engine.texts.DELIVERY:
+            b.doc_delivery = doc_delivery
+    else:
+        b.include_view_link = bool(include_view_link)
+    if tone in fu_engine.texts.TONES:
+        b.tone = tone
     b.personalize = bool(personalize)
     for d in b.documents:
         for f in d.followups:

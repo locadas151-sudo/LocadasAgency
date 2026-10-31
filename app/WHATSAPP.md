@@ -101,6 +101,7 @@ Beispiel: {{1}} = Thomas, {{2}} = Die Mail an Familie Schmidt zu Angebot A-2026-
   - „Hat angerufen“ / „Stopp: Name“ / „Hat sich gemeldet“: nicht mehr nachfassen
   - „Passt“, „Alles klar“, „Erledigt“: nur bestätigen
   - „Senden“ / „Diesmal nicht“: Freigabe, danach kommt die nächste offene Freigabe
+  - „Bezahlt“ / „Erledigt“ / „Bitte nachfassen“: Frage zu einem Vorgang von vor dem Start. Erst „Bitte nachfassen“ plant eine Nachfass-Mail (normaler Ablauf mit Vorschau). Diese Frage hat keine Vorlage: außerhalb des 24h-Fensters kommt sie per Mail.
   - „Auftrag bekommen“ / „Nicht bekommen“ / „Ist bezahlt“ / „Nicht bezahlt“: Ergebnis notieren, danach die nächste offene Frage
   - „Jetzt anrufen“: Mailadresse und Link aufs PDF (Telefonnummer des Kunden kennen wir nicht, sie steht im Dokument)
   - „Weiter nachfassen“: Vorgang wieder öffnen

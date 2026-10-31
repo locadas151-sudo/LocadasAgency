@@ -33,7 +33,7 @@
 <li class="row">
 <div><a class="t" href="/dokument/{{ d.id }}">{{ d.kind_label }} {{ d.document_number }}{% if d.title %} · {{ d.title }}{% endif %}</a>
 <div class="meta"><span>{{ d.customer_name or d.customer_email }}</span><span>gesendet {{ d.sent_at|date }}</span>{% if d.kind == DocKind.INVOICE and d.due_date %}<span>fällig {{ d.due_date|date }}</span>{% endif %}</div></div>
-<div class="right"><span class="amt">{{ d.amount_gross|money }}</span><div class="next">{% if d.next_followup_at %}nachfassen {{ d.next_followup_at|rel }}{% endif %}</div></div>
+<div class="right"><span class="amt">{{ d.amount_gross|money(d.currency) }}</span><div class="next">{% if d.next_followup_at %}nachfassen {{ d.next_followup_at|rel }}{% endif %}</div></div>
 </li>
 {% endfor %}
 </ul>

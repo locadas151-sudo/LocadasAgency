@@ -24,7 +24,19 @@
 <label class="toggle"><input type="checkbox" name="followup_offers" value="1" {% if business.followup_offers %}checked{% endif %}><div><b>Angebote nachfassen</b><span>{{ settings.offer_followup_days|join(', ') }} Tage nach Versand, bis der Kunde antwortet.</span></div></label>
 <label class="toggle"><input type="checkbox" name="followup_invoices" value="1" {% if business.followup_invoices %}checked{% endif %}><div><b>Rechnungen nachfassen</b><span>{{ settings.invoice_followup_days|join(', ') }} Tage nach Fälligkeit. Freundlich, dann deutlicher.</span></div></label>
 <label class="toggle"><input type="checkbox" name="auto_mode" value="1" {% if business.auto_mode or business.approvals_done >= settings.approvals_before_auto %}checked{% endif %}><div><b>Automatisch senden, ohne Freigabe</b><span>Aus = du bekommst jede Nachfass-Mail vorher per Mail zur Freigabe. {{ business.approvals_done }} von {{ settings.approvals_before_auto }} Freigaben erteilt.</span></div></label>
-<label class="toggle"><input type="checkbox" name="include_view_link" value="1" {% if business.include_view_link %}checked{% endif %}><div><b>Link zum Dokument in Nachfass-Mails</b><span>Der Kunde kann Angebot oder Rechnung per Link öffnen. Du siehst, ob und wann er es geöffnet hat.</span></div></label>
+<div class="fields2">
+<div class="field"><label>Dokument in Nachfass-Mails</label><select name="doc_delivery">
+<option value="link" {% if business.include_view_link and business.doc_delivery != 'attachment' %}selected{% endif %}>Link zum PDF (du siehst, wann geöffnet)</option>
+<option value="attachment" {% if business.include_view_link and business.doc_delivery == 'attachment' %}selected{% endif %}>PDF noch einmal anhängen</option>
+<option value="none" {% if not business.include_view_link %}selected{% endif %}>Nichts beifügen</option>
+</select></div>
+<div class="field"><label>Ton bei Zahlungserinnerungen</label><select name="tone">
+<option value="freundlich" {% if business.tone == 'freundlich' %}selected{% endif %}>Freundlich</option>
+<option value="sachlich" {% if business.tone == 'sachlich' %}selected{% endif %}>Sachlich</option>
+<option value="bestimmt" {% if business.tone == 'bestimmt' %}selected{% endif %}>Bestimmt (Verzug, Mahnkosten)</option>
+</select></div>
+</div>
+<p class="small muted" style="margin:-6px 0 14px">Firmenkunden bekommen immer mindestens sachliche Erinnerungen. Jede Erinnerung nennt ein Zahlungsdatum und deine Bankverbindung aus der Rechnung.</p>
 <label class="toggle"><input type="checkbox" name="personalize" value="1" {% if business.personalize %}checked{% endif %}><div><b>Nachfass-Mails in deinem Stil schreiben</b><span>Wir lernen Anrede, Ton und Grußformel aus deinen gesendeten Mails. Jeder Text wird geprüft, sonst gilt die feste Vorlage.</span></div></label>
 <label class="toggle"><input type="checkbox" name="notify_opened" value="1" {% if business.notify_opened %}checked{% endif %}><div><b>Bescheid geben, wenn ein Kunde öffnet oder antwortet</b><span>Kurze Nachricht per WhatsApp oder Mail, wenn der Kunde den Link zum ersten Mal öffnet oder antwortet.</span></div></label>
 <label class="toggle"><input type="checkbox" name="paused" value="1" {% if business.paused %}checked{% endif %}><div><b>Alles pausieren</b><span>Urlaub oder Baustelle: Wir lesen weiter mit, schicken aber nichts.</span></div></label>

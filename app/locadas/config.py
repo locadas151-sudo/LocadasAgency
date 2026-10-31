@@ -51,6 +51,8 @@ def _templates(raw: str) -> dict[str, str]:
 class Settings:
     # Basis
     base_url: str = field(default_factory=lambda: _env("BASE_URL", "http://localhost:8000").rstrip("/"))
+    # Domain für den Dokument-Link in Kunden-Mails (später z. B. eine neutrale Domain), Standard wie BASE_URL
+    view_base_url: str = field(default_factory=lambda: (_env("VIEW_BASE_URL") or _env("BASE_URL", "http://localhost:8000")).rstrip("/"))
     secret_key: str = field(default_factory=lambda: _env("SECRET_KEY", "dev-secret-change-me"))
     encryption_key: str | None = field(default_factory=lambda: _env("ENCRYPTION_KEY"))
     data_dir: Path = field(default_factory=lambda: Path(_env("DATA_DIR", "./data")))

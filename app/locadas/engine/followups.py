@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .. import fmt
 from ..config import settings
 from ..db import Business, DocKind, DocStatus, Document, FollowUp, FollowUpStatus, log_event, utcnow
 from ..mail.imap import MailAuthError, MailConnectError
@@ -106,13 +107,28 @@ def reopen_document(session: Session, doc: Document) -> None:
 
 # --- Versand ------------------------------------------------------------------
 
-def _prepare(fu: FollowUp) -> None:
+def _prepare(fu: FollowUp, now: datetime | None = None) -> None:
     doc = fu.document
     if not fu.subject:
         fu.subject = texts.subject_for(doc, fu.step)
     if not fu.body:
         # Personalisiert (Claude + Prüfung), wenn Schlüssel da und im Betrieb an; sonst bzw. bei Fehler die Vorlage
-        fu.body = personalize.body_for(doc, fu.step)
+        fu.body = personalize.body_for(doc, fu.step, now)
+
+
+def _attach_pdf(msg, doc: Document) -> None:
+    """Einstellung „PDF anhängen“: das Original noch einmal mitschicken statt Link."""
+    from pathlib import Path
+
+    if texts.delivery(doc) != "attachment":
+        return
+    path = Path(doc.pdf_path)
+    if not path.exists():
+        return
+    try:
+        msg.add_attachment(path.read_bytes(), maintype="application", subtype="pdf", filename=doc.pdf_filename or path.name.split("_", 1)[-1])
+    except OSError as exc:
+        log.info("PDF für Dokument %s nicht anhängbar: %s", doc.id, exc)
 
 
 def send_followup(session: Session, fu: FollowUp) -> bool:
@@ -134,6 +150,7 @@ def send_followup(session: Session, fu: FollowUp) -> bool:
         in_reply_to=doc.message_id,
         references=[doc.message_id] if doc.message_id else None,
     )
+    _attach_pdf(msg, doc)
     try:
         fu.message_id = acc.smtp_for(account).send(msg)
     except (MailAuthError, MailConnectError) as exc:
@@ -168,8 +185,41 @@ def _copy_to_sent(account, msg) -> None:
         log.info("Kopie in Gesendet fehlgeschlagen (%s): %s", account.email, exc)
 
 
+def review_question(doc: Document) -> str:
+    """Vor dem Start verschickt: erst fragen, nicht gleich eine Mail vorbereiten."""
+    nr = doc.document_number or doc.title or doc.subject
+    what = f"{texts.dies(doc, 'acc')} {texts.term(doc)} {nr}{_money(doc.amount_gross, doc.currency)}"
+    when = doc.sent_at.astimezone(ZoneInfo(settings.timezone)).strftime("%d.%m.%Y")
+    who = f" an {doc.customer_name or doc.customer_email}" if (doc.customer_name or doc.customer_email) else ""
+    q = "Ist sie schon bezahlt?" if doc.kind == DocKind.INVOICE else f"Ist {texts.es(doc)} schon erledigt?"
+    return f"{what} hast du am {when}{who} verschickt, also vor deinem Start bei uns. {q}"
+
+
+def review_labels(doc: Document) -> tuple[str, str]:
+    return ("Bezahlt" if doc.kind == DocKind.INVOICE else "Erledigt", "Bitte nachfassen")
+
+
+def _review_mail(business: Business, fu: FollowUp) -> tuple[str, str]:
+    doc = fu.document
+    base = settings.base_url
+    done, go = review_labels(doc)
+    q = review_question(doc)
+    body = (
+        f"Hallo {business.owner_name or business.name},\n\n"
+        f"{q[0].lower() + q[1:]}\n\n"
+        f"{done}, nicht nachfassen: {base}/f/{fu.approval_token}/done\n"
+        f"{go}:{' ' * max(1, len(done) + 18 - len(go))}{base}/f/{fu.approval_token}/send\n\n"
+        f"Erst wenn du „{go}“ klickst, plane ich eine Nachfass-Mail. Du siehst sie vorher noch.\n\n"
+        f"Locadas Nachfasser"
+    )
+    subject = f"Schon {'bezahlt' if doc.kind == DocKind.INVOICE else 'erledigt'}? {doc.customer_name or doc.customer_email} ({texts.term(doc)} {doc.document_number or doc.title})".strip()
+    return subject, body
+
+
 def _approval_mail(business: Business, fu: FollowUp) -> tuple[str, str]:
     doc = fu.document
+    if doc.needs_review:
+        return _review_mail(business, fu)
     base = settings.base_url
     ok = f"{base}/f/{fu.approval_token}/send"
     skip = f"{base}/f/{fu.approval_token}/skip"
@@ -206,49 +256,78 @@ def _needs_approval(business: Business, doc: Document) -> bool:
 
 
 def request_approvals(session: Session, business: Business, fus: list[FollowUp]) -> None:
-    """Eine einzige Mail mit allen anstehenden Freigaben, statt eine pro Kunde."""
+    """Eine einzige Mail mit allen anstehenden Freigaben, statt eine pro Kunde.
+
+    Dokumente von vor dem Start (needs_review) kommen zuerst als Frage („Schon bezahlt?“), ohne vorbereitete Mail.
+    """
     if not fus:
         return
+    fus = sorted(fus, key=lambda f: not f.document.needs_review)  # Fragen zuerst
     for fu in fus:
-        _prepare(fu)
+        if not fu.document.needs_review:
+            _prepare(fu)
         fu.status = FollowUpStatus.AWAITING_APPROVAL
     base = settings.base_url
+    reviews = [f for f in fus if f.document.needs_review]
+    normal = [f for f in fus if not f.document.needs_review]
     if len(fus) == 1:
         subject, body = _approval_mail(business, fus[0])
     else:
-        lines = [
-            f"Hallo {business.owner_name or business.name},",
-            "",
-            f"bei {len(fus)} Kunden würde ich jetzt nachfassen. Ein Klick pro Kunde reicht.",
-            f"Alle Texte in Ruhe ansehen und freigeben: {base}/freigaben",
-            "",
-        ]
-        for fu in fus:
-            d = fu.document
-            hint = " (älter als dein Start bei uns, schon erledigt?)" if d.needs_review else ""
+        lines = [f"Hallo {business.owner_name or business.name},", ""]
+        if reviews:
             lines += [
-                f"• {d.customer_name or d.customer_email}: {d.kind_label} {d.document_number or d.title}{_money(d.amount_gross)}, gesendet {d.sent_at.strftime('%d.%m.')}{hint}",
-                f"  Senden: {base}/f/{fu.approval_token}/send",
-                f"  Erledigt, nicht nachfassen: {base}/f/{fu.approval_token}/stop",
+                f"{'ein paar kurze Fragen' if len(reviews) > 1 else 'eine kurze Frage'} vorab. Ich fasse dort nur nach, wenn du es sagst:",
                 "",
             ]
-        if business.needs_approval:
-            lines.append(f"Noch {max(0, settings.approvals_before_auto - business.approvals_done)} Freigaben, dann läuft es automatisch.")
+            for fu in reviews:
+                d = fu.document
+                done, go = review_labels(d)
+                lines += [
+                    f"• {review_question(d)}",
+                    f"  {done}, nicht nachfassen: {base}/f/{fu.approval_token}/done",
+                    f"  {go}: {base}/f/{fu.approval_token}/send",
+                    "",
+                ]
+        if normal:
+            lines += [
+                (f"Außerdem würde ich bei {f'{len(normal)} Kunden' if len(normal) > 1 else 'einem Kunden'} jetzt nachfassen. Ein Klick pro Kunde reicht."
+                 if reviews else f"bei {len(normal)} Kunden würde ich jetzt nachfassen. Ein Klick pro Kunde reicht."),
+                f"Alle Texte in Ruhe ansehen und freigeben: {base}/freigaben",
+                "",
+            ]
+            for fu in normal:
+                d = fu.document
+                lines += [
+                    f"• {d.customer_name or d.customer_email}: {texts.term(d)} {d.document_number or d.title}{_money(d.amount_gross, d.currency)}, gesendet {d.sent_at.strftime('%d.%m.')}",
+                    f"  Senden: {base}/f/{fu.approval_token}/send",
+                    f"  Erledigt, nicht nachfassen: {base}/f/{fu.approval_token}/stop",
+                    "",
+                ]
+            if business.needs_approval:
+                lines.append(f"Noch {max(0, settings.approvals_before_auto - business.approvals_done)} Freigaben, dann läuft es automatisch.")
         lines += ["", "Locadas Nachfasser"]
-        subject = f"{len(fus)} Kunden zum Nachfassen, bitte kurz freigeben"
+        if normal and reviews:
+            subject = f"{len(reviews)} {'Fragen' if len(reviews) > 1 else 'Frage'} und {len(normal)} {'Freigaben' if len(normal) > 1 else 'Freigabe'} zum Nachfassen"
+        elif reviews:
+            subject = f"{len(reviews)} ältere Vorgänge: schon erledigt?"
+        else:
+            subject = f"{len(fus)} Kunden zum Nachfassen, bitte kurz freigeben"
         body = "\n".join(lines)
     if notify(session, approval_notification(business, fus, subject, body)):
         for fu in fus:
             d = fu.document
-            log_event(session, d.business_id, "approval", f"Freigabe angefragt: Nachfass-Mail {fu.step} für {d.kind_label} {d.document_number or d.title}.", d.id)
+            if d.needs_review:
+                log_event(session, d.business_id, "approval", f"Nachgefragt, ob {d.kind_label} {d.document_number or d.title} schon erledigt ist.", d.id)
+            else:
+                log_event(session, d.business_id, "approval", f"Freigabe angefragt: Nachfass-Mail {fu.step} für {d.kind_label} {d.document_number or d.title}.", d.id)
 
 
 def request_approval(session: Session, fu: FollowUp) -> None:
     request_approvals(session, fu.document.business, [fu])
 
 
-def _money(v) -> str:
-    return f" über {v:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".") if v else ""
+def _money(v, currency: str | None = "EUR") -> str:
+    return fmt.over(v, currency)
 
 
 def _sent_today(session: Session, business_id: int, now: datetime) -> int:
@@ -330,7 +409,7 @@ def send_preview(session: Session, business: Business, fus: list[FollowUp], now:
     for fu in fus:
         d = fu.document
         lines += [
-            f"• {d.customer_name or d.customer_email}: {d.kind_label} {d.document_number or d.title}{_money(d.amount_gross)} (Nachfass-Mail {fu.step} von 3)",
+            f"• {d.customer_name or d.customer_email}: {texts.term(d)} {d.document_number or d.title}{_money(d.amount_gross, d.currency)} (Nachfass-Mail {fu.step} von 3)",
             f"  Stopp, hat sich gemeldet: {base}/f/{fu.approval_token}/stop",
             "",
         ]
@@ -353,15 +432,61 @@ def find_by_token(session: Session, token: str) -> FollowUp | None:
     return session.scalar(select(FollowUp).where(FollowUp.approval_token == token))
 
 
+def release_review(session: Session, fu: FollowUp, now: datetime | None = None) -> bool:
+    """„Bitte nachfassen“ bei einem Vorgang von vor dem Start: ab jetzt normaler Ablauf (Freigabe bzw. Morgen-Vorschau)."""
+    if fu.status != FollowUpStatus.AWAITING_APPROVAL or not fu.document.needs_review:
+        return False
+    now = now or utcnow()
+    doc = fu.document
+    doc.needs_review = False
+    fu.status = FollowUpStatus.SCHEDULED
+    fu.subject, fu.body = "", ""
+    fu.due_at = min(fu.due_at, now)
+    fu.announced_at = None
+    remaining = [f.due_at for f in doc.followups if f.status == FollowUpStatus.SCHEDULED]
+    doc.next_followup_at = min(remaining) if remaining else None
+    log_event(session, doc.business_id, "review", f"{doc.kind_label} {doc.document_number or doc.title}: Du willst nachfassen lassen. Die Mail kommt im normalen Ablauf.", doc.id)
+    return True
+
+
+def settle(session: Session, doc: Document) -> str:
+    """„Bezahlt“ / „Erledigt“ auf die Frage zu einem Vorgang von vor dem Start."""
+    if doc.status != DocStatus.OPEN:
+        return ""
+    if doc.kind == DocKind.INVOICE:
+        close_document(session, doc, DocStatus.PAID, "Vom Betrieb als bezahlt markiert")
+        return "Bezahlt"
+    close_document(session, doc, DocStatus.DONE, "Vom Betrieb als erledigt markiert")
+    return "Erledigt"
+
+
+OPEN_PUSH_DAYS = 3
+
+
+def on_first_open(session: Session, doc: Document, now: datetime | None = None) -> None:
+    """Kunde hat das Angebot gerade zum ersten Mal geöffnet: ihm Zeit lassen, geplante Schritte rücken 3 Tage nach hinten."""
+    if doc.kind != DocKind.OFFER or doc.status != DocStatus.OPEN:
+        return
+    now = now or utcnow()
+    pending = [f for f in doc.followups if f.status == FollowUpStatus.SCHEDULED]
+    if not pending:
+        return
+    for f in pending:
+        f.due_at = max(f.due_at, now) + timedelta(days=OPEN_PUSH_DAYS)
+        f.announced_at = None
+        f.subject, f.body = "", ""
+    doc.next_followup_at = min(f.due_at for f in pending)
+
+
 def approve(session: Session, fu: FollowUp) -> bool:
     if fu.status != FollowUpStatus.AWAITING_APPROVAL:
         return False
+    if fu.document.needs_review:
+        # Bei Vorgängen von vor dem Start heißt „ja“: bitte nachfassen, im normalen Ablauf
+        return release_review(session, fu)
     ok = send_followup(session, fu)
     if ok:
         b = fu.document.business
-        if fu.document.needs_review:
-            fu.document.needs_review = False
-            return ok
         b.approvals_done += 1
         if b.approvals_done >= settings.approvals_before_auto:
             b.auto_mode = True
@@ -408,7 +533,7 @@ def outcome_mail(business: Business, docs: list[Document]) -> tuple[str, str]:
     base = settings.base_url
     lines = [f"Hallo {business.owner_name or business.name},", "", "bei diesen Vorgängen habe ich alles nachgefasst und per Mail kam keine Antwort. Wie ist es ausgegangen? Ein Klick reicht.", ""]
     for d in docs:
-        head = f"• {d.customer_name or d.customer_email}: {d.kind_label} {d.document_number or d.title}{_money(d.amount_gross)}"
+        head = f"• {d.customer_name or d.customer_email}: {texts.term(d)} {d.document_number or d.title}{_money(d.amount_gross, d.currency)}"
         if d.kind == DocKind.OFFER:
             lines += [head, f"  Auftrag bekommen: {base}/o/{d.outcome_token}/won", f"  Nicht bekommen:   {base}/o/{d.outcome_token}/lost", ""]
         else:

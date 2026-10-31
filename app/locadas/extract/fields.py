@@ -9,6 +9,7 @@ import json
 import logging
 import re
 from dataclasses import asdict, dataclass
+from types import SimpleNamespace
 from datetime import date, datetime, timedelta, timezone
 
 from ..config import settings
@@ -31,6 +32,11 @@ class Extracted:
     valid_until: str | None = None     # ISO, Angebote
     confidence: float = 0.0
     source: str = "heuristic"
+    doc_term: str = ""                 # Begriff aus dem Dokument: Angebot, Offerte, Kostenvoranschlag, Rechnung …
+    iban: str = ""                     # nur mit gültiger Prüfsumme, in Vierergruppen
+    bic: str = ""
+    bank_name: str = ""
+    account_holder: str = ""
 
     def to_json(self) -> str:
         return json.dumps(asdict(self), ensure_ascii=False)
@@ -46,7 +52,9 @@ Zieh die Felder heraus und antworte NUR mit einem JSON-Objekt, ohne Erklärung, 
   "document_number": "Angebots- bzw. Rechnungsnummer, sonst leer",
   "title": "kurze Bezeichnung der Leistung (max. 8 Wörter), z. B. 'Badsanierung EG' oder 'Austausch Gastherme'",
   "amount_gross": Bruttobetrag als Zahl ohne Tausenderpunkte, Punkt als Dezimaltrenner, oder null,
-  "currency": "EUR",
+  "currency": "EUR" oder "CHF" (Währung des Endbetrags, wie im Dokument),
+  "doc_term": "der Begriff, mit dem das Dokument sich selbst überschreibt, genau eines von: Angebot, Offerte, Kostenvoranschlag, Rechnung, Abschlagsrechnung, Schlussrechnung, Teilrechnung",
+  "account_holder": "Kontoinhaber laut Bankverbindung, falls ausdrücklich genannt, sonst leer",
   "document_date": "YYYY-MM-DD oder null",
   "due_date": "Zahlungsziel YYYY-MM-DD bei Rechnungen (aus 'zahlbar bis', 'Zahlungsziel', 'innerhalb von X Tagen' berechnet), sonst null",
   "valid_until": "Gültigkeit YYYY-MM-DD bei Angeboten, sonst null",
@@ -82,7 +90,7 @@ def _claude_extract(kind_hint: DocKind | None, subject: str, recipients: str, ma
     try:
         resp = client.messages.create(
             model=settings.claude_model,
-            max_tokens=600,
+            max_tokens=2000,  # Platz für Denk-Blöcke, sonst kommt kein Text
             messages=[{"role": "user", "content": prompt}],
         )
     except Exception as exc:
@@ -122,6 +130,8 @@ def parse_claude_json(raw: str, kind_hint: DocKind | None) -> Extracted | None:
         valid_until=_iso(data.get("valid_until")),
         confidence=float(data.get("confidence") or 0.5),
         source="claude",
+        doc_term=_canon_term(str(data.get("doc_term") or ""), kind),
+        account_holder=re.sub(r"\s+", " ", str(data.get("account_holder") or "")).strip()[:200],
     )
 
 
@@ -134,6 +144,90 @@ def _iso(value) -> str | None:
         return None
 
 
+# --- Begriff und Bankverbindung ----------------------------------------------------
+
+OFFER_TERMS = ("Kostenvoranschlag", "Offerte", "Angebot")
+INVOICE_TERMS = ("Abschlagsrechnung", "Schlussrechnung", "Teilrechnung", "Rechnung")
+
+
+def _terms_for(kind) -> tuple[str, ...]:
+    k = kind.value if isinstance(kind, DocKind) else str(kind)
+    return OFFER_TERMS if k == "offer" else INVOICE_TERMS
+
+
+def _canon_term(raw: str, kind) -> str:
+    raw = (raw or "").strip().lower()
+    return next((t for t in _terms_for(kind) if t.lower() == raw), "")
+
+
+def detect_doc_term(kind, subject: str = "", filename: str = "", text: str = "") -> str:
+    """Wie nennt das Dokument sich selbst? Überschrift im PDF zuerst, dann Betreff, dann Dateiname. Leer, wenn unklar."""
+    terms = _terms_for(kind)
+    lines = [ln for ln in (text or "").splitlines() if ln.strip()][:40]
+    for ln in lines:
+        for t in terms:
+            if re.match(r"\s*(?:ihr|ihre|unser|unsere)?\s*" + t + r"\b", ln, re.I):
+                return t
+    for src in (subject or "", re.sub(r"[_\-.]+", " ", filename or "")):
+        for t in terms:
+            if re.search(r"\b" + t + r"\b", src, re.I):
+                return t
+    return ""
+
+
+IBAN_LENGTH = {"DE": 22, "AT": 20, "CH": 21, "LI": 21}
+_IBAN_CAND = re.compile(r"\b(DE|AT|CH|LI)\s?(\d{2})((?:[ \u00a0]?[0-9A-Z]){10,34})")
+_BIC_RE = re.compile(r"\b(?:BIC|SWIFT)(?:[/ -]?(?:SWIFT|Code))?\s*:?\s*([A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?)\b")
+_BANK_RE = re.compile(r"(?im)\b(?:bankverbindung|bank|kreditinstitut|geldinstitut)\s*:\s*([^\n·|,;:]{3,60}?)\s*(?=$|[·|,;]|\bIBAN\b|\bBIC\b)")
+_HOLDER_RE = re.compile(r"(?im)\b(?:kontoinhaber(?:in)?|zahlungsempfänger|empfänger)\s*:\s*([^\n·|;:]{3,80}?)\s*(?=$|[·|;]|\bIBAN\b|\bBIC\b)")
+
+
+def iban_valid(iban: str) -> bool:
+    iban = re.sub(r"\s", "", iban or "").upper()
+    if len(iban) != IBAN_LENGTH.get(iban[:2], -1) or not iban.isalnum():
+        return False
+    if iban[:2] in ("DE", "AT") and not iban[2:].isdigit():
+        return False
+    rearranged = iban[4:] + iban[:4]
+    try:
+        return int("".join(str(int(c, 36)) for c in rearranged)) % 97 == 1
+    except ValueError:
+        return False
+
+
+def format_iban(iban: str) -> str:
+    compact = re.sub(r"\s", "", iban or "").upper()
+    return " ".join(compact[i:i + 4] for i in range(0, len(compact), 4))
+
+
+def find_iban(text: str) -> str:
+    """Erste IBAN (DE/AT/CH/LI) mit gültiger Prüfsumme, in Vierergruppen; sonst leer."""
+    for m in _IBAN_CAND.finditer(text or ""):
+        compact = re.sub(r"[ \u00a0]", "", m.group(0))
+        cand = compact[: IBAN_LENGTH[m.group(1)]]
+        if iban_valid(cand):
+            return format_iban(cand)
+    return ""
+
+
+def bank_details(text: str) -> dict[str, str]:
+    t = text or ""
+    iban = find_iban(t)
+    out = {"iban": iban, "bic": "", "bank_name": "", "account_holder": ""}
+    if not iban:
+        return out
+    m = _BIC_RE.search(t)
+    if m:
+        out["bic"] = m.group(1)
+    m = _BANK_RE.search(t)
+    if m and not re.match(r"(?i)iban|bic", m.group(1)):
+        out["bank_name"] = m.group(1).strip()[:100]
+    m = _HOLDER_RE.search(t)
+    if m:
+        out["account_holder"] = m.group(1).strip()[:200]
+    return out
+
+
 # --- Heuristik ---------------------------------------------------------------
 
 _AMOUNT_LABELS = (
@@ -144,12 +238,6 @@ _AMOUNT_LABELS = (
 _MONEY_CH = r"(?:chf|fr\.)\s*(?P<amt>\d{1,3}(?:'\d{3})*(?:\.\d{2})|\d+\.\d{2})"
 _MONEY = r"(?P<amt>\d{1,3}(?:[.\s]\d{3})*(?:,\d{2}|,-{1,2})|\d+(?:,\d{2}|,-{1,2}))\s*(?:€|eur)?"
 _NUMBER_RE = re.compile(r"(?:angebots?|rechnungs?|kostenvoranschlags?|offerte|abschlagsrechnung|auftrags?)[\s-]*(?:nr\.?|nummer|no\.?|#)?\s*[:.]?\s*([A-Z0-9][A-Z0-9\-/]*\d[\w\-/]*)", re.I)
-_DATE_RE = r"(\d{1,2})\.(\d{1,2})\.(\d{2,4})"
-_DUE_RE = re.compile(r"(?:zahlbar\s+(?:bis|zum)|zahlungsziel|fällig(?:keit)?(?:\s+am)?|bitte\s+(?:überweisen|zahlen)\s+(?:sie\s+)?bis(?:\s+zum)?)\s*:?\s*(?:am\s+)?" + _DATE_RE, re.I)
-_DUE_DAYS_RE = re.compile(r"(?:innerhalb\s+von|zahlbar\s+innerhalb|zahlungsziel:?)\s*(\d{1,2})\s*tage", re.I)
-_VALID_RE = re.compile(r"(?:gültig\s+bis|gueltig\s+bis|bindefrist(?:\s+bis)?|angebot\s+gilt\s+bis)\s*:?\s*(?:zum\s+)?" + _DATE_RE, re.I)
-_VALID_DAYS_RE = re.compile(r"(?:gültig|gueltig|bindefrist)\D{0,20}?(\d{1,3})\s*tage", re.I)
-_DOCDATE_RE = re.compile(r"(?:datum|vom|rechnungsdatum|angebotsdatum)\s*:?\s*" + _DATE_RE, re.I)
 _DATE_RE = r"(\d{1,2})\.(\d{1,2})\.(\d{2,4})"
 _DUE_RE = re.compile(r"(?:zahlbar\s+(?:bis|zum)|zahlungsziel|fällig(?:keit)?(?:\s+am)?|bitte\s+(?:überweisen|zahlen)\s+(?:sie\s+)?bis(?:\s+zum)?)\s*:?\s*(?:am\s+)?" + _DATE_RE, re.I)
 _DUE_DAYS_RE = re.compile(r"(?:innerhalb\s+von|zahlbar\s+innerhalb|zahlungsziel:?)\s*(\d{1,2})\s*tage", re.I)
@@ -176,7 +264,7 @@ def _to_iso(d: str, m: str, y: str) -> str | None:
         return None
 
 
-def heuristic_extract(kind: DocKind, subject: str, recipients: list[tuple[str, str]], mail_date: datetime, text: str) -> Extracted:
+def heuristic_extract(kind: DocKind, subject: str, recipients: list[tuple[str, str]], mail_date: datetime, text: str, filename: str = "") -> Extracted:
     t = text or ""
     amount: float | None = None
     # Betrag: Zeilen mit Gesamt-Label, Netto/MwSt-Zeilen auslassen; sonst größter Betrag
@@ -196,6 +284,8 @@ def heuristic_extract(kind: DocKind, subject: str, recipients: list[tuple[str, s
         hits = [m for m in re.finditer(r"(?im)^.*?(total inkl|total|gesamt|endbetrag|betrag)[^\n]*?" + _MONEY_CH, t)]
         if hits:
             amount = float(hits[-1].group("amt").replace("'", ""))
+    if re.search(r"\bCHF\b", t) and not re.search(r"€|\bEUR\b", t):
+        currency = "CHF"  # Schweizer Dokument, auch wenn der Betrag oben schon gefunden wurde
     if amount is None:
         candidates = [_to_float(m.group("amt")) for m in re.finditer(_MONEY, t)]
         candidates = [c for c in candidates if c]
@@ -238,12 +328,15 @@ def heuristic_extract(kind: DocKind, subject: str, recipients: list[tuple[str, s
             name = re.sub(r"[._-]+", " ", local).title()
 
     # Titel: Betreff ohne "Angebot"/"Rechnung" und Nummer
-    title = re.sub(r"(?i)\b(angebot|rechnung|kostenvoranschlag|ihr|ihre|unser|unsere|nr\.?|nummer|zu|vom|für|fuer)\b", " ", subject)
+    title = re.sub(r"(?i)\b(angebot|offerte|rechnung|abschlagsrechnung|schlussrechnung|kostenvoranschlag|ihr|ihre|unser|unsere|nr\.?|nummer|zu|vom|für|fuer)\b", " ", subject)
     title = " ".join(w for w in title.split() if not re.search(r"\d", w) and len(w) > 1)
     title = re.sub(r"\s+", " ", title).strip(" :-–")[:300]
 
+    bank = bank_details(t) if kind == DocKind.INVOICE else {}
     return Extracted(
         kind=kind.value,
+        doc_term=detect_doc_term(kind, subject, filename, t),
+        iban=bank.get("iban", ""), bic=bank.get("bic", ""), bank_name=bank.get("bank_name", ""), account_holder=bank.get("account_holder", ""),
         customer_name=name[:200],
         customer_email=email_addr.lower(),
         document_number=number[:100],
@@ -258,9 +351,9 @@ def heuristic_extract(kind: DocKind, subject: str, recipients: list[tuple[str, s
     )
 
 
-def extract_fields(kind: DocKind, subject: str, recipients: list[tuple[str, str]], mail_date: datetime, text: str) -> Extracted:
+def extract_fields(kind: DocKind, subject: str, recipients: list[tuple[str, str]], mail_date: datetime, text: str, filename: str = "") -> Extracted:
     """Claude zuerst, Heuristik als Netz. Kunden-Mail kommt notfalls aus dem Mail-Empfänger."""
-    heuristic = heuristic_extract(kind, subject, recipients, mail_date, text)
+    heuristic = heuristic_extract(kind, subject, recipients, mail_date, text, filename)
     rec_str = ", ".join(f"{n} <{a}>" if n else a for n, a in recipients)
     result = _claude_extract(kind, subject, rec_str, mail_date, text) if text.strip() else None
     if result is None:
@@ -276,6 +369,21 @@ def extract_fields(kind: DocKind, subject: str, recipients: list[tuple[str, str]
         result.due_date = heuristic.due_date
     if not result.title:
         result.title = heuristic.title
+    if heuristic.currency == "CHF":
+        result.currency = "CHF"
+    result.currency = (result.currency or "EUR").upper()
+    if result.kind != heuristic.kind:
+        # Claude sieht eine andere Art: Begriff passend zur Art neu bestimmen
+        heuristic.doc_term = detect_doc_term(result.kind, subject, filename, text)
+    # Begriff: Überschrift/Betreff schlägt Claude, Claude nur, wenn wir nichts finden
+    result.doc_term = heuristic.doc_term or result.doc_term
+    # Bankverbindung nur per Regex mit Prüfsumme, nie geraten
+    if result.kind == "invoice":
+        bank = heuristic if heuristic.iban else SimpleNamespace(**bank_details(text))
+        result.iban, result.bic, result.bank_name = bank.iban, bank.bic, bank.bank_name
+        result.account_holder = (bank.account_holder or result.account_holder) if result.iban else ""
+    else:
+        result.iban = result.bic = result.bank_name = result.account_holder = ""
     return result
 
 

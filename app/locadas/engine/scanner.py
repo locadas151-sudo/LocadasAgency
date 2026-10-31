@@ -20,6 +20,7 @@ from datetime import timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .. import fmt
 from ..config import settings
 from ..db import DocKind, DocStatus, Document, FollowUp, FollowUpStatus, MailAccount, SeenMessage, log_event, utcnow
 from ..extract.classify import classify, is_forward, looks_like_customer
@@ -93,8 +94,8 @@ def _pick_document_pdf(subject: str, pdfs: list[Attachment]) -> tuple[Attachment
     return pdf, text, kind
 
 
-def _fmt_amount(v: float | None) -> str:
-    return f" über {v:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".") if v else ""
+def _fmt_amount(v: float | None, currency: str | None = "EUR") -> str:
+    return fmt.over(v, currency)
 
 
 def _thread_ids(mail: ParsedMail) -> set[str]:
@@ -181,7 +182,7 @@ def process_sent_mail(session: Session, account: MailAccount, mail: ParsedMail, 
     main_pdf, text, kind = _pick_document_pdf(mail.subject, pdfs)
     if kind is None:
         return None
-    fields = extract_fields(kind, mail.subject, recipients, mail.date, text)
+    fields = extract_fields(kind, mail.subject, recipients, mail.date, text, main_pdf.filename)
     doc_kind = DocKind(fields.kind)
     customer_email = (fields.customer_email or recipients[0][1]).lower()
     # Kunde laut PDF ist nicht unter den Empfängern (z. B. Mail ging an Hausverwaltung): Mail-Empfänger nehmen
@@ -206,10 +207,15 @@ def process_sent_mail(session: Session, account: MailAccount, mail: ParsedMail, 
                 existing.pdf_filename = main_pdf.filename
                 if fields.amount_gross is not None:
                     existing.amount_gross = fields.amount_gross
+                    existing.currency = fields.currency or existing.currency
+                if fields.doc_term:
+                    existing.doc_term = fields.doc_term
+                if fields.iban:
+                    existing.iban, existing.bic, existing.bank_name, existing.account_holder = fields.iban, fields.bic, fields.bank_name, fields.account_holder
                 if doc_kind == DocKind.INVOICE and fields.due_date:
                     existing.due_date = utc_from_iso(fields.due_date)
                 _reschedule_from(existing, mail.date)
-                log_event(session, existing.business_id, "updated", f"{existing.kind_label} {existing.document_number} wurde neu verschickt{_fmt_amount(existing.amount_gross)}. Nachfassen startet neu.", existing.id)
+                log_event(session, existing.business_id, "updated", f"{existing.kind_label} {existing.document_number} wurde neu verschickt{_fmt_amount(existing.amount_gross, existing.currency)}. Nachfassen startet neu.", existing.id)
             return None
 
     doc = Document(
@@ -233,6 +239,11 @@ def process_sent_mail(session: Session, account: MailAccount, mail: ParsedMail, 
         pdf_filename=main_pdf.filename,
         extraction_source=fields.source,
         confidence=fields.confidence,
+        doc_term=fields.doc_term,
+        iban=fields.iban,
+        bic=fields.bic,
+        bank_name=fields.bank_name,
+        account_holder=fields.account_holder,
     )
     if doc.kind == DocKind.INVOICE and doc.due_date is None:
         doc.due_date = doc.sent_at + timedelta(days=settings.default_invoice_due_days)
@@ -244,7 +255,7 @@ def process_sent_mail(session: Session, account: MailAccount, mail: ParsedMail, 
     session.add(doc)
     session.flush()
     schedule_followups(session, doc)
-    log_event(session, doc.business_id, "new", f"{doc.kind_label} {doc.document_number or doc.title} an {doc.customer_name or doc.customer_email}{_fmt_amount(doc.amount_gross)} erkannt.", doc.id)
+    log_event(session, doc.business_id, "new", f"{doc.kind_label} {doc.document_number or doc.title} an {doc.customer_name or doc.customer_email}{_fmt_amount(doc.amount_gross, doc.currency)} erkannt.", doc.id)
     return doc
 
 
@@ -400,6 +411,22 @@ def _notify_reply(session: Session, doc: Document, mail: ParsedMail, status: Doc
     session.commit()
 
 
+_ACK_RE = re.compile(r"eingangsbestätigung|eingangsbest|eingegangen|\beingang\b|\berhalten\b|\breceived\b|receipt|empfangsbestätigung", re.I)
+_OOO_RE = re.compile(r"abwesen|urlaub|nicht im (?:haus|büro)|außer haus|ausser haus|out of (?:the )?office|vacation|elternzeit|krank", re.I)
+
+
+def is_receipt_ack(subject: str, body: str = "") -> bool:
+    """Automatische Eingangsbestätigung (z. B. Rechnungseingang eines GU), keine Abwesenheitsnotiz."""
+    text = f"{subject or ''}\n{body or ''}"
+    return bool(_ACK_RE.search(text)) and not _OOO_RE.search(text)
+
+
+def _ack_body(client: ImapClient, mail: ParsedMail) -> str:
+    if _OOO_RE.search(mail.subject or "") or re.search(r"eingangsbest", mail.subject or "", re.I):
+        return ""  # Betreff reicht
+    return (mail.text or "") or _mail_body(client, mail)[:3000]
+
+
 def scan_inbox(session: Session, account: MailAccount, client: ImapClient) -> int:
     validity, uidnext = client.select(account.inbox_folder)
     if account.inbox_uidvalidity is None or validity != account.inbox_uidvalidity:
@@ -423,7 +450,12 @@ def scan_inbox(session: Session, account: MailAccount, client: ImapClient) -> in
         if mail.is_auto_reply:
             doc = doc or _doc_in_thread(session, account, set(), customer=mail.from_addr)
             if doc is not None:
-                log_event(session, doc.business_id, "autoreply", f"Abwesenheitsnotiz von {mail.from_addr}. Ich fasse trotzdem weiter nach.", doc.id)
+                if is_receipt_ack(mail.subject, _ack_body(client, mail)):
+                    if doc.ack_at is None:
+                        doc.ack_at = mail.date
+                        log_event(session, doc.business_id, "ack", f"{mail.from_addr} hat den Eingang von {doc.kind_label} {doc.document_number or doc.title} automatisch bestätigt.", doc.id)
+                else:
+                    log_event(session, doc.business_id, "autoreply", f"Abwesenheitsnotiz von {mail.from_addr}. Ich fasse trotzdem weiter nach.", doc.id)
                 session.commit()
             continue
         if doc is not None:

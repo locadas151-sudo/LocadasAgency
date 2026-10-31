@@ -20,7 +20,6 @@ log = logging.getLogger(__name__)
 
 MAX_WORDS = 90
 MAX_ATTEMPTS = 2
-PAYMENT_DAYS = 7  # Frist in Schritt 2 und 3 bei Rechnungen, wie in den Vorlagen
 
 # --- Kunde und Anrede -----------------------------------------------------------
 
@@ -126,10 +125,7 @@ def signature(doc: Document, profile: dict | None, step: int) -> str:
 
 
 def link_block(doc: Document, du: bool) -> str:
-    link = texts._link(doc)
-    if link and du:
-        link = link.replace("Hier können Sie", "Hier kannst du")
-    return link
+    return texts._link(doc, du)
 
 
 # --- Fakten und Prompt -----------------------------------------------------------------
@@ -144,30 +140,43 @@ class Context:
     profile: dict | None
     allowed_numbers: set[str] = field(default_factory=set)
     required_ref: list[str] = field(default_factory=list)
+    term: str = ""
+    closing: str = ""
+    tone: str = "freundlich"
+    opened: bool = False
 
 
 def _fmt_date(dt) -> str:
     return dt.strftime("%d.%m.%Y") if dt else ""
 
 
-def build_context(doc: Document, step: int, profile: dict | None) -> Context:
+def build_context(doc: Document, step: int, profile: dict | None, now=None) -> Context:
     du = _du_for(doc, profile)
+    term = texts.term(doc)
     facts = {
-        "Art": doc.kind_label,
+        "Art des Dokuments (genau dieses Wort verwenden)": term,
         "Kunde": (doc.customer_name or "").strip() or "unbekannt",
         "Nummer": (doc.document_number or "").strip(),
         "Leistung": (doc.title or "").strip(),
         "Betrag": texts._betrag(doc),
         "Verschickt am": _fmt_date(doc.sent_at),
     }
+    opened = texts.opened(doc) and doc.kind == DocKind.OFFER
+    tone = "freundlich"
     if doc.kind == DocKind.INVOICE:
+        tone = texts.invoice_tone(doc)
         facts["Fällig seit"] = _fmt_date(doc.due_date)
-        if step >= 2:
-            facts["Neue Zahlungsfrist"] = f"{PAYMENT_DAYS} Tage"
-    elif doc.valid_until:
-        facts["Angebot gültig bis"] = _fmt_date(doc.valid_until)
+        facts["Neue Zahlungsfrist bis"] = _fmt_date(texts.payment_deadline(now))
+        if getattr(doc, "ack_at", None):
+            facts["Kunde hat den Eingang automatisch bestätigt am"] = _fmt_date(doc.ack_at)
+    else:
+        if getattr(doc, "valid_until", None):
+            facts[f"{term} gültig bis"] = _fmt_date(doc.valid_until)
+        if opened:
+            facts[f"Kunde hat {texts.der(doc, 'acc')} {term} schon geöffnet (nur zu deiner Info, nie erwähnen)"] = "ja"
     facts = {k: v for k, v in facts.items() if v}
-    ctx = Context(doc=doc, step=step, anrede=anrede(doc, profile), du=du, facts=facts, profile=profile)
+    ctx = Context(doc=doc, step=step, anrede=anrede(doc, profile), du=du, facts=facts, profile=profile, term=term,
+                  closing=texts.closing(doc, step, now, du), tone=tone, opened=opened)
     allowed_src = " ".join(facts.values()) + " " + (doc.subject or "")
     ctx.allowed_numbers = set(_NUM_RE.findall(allowed_src)) | set(re.findall(r"\d+", allowed_src))
     if doc.document_number:
@@ -177,14 +186,40 @@ def build_context(doc: Document, step: int, profile: dict | None) -> Context:
     return ctx
 
 
-_STEP_GOALS = {
-    (DocKind.OFFER, 1): "Erste freundliche Nachfrage. Fragen, ob das Angebot angekommen ist und ob noch Fragen offen sind. Anbieten, etwas zu erklären oder anzupassen. Kein Druck.",
-    (DocKind.OFFER, 2): "Zweite Nachfrage, etwas direkter. Um eine kurze Rückmeldung oder Entscheidung bitten, auch eine Absage ist in Ordnung, weil der Betrieb planen muss. Gesprächsbereitschaft zu Umfang oder Termin zeigen.",
-    (DocKind.OFFER, 3): "Letzte höfliche Nachricht zu diesem Angebot. Ausdrücklich sagen, dass dies die letzte Nachricht dazu ist. Um eine kurze Antwort bitten (Ja, Nein oder später). Nicht drängen.",
-    (DocKind.INVOICE, 1): "Freundliche Zahlungserinnerung. Die Rechnung ist seit dem Fälligkeitsdatum offen, vielleicht ist sie untergegangen. Bitten, den Betrag in den nächsten Tagen zu überweisen. Falls schon bezahlt, die Nachricht einfach ignorieren.",
-    (DocKind.INVOICE, 2): f"Zweite Erinnerung, klar und sachlich. Noch kein Zahlungseingang. Bitten, innerhalb von {PAYMENT_DAYS} Tagen zu überweisen. Bei Fragen zur Rechnung oder Problemen soll sich der Kunde melden.",
-    (DocKind.INVOICE, 3): f"Dritte und letzte Erinnerung, bestimmt aber höflich. Trotz zweier Erinnerungen noch offen. Bitten, innerhalb von {PAYMENT_DAYS} Tagen zu überweisen, sonst wird das Mahnverfahren eingeleitet. Das Wort \"Mahnverfahren\" muss vorkommen.",
+_INVOICE_TONE = {
+    "freundlich": "freundlich und klar, auf Augenhöhe, ohne Entschuldigungen und ohne Ausreden für den Kunden",
+    "sachlich": "sachlich und neutral wie unter Geschäftspartnern (B2B), keine Gefühle, keine Floskeln",
+    "bestimmt": "bestimmt und deutlich, höflich aber ohne Weichmacher",
 }
+
+
+def step_goal(ctx: Context) -> str:
+    t = ctx.term
+    d = ctx.doc
+    step = min(max(ctx.step, 1), 3)
+    if d.kind == DocKind.OFFER:
+        if ctx.opened:
+            secret = " Niemals erwähnen oder andeuten, dass du weißt, dass er es geöffnet oder angesehen hat."
+            return {
+                1: f"Erste freundliche Nachricht. Der Kunde hat {texts.der(d, 'acc')} {t} schon geöffnet, er hat also Interesse. Das nicht erwähnen, sondern anbieten, Fragen {texts.zum(d)} {t} zu beantworten oder etwas anzupassen. Nicht nach einer Entscheidung oder Rückmeldung fragen, kein Druck.",
+                2: f"Zweite Nachricht. Der Kunde hat {texts.der(d, 'acc')} {t} schon angesehen. Nur Hilfe anbieten (Fragen {texts.zum(d)} {t}, Umfang, Termin) und signalisieren, dass er sich Zeit lassen kann. Ausdrücklich nicht nach einer Entscheidung fragen.",
+                3: f"Dritte und ruhige Nachricht. Der Kunde hat {texts.der(d, 'acc')} {t} angesehen. Kurz anbieten, offene Fragen zu klären. Nicht nach einer Entscheidung fragen. Nicht sagen, dass es die letzte Nachricht ist; der Satz, dass du dich nicht weiter meldest, wird automatisch angehängt.",
+            }[step] + secret
+        return {
+            1: f"Erste freundliche Nachfrage. Fragen, ob {texts.der(d)} {t} angekommen ist und ob noch Fragen offen sind. Anbieten, etwas zu erklären oder anzupassen. Kein Druck.",
+            2: "Zweite Nachfrage, etwas direkter. Um eine kurze Rückmeldung bitten, auch eine Absage ist in Ordnung, weil der Betrieb planen muss. Gesprächsbereitschaft zu Umfang oder Termin zeigen.",
+            3: "Dritte und ruhige Nachricht. Verständnis zeigen, dass es vielleicht gerade nicht passt oder der Kunde sich anders entschieden hat, beides ist in Ordnung. Nicht drängen, nicht sagen, dass es die letzte Nachricht ist, keine Ja/Nein-Formel. Der Satz, dass du dich nicht weiter meldest, wird automatisch angehängt.",
+        }[step]
+    tone = _INVOICE_TONE.get(ctx.tone, _INVOICE_TONE["freundlich"])
+    ack = " Der Kunde hat den Eingang bestätigt, die Rechnung ist also angekommen." if "Kunde hat den Eingang automatisch bestätigt am" in ctx.facts else ""
+    base = {
+        1: f"Erste Zahlungserinnerung, Ton {tone}. Die {t} ist seit dem Fälligkeitsdatum offen, es ist noch keine Zahlung eingegangen.{ack}",
+        2: f"Zweite Zahlungserinnerung, Ton {tone}. Trotz der ersten Erinnerung noch kein Zahlungseingang.{ack} Bei Fragen zur {t} soll sich der Kunde melden.",
+        3: f"Dritte und letzte Zahlungserinnerung, Ton {tone}. Trotz zweier Erinnerungen noch offen. Sagen, dass nach Ablauf der Frist das Mahnverfahren eingeleitet wird. Das Wort \"Mahnverfahren\" muss vorkommen.",
+    }[step]
+    if ctx.tone == "bestimmt" and step == 2:
+        base += " Sagen, dass der Kunde im Zahlungsverzug ist und bei Fristablauf Mahnkosten berechnet werden. Das Wort \"Mahnkosten\" muss vorkommen."
+    return base + " Nicht sagen, die Rechnung sei vielleicht untergegangen, und nicht anbieten, die Nachricht zu ignorieren. Schildere nur kurz die Lage und biete an, dass sich der Kunde bei Fragen meldet. Keine eigene Zahlungsaufforderung, keine Frist, keine Bankverbindung und kein Hinweis wie \"siehe unten\": Die Zahlungsaufforderung folgt direkt im automatisch angehängten Absatz."
 
 
 def build_prompt(ctx: Context, problems: list[str] | None = None) -> str:
@@ -200,8 +235,9 @@ def build_prompt(ctx: Context, problems: list[str] | None = None) -> str:
     retry = ""
     if problems:
         retry = "\n\nDein letzter Entwurf wurde abgelehnt, weil: " + "; ".join(problems) + ". Schreib ihn neu und vermeide das."
-    return f"""Du schreibst im Namen eines deutschen Handwerksbetriebs eine kurze Nachfass-E-Mail an einen Kunden, als Antwort im selben Mailverlauf.
-Ziel dieser Mail: {_STEP_GOALS[(ctx.doc.kind, min(max(ctx.step, 1), 3))]}
+    closing = f"\n- Nach deinem Text hängt der Code diesen Absatz an, wiederhole seinen Inhalt nicht:\n  «{ctx.closing}»" if ctx.closing else ""
+    return f"""Du schreibst im Namen eines Handwerksbetriebs eine kurze Nachfass-E-Mail an einen Kunden, im selben Mailverlauf wie das ursprüngliche Dokument.
+Ziel dieser Mail: {step_goal(ctx)}
 
 Fakten (nur diese verwenden):
 {facts}
@@ -212,12 +248,13 @@ Stil des Betriebs:
 Regeln:
 - Erste Zeile genau: {ctx.anrede}
 - Danach eine Leerzeile, dann der Text. Er beginnt klein, weil er nach der Anrede mit Komma weitergeht.
-- {ref} muss im Text vorkommen.
+- {ref} muss im Text vorkommen, ebenso das Wort "{ctx.term}". Nenne das Dokument immer "{ctx.term}", nie anders.
+- Beträge genau so schreiben wie oben angegeben, mit derselben Währung.
 - Höchstens 70 Wörter inklusive Anrede, 2 bis 3 kurze Absätze, in der Ich-Form des Betriebsinhabers.
 - Keine Fakten erfinden: keine Daten, Wochentage, Fristen, Preise, Rabatte, Zusagen oder Zahlen, die oben nicht stehen.
 - Keine Werbesprache, keine Emojis, höchstens ein Ausrufezeichen, keine Links, keine Platzhalter.
 - Keine Gedankenstriche (– oder —) und keine Bindestriche als Einschub. Kein Komma vor "und".
-- Keine Grußformel und keine Signatur am Ende, die werden automatisch angehängt, ebenso ein Link zum Dokument.
+- Keine Grußformel und keine Signatur am Ende, die werden automatisch angehängt, ebenso der Link oder Anhang zum Dokument.{closing}
 - Antworte nur mit dem Mailtext, ohne Betreff, ohne Anführungszeichen, ohne Erklärung.{retry}"""
 
 
@@ -242,6 +279,11 @@ _PROMISE_MARKETING_RE = re.compile(
     r"preisgarantie|bestpreis|vorteil",
     re.I,
 )
+_OTHER_TERMS = ("angebot", "offerte", "kostenvoranschlag")
+_SOFT_INVOICE_RE = re.compile(r"untergegangen|ignorieren|ignorier|übersehen|vergessen haben|betrachten sie diese|gegenstandslos", re.I)
+_LAST_MESSAGE_RE = re.compile(r"letzte[nrs]?\s+(?:nachricht|mail|e-mail|mal|erinnerung)|ja, nein oder|ja oder nein", re.I)
+_PRESSURE_RE = re.compile(r"entscheid|zusage|noch keine rückmeldung|nichts (?:mehr )?(?:von ihnen |von dir )?gehört|bitte (?:um )?(?:eine )?(?:kurze )?rückmeldung|planen", re.I)
+_TRACKING_RE = re.compile(r"geöffnet|angesehen|angeschaut|reingeschaut|durchgesehen|ich sehe,? dass|wie ich sehe|gesehen,? dass|bemerkt", re.I)
 _LEGAL_RE = re.compile(r"mahn|inkasso|anwalt|gericht|rechtliche|verzugszins", re.I)
 _SIE_FORMS_RE = re.compile(r"\b(?:du|dich|dir|dein|deine|deinen|deinem|deiner|deines|euch|euer|eure)\b", re.I)
 _DU_FORMAL_RE = re.compile(r"\b(?:Ihnen|Ihre|Ihren|Ihrem|Ihrer|Ihres)\b|[a-zäöüß,] Sie\b")
@@ -319,16 +361,27 @@ def validate(text: str, ctx: Context) -> list[str]:
         problems.append(f"zu lang ({words} Wörter, erlaubt {MAX_WORDS})")
     if ctx.required_ref and not any(r.lower() in text.lower() for r in ctx.required_ref):
         problems.append(f'"{ctx.required_ref[0]}" fehlt')
+    if ctx.term and ctx.term.lower() not in body.lower():
+        problems.append(f'Wort "{ctx.term}" fehlt')
+    for other in _OTHER_TERMS:
+        if other != ctx.term.lower() and other not in ctx.term.lower() and re.search(r"\b" + other + r"\b", body, re.I):
+            problems.append(f'"{other.capitalize()}" statt "{ctx.term}"')
+            break
     for tok in _NUM_RE.findall(body):
         if tok not in ctx.allowed_numbers:
             problems.append(f'erfundene Zahl "{tok}"')
             break
-    if re.search(r"€|\beuro\b|\beur\b", body, re.I) and not ctx.facts.get("Betrag"):
+    money_re = r"€|\beuro\b|\beur\b|\bchf\b|\bfranken\b"
+    if re.search(money_re, body, re.I) and not ctx.facts.get("Betrag"):
         problems.append("Betrag erwähnt, obwohl keiner bekannt ist")
+    elif ctx.facts.get("Betrag"):
+        is_chf = ctx.facts["Betrag"].startswith("CHF")
+        if (is_chf and re.search(r"€|\beuro\b|\beur\b", body, re.I)) or (not is_chf and re.search(r"\bchf\b|\bfranken\b", body, re.I)):
+            problems.append("falsche Währung")
     if _WEEKDAY_MONTH_RE.search(body) or _NEXT_PERIOD_RE.search(body):
         problems.append("Datum oder Termin erfunden")
     m = _SPELLED_PERIOD_RE.search(body)
-    if m and not (ctx.facts.get("Neue Zahlungsfrist") and m.group(0).lower().startswith("sieben")):
+    if m:
         problems.append(f'Frist erfunden ("{m.group(0)}")')
     m = _PROMISE_MARKETING_RE.search(body)
     if m:
@@ -336,10 +389,28 @@ def validate(text: str, ctx: Context) -> list[str]:
     if ctx.doc.kind == DocKind.INVOICE and ctx.step >= 3:
         if "mahnverfahren" not in body.lower():
             problems.append('"Mahnverfahren" fehlt')
+    elif ctx.doc.kind == DocKind.INVOICE and ctx.step == 2 and ctx.tone == "bestimmt":
+        if "mahnkosten" not in body.lower():
+            problems.append('"Mahnkosten" fehlt')
+        if re.search(r"inkasso|anwalt|gericht|mahnverfahren", body, re.I):
+            problems.append("rechtliche Schritte zu früh")
     elif _LEGAL_RE.search(body):
         problems.append("Mahnung/rechtliche Schritte zu früh")
-    if ctx.doc.kind == DocKind.OFFER and ctx.step >= 3 and "letzt" not in body.lower():
-        problems.append("nicht als letzte Nachricht erkennbar")
+    if ctx.closing and re.search(r"\bunten\b|nachfolgend|im folgenden|weiter unten", body, re.I):
+        problems.append("Verweis auf den angehängten Absatz")
+    m = _SOFT_INVOICE_RE.search(body)
+    if ctx.doc.kind == DocKind.INVOICE and m:
+        problems.append(f'zu weich ("{m.group(0)}")')
+    if ctx.doc.kind == DocKind.OFFER:
+        m = _LAST_MESSAGE_RE.search(body)
+        if m:
+            problems.append(f'klingt nach Drohung ("{m.group(0)}")')
+        m = _PRESSURE_RE.search(body) if ctx.opened else None
+        if m:
+            problems.append(f'drängt, obwohl der Kunde es geöffnet hat ("{m.group(0)}")')
+        m = _TRACKING_RE.search(body) if ctx.opened else None
+        if m:
+            problems.append(f'verrät das Lese-Tracking ("{m.group(0)}")')
     if any(p.strip() and p.strip()[-1] not in ".?!:" for p in body.split("\n\n")):
         problems.append("Satz ohne Satzzeichen am Ende")
     if text.count("!") > 1:
@@ -368,15 +439,16 @@ def validate(text: str, ctx: Context) -> list[str]:
 
 
 def assemble(text: str, doc: Document, ctx: Context) -> str:
-    return f"{text}\n\n{link_block(doc, ctx.du)}{signature(doc, ctx.profile, ctx.step)}"
+    closing = f"{ctx.closing}\n\n" if ctx.closing else ""
+    return f"{text}\n\n{closing}{link_block(doc, ctx.du)}{signature(doc, ctx.profile, ctx.step)}"
 
 
-def generate(doc: Document, step: int, profile: dict | None) -> str | None:
+def generate(doc: Document, step: int, profile: dict | None, now=None) -> str | None:
     """Personalisierter Text oder None (dann gilt die Vorlage)."""
-    ctx = build_context(doc, step, profile)
+    ctx = build_context(doc, step, profile, now)
     problems: list[str] | None = None
     for _ in range(MAX_ATTEMPTS):
-        raw = style.claude_text(build_prompt(ctx, problems), max_tokens=500)
+        raw = style.claude_text(build_prompt(ctx, problems), max_tokens=4000)  # Denk-Blöcke zählen mit
         if raw is None:
             return None
         text = clean_output(raw, ctx)
@@ -392,15 +464,15 @@ def generate(doc: Document, step: int, profile: dict | None) -> str | None:
     return None
 
 
-def body_for(doc: Document, step: int) -> str:
+def body_for(doc: Document, step: int, now=None) -> str:
     """Einstieg für `followups._prepare`: personalisiert, wenn möglich, sonst die feste Vorlage."""
     business = doc.business
     if settings.anthropic_api_key and getattr(business, "personalize", True):
         try:
             profile = style.ensure_profile(business)
-            text = generate(doc, step, profile)
+            text = generate(doc, step, profile, now)
             if text:
                 return text
         except Exception as exc:
             log.warning("Personalisierung fehlgeschlagen, nehme Vorlage: %s", exc)
-    return texts.body_for(doc, step)
+    return texts.body_for(doc, step, now)

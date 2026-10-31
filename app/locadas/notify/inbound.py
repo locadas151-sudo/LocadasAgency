@@ -133,16 +133,22 @@ def run_payload(session: Session, businesses: list[Business], value: str, now: d
             return "Die sind alle schon erledigt.", None
         return "", m.pick(docs[0].business, docs)
 
-    if action in ("send", "skip", "gone"):
+    if action in ("send", "skip", "gone", "settle"):
         fu = own_fu(ids[0]) if ids else None
         if fu is None:
             return "Diesen Vorgang finde ich nicht mehr.", None
         doc = fu.document
-        if action == "send":
+        if action == "settle":
+            label = fe.settle(session, doc)
+            reply = f"Notiert: {m.who(doc)}, {label}. Ich fasse dort nicht nach." if label else f"Bei {m.who(doc)} fasse ich schon nicht mehr nach."
+        elif action == "send":
             if fu.status == FollowUpStatus.SENT:
                 reply = "Die ist schon raus."
             elif fu.status != FollowUpStatus.AWAITING_APPROVAL:
                 reply = "Diese Freigabe ist nicht mehr offen."
+            elif doc.needs_review:
+                fe.release_review(session, fu)
+                reply = f"Alles klar, ich fasse bei {m.who(doc)} nach. Den Text bekommst du vorher noch zu sehen."
             elif fe.approve(session, fu):
                 reply = f"Gesendet. Die Mail an {m.who(doc)} ist in deinem Namen raus."
             else:
@@ -212,7 +218,7 @@ def _contact(doc: Document) -> str:
     lines = [f"*{m.who(doc)} anrufen*", "Die Nummer habe ich nicht gespeichert, sie steht meist im Dokument. Tipp im PDF auf die Nummer, dann wählt dein Handy direkt."]
     if doc.customer_email:
         lines.append(f"Mail: {doc.customer_email}")
-    lines.append(f"{m.ref(doc)}{m.money(doc.amount_gross)}")
+    lines.append(f"{m.ref(doc)}{m.dmoney(doc)}")
     if doc.pdf_path:
         lines.append(doc_link(doc.id))
     return "\n".join(lines)

@@ -197,7 +197,7 @@ def derive_profile(business: Business, now=None) -> dict | None:
     if len(samples) < MIN_SAMPLES:
         return None
     blocks = "\n\n".join(f"--- Mail {i} ---\n{s}" for i, s in enumerate(samples, start=1))
-    raw = claude_text(_PROFILE_PROMPT.replace("{samples}", blocks), max_tokens=500)
+    raw = claude_text(_PROFILE_PROMPT.replace("{samples}", blocks), max_tokens=2000)
     if raw is None:
         return None
     profile = parse_profile(raw, samples)
