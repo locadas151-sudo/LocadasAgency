@@ -29,6 +29,9 @@ log = logging.getLogger(__name__)
 
 _EMAIL_RE = re.compile(r"^[\w.+'-]+@[\w-]+(?:\.[\w-]+)+$")
 WA_PREFILL = "Hier mein Angebot:"
+# Einwilligung in WhatsApp-Nachrichten (Meta verlangt ein klares Opt-in). Neue Fassung = neue Versionsnummer.
+WA_OPTIN_TEXT = "Ich bin einverstanden, dass mir Locadas zu meinen Angeboten per WhatsApp schreibt. Abbestellen jederzeit mit STOP."
+WA_OPTIN_VERSION = "wa-optin-2026-11"
 
 
 def secretary_link() -> str:
@@ -40,7 +43,7 @@ def welcome(b: Business) -> Notification:
     text = (f"Willkommen beim Test! Schick mir hier dein letztes Angebot als PDF oder Foto. Oder leite die Mail mit dem PDF an "
             f"{b.inbound_address} weiter. Ich sage dir sofort, was ich erkannt habe, und melde mich mit der fertigen Nachfass-Nachricht, wenn sie dran ist.")
     return Notification(
-        business=b, kind="trial", title="Hallo, hier ist dein Locadas-Sekretär", text=text + "\n\nSchreib „abmelden“, wenn du keine Nachrichten mehr willst.",
+        business=b, kind="trial", title="Hallo, hier ist dein Locadas-Sekretär", text=text + "\n\nSchreib STOP, wenn du keine Nachrichten mehr willst.",
         template="event", template_params=[(b.owner_name or "").split(" ")[0] or b.name, text], template_buttons=[payload("ok")],
         email_subject="Deine Adresse für den Locadas-Test",
         email_body=(f"Hallo {b.owner_name or b.name},\n\nleite dein letztes Angebot mit PDF an diese Adresse weiter:\n{b.inbound_address}\n\n"
@@ -66,7 +69,7 @@ def install(app: FastAPI, render: Callable, get_db: Callable, current_business: 
         ctx.setdefault("values", {})
         ctx.setdefault("error", None)
         ctx.setdefault("business", None)
-        return render(request, "testen.html", wa_link=secretary_link(), **ctx)
+        return render(request, "testen.html", wa_link=secretary_link(), wa_optin_text=WA_OPTIN_TEXT, **ctx)
 
     @app.get("/testen", response_class=HTMLResponse)
     def trial_form(request: Request, business: Business | None = Depends(current_business)):
@@ -78,8 +81,9 @@ def install(app: FastAPI, render: Callable, get_db: Callable, current_business: 
     def trial_submit(
         request: Request, session: Session = Depends(get_db),
         owner_name: str = Form(""), business_name: str = Form(""), whatsapp: str = Form(""), email: str = Form(""), website: str = Form(""),
+        wa_optin: str = Form(""),
     ):
-        values = dict(owner_name=owner_name, business_name=business_name, whatsapp=whatsapp, email=email)
+        values = dict(owner_name=owner_name, business_name=business_name, whatsapp=whatsapp, email=email, wa_optin=wa_optin)
         if website.strip():  # Honigtopf für Bots
             return RedirectResponse("/testen", status_code=303)
         if not ratelimit.allow("testen", client_ip(request)):
@@ -102,7 +106,10 @@ def install(app: FastAPI, render: Callable, get_db: Callable, current_business: 
             notify(session, login_notification(existing))
             session.commit()
             return _form(request, values=values, already=True)
+        if not wa_optin:
+            return _form(request, values=values, error="Bitte bestätige, dass dir Locadas per WhatsApp schreiben darf. Abbestellen geht jederzeit mit STOP.")
         b = trial.create(session, owner_name, business_name, number, mail)
+        b.wa_optin_at, b.wa_optin_text = utcnow(), WA_OPTIN_VERSION
         session.commit()
         if not notify(session, welcome(b)):
             log.info("Willkommensnachricht an Tester %s nicht zugestellt", b.id)

@@ -16,6 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..config import settings
+from ..ops import usage
 from ..db import Business, FollowUp, MailAccount, utcnow
 from ..extract.classify import looks_like_customer
 
@@ -144,8 +145,10 @@ def claude_text(prompt: str, max_tokens: int) -> str | None:
             messages=[{"role": "user", "content": prompt}],
         )
     except Exception as exc:
+        usage.record("text", settings.claude_model, error=True)
         log.warning("Claude-Aufruf fehlgeschlagen: %s", exc)
         return None
+    usage.record("text", settings.claude_model, resp)
     return "".join(getattr(b, "text", "") or "" for b in resp.content).strip()
 
 

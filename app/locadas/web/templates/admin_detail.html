@@ -1,0 +1,74 @@
+{% extends "admin_base.html" %}
+{% block atitle %}{{ b.name }}{% endblock %}
+{% block admin %}
+<div class="adm-head">
+<div><h1 class="h2">{{ b.name }}</h1><p class="app-sub">{{ b.owner_name }}{% if b.owner_email %} · {{ b.owner_email }}{% endif %} · seit {{ b.created_at|datetime }} · {{ 'Test' if b.mode == 'trial' else 'verbunden' }}{% if b.signup_source %} über {{ b.signup_source }}{% endif %}</p></div>
+<div class="btn-row">
+{% if phone %}<a class="btn sm" href="https://wa.me/{{ phone }}" target="_blank" rel="noopener"><svg class="ic"><use href="#i-wa"/></svg> +{{ phone }}</a><a class="btn ghost sm" href="tel:+{{ phone }}">Anrufen</a>{% endif %}
+</div>
+</div>
+{% if msg %}<div class="note {% if msg in ('link_fehler', 'kein_postfach') %}err{% endif %}" style="margin-bottom:16px">{{ {'pausiert': 'Nachfassen pausiert.', 'aktiv': 'Nachfassen läuft wieder.', 'scan': 'Scan läuft im Hintergrund. In ein bis zwei Minuten neu laden.', 'kein_postfach': 'Kein verbundenes Postfach.', 'link_ok': 'Login-Link ist raus.', 'link_fehler': 'Login-Link konnte nicht zugestellt werden.', 'notiz': 'Gespeichert.'}.get(msg, msg) }}</div>{% endif %}
+
+<div class="adm-grid">
+<div class="card">
+<h3 class="h3">Aktionen</h3>
+<div class="btn-row">
+<form method="post" action="/admin/betrieb/{{ b.id }}/pause"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn {{ 'sm' if b.paused else 'ghost sm' }}" type="submit">{{ 'Fortsetzen' if b.paused else 'Pausieren' }}</button></form>
+<form method="post" action="/admin/betrieb/{{ b.id }}/scan"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn ghost sm" type="submit">Jetzt scannen</button></form>
+<form method="post" action="/admin/betrieb/{{ b.id }}/login-link"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn ghost sm" type="submit">Login-Link schicken</button></form>
+</div>
+<form method="post" action="/admin/betrieb/{{ b.id }}/notiz" style="margin-top:16px">
+<input type="hidden" name="csrf" value="{{ csrf }}">
+<label class="toggle"><input type="checkbox" name="onboarded" value="1" {% if b.onboarded_at %}checked{% endif %}><div><b>Onboarding-Call erledigt</b>{% if b.onboarded_at %}<span>am {{ b.onboarded_at|datetime }}</span>{% endif %}</div></label>
+<label class="small muted" for="admin_note">Notiz (nur intern)</label>
+<textarea id="admin_note" name="admin_note" placeholder="Was besprochen, was offen ist">{{ b.admin_note }}</textarea>
+<button class="btn sm" type="submit" style="margin-top:8px">Speichern</button>
+</form>
+</div>
+<div class="card">
+<h3 class="h3">Status</h3>
+<ul class="plain small">
+<li><b>Nachfassen:</b> {{ 'pausiert' if b.paused else 'aktiv' }} · Kanal {{ b.followup_channel }} · Freigaben {{ b.review_mode }} · Paket {{ b.plan }}</li>
+<li><b>WhatsApp:</b> {% if b.whatsapp_number %}+{{ b.whatsapp_number }} · {{ 'eingeschaltet' if b.whatsapp_opt_in else 'aus' }}{% if b.wa_optin_at %} · Einwilligung {{ b.wa_optin_at|datetime }} ({{ b.wa_optin_text }}){% endif %}{% if b.wa_optout_at %} · STOP am {{ b.wa_optout_at|datetime }}{% endif %}{% if b.whatsapp_last_inbound_at %} · zuletzt geschrieben {{ b.whatsapp_last_inbound_at|datetime }}{% endif %}{% else %}keine Nummer{% endif %}</li>
+{% if b.inbound_address %}<li><b>Weiterleitung:</b> <span class="adm-mono">{{ b.inbound_address }}</span></li>{% endif %}
+{% if b.mode == 'trial' %}<li><b>Test:</b> Aha {{ b.trial_aha_at|datetime if b.trial_aha_at else 'noch nicht' }} · Angebot zum Verbinden {{ b.upgrade_prompt_at|datetime if b.upgrade_prompt_at else 'noch nicht' }} · zuletzt aktiv {{ b.trial_active_at|datetime if b.trial_active_at else '' }}</li>{% endif %}
+<li><b>Login zuletzt:</b> {{ b.last_login_at|datetime if b.last_login_at else 'nie' }} · AVV {{ b.avv_accepted_at|date if b.avv_accepted_at else 'nein' }}</li>
+{% for a in accounts %}
+<li><b>Postfach {{ a.email }}</b> ({{ a.provider }}, {{ a.auth_type }}): <span class="pill {{ {'active': 'good', 'error': 'bad', 'disconnected': 'muted'}[a.status.value] }}">{{ a.status.value }}</span> · Scan {{ a.last_scan_at|datetime if a.last_scan_at else 'noch nie' }}{% if a.consecutive_errors %} · {{ a.consecutive_errors }} Fehler in Folge{% endif %}{% if a.error_since %} · gestört seit {{ a.error_since|datetime }}{% endif %}{% if a.last_error %}<div class="adm-err">{{ a.last_error[:500] }}</div>{% endif %}</li>
+{% endfor %}
+</ul>
+</div>
+</div>
+
+<div class="card" style="margin-top:16px">
+<h3 class="h3">Dokumente ({{ docs|length }})</h3>
+<div class="adm-scroll"><table class="adm-tbl">
+<tr><th>Erkannt</th><th>Art</th><th>Kunde</th><th>Nummer</th><th class="adm-num">Betrag</th><th>Status</th><th>Nachfassen</th><th>Quelle</th></tr>
+{% for d in docs %}
+<tr><td class="small">{{ d.created_at|datetime }}</td><td>{{ d.term }}</td><td class="small">{{ d.customer_name }}<br><span class="muted">{{ d.customer_email }}{% if d.customer_mobile %} · +{{ d.customer_mobile }}{% endif %}</span></td><td class="small">{{ d.document_number }}</td><td class="adm-num small">{{ d.amount_gross|money(d.currency) if d.amount_gross else '' }}</td><td><span class="pill {{ STATUS_CLASS[d.status] }}">{{ STATUS_LABEL[d.status] }}</span>{% if d.needs_review %} <span class="pill warn">prüfen</span>{% endif %}</td><td class="small">{{ d.followups_sent }} gesendet{% if d.next_followup_at and d.status == DocStatus.OPEN %}, nächste {{ d.next_followup_at|datetime }}{% endif %}</td><td class="small">{{ d.source }} · {{ d.extraction_source }}</td></tr>
+{% else %}<tr><td colspan="8" class="muted">Noch keine Dokumente.</td></tr>{% endfor %}
+</table></div>
+</div>
+
+<div class="adm-grid" style="margin-top:16px">
+<div class="card">
+<h3 class="h3">Verlauf</h3>
+<div class="adm-scroll"><table class="adm-tbl">
+{% for e in events %}<tr><td class="small" style="white-space:nowrap">{{ e.created_at|datetime }}</td><td class="small"><span class="muted">{{ e.kind }}</span> {{ e.text }}</td></tr>
+{% else %}<tr><td class="muted">Nichts.</td></tr>{% endfor %}
+</table></div>
+</div>
+<div class="card">
+<h3 class="h3">Benachrichtigungen</h3>
+<div class="adm-scroll"><table class="adm-tbl">
+{% for n in notes %}<tr><td class="small" style="white-space:nowrap">{{ n.created_at|datetime }}</td><td class="small">{{ n.kind }} · {{ n.title }}</td><td class="small">{% if n.ok %}<span class="pill good">{{ n.channel }}{% if n.wa_mode %} {{ n.wa_mode }}{% endif %}</span>{% else %}<span class="pill bad">nicht zugestellt</span><div class="adm-err">{{ n.error[:200] }}</div>{% endif %}</td></tr>
+{% else %}<tr><td class="muted">Noch keine.</td></tr>{% endfor %}
+</table></div>
+<h3 class="h3" style="margin-top:20px">Fehler und Warnungen</h3>
+<div class="adm-scroll"><table class="adm-tbl">
+{% for r in errors %}<tr><td class="small" style="white-space:nowrap">{{ r.created_at|datetime }}</td><td class="small"><span class="pill {{ 'bad' if r.level in ('ERROR', 'CRITICAL') else 'warn' }}">{{ r.level }}</span> <span class="adm-mono">{{ r.message[:400] }}</span></td></tr>
+{% else %}<tr><td class="muted">Keine.</td></tr>{% endfor %}
+</table></div>
+</div>
+</div>
+{% endblock %}

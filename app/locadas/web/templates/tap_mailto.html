@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Mail an {{ doc.customer_name or doc.customer_email }} · Locadas Nachfasser{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap wrap--narrow" style="max-width:640px">
+<div class="app-head"><div><h1 class="h2">Mail an {{ doc.customer_name or 'deinen Kunden' }}</h1><p class="app-sub">{{ doc.term }} {{ doc.document_number or doc.title }}{% if doc.amount_gross %} über {{ doc.amount_gross|money(doc.currency) }}{% endif %} · Nachricht {{ fu.step }}</p></div></div>
+<div class="card accent">
+<p style="margin-top:0">Dein Mailprogramm öffnet sich gleich mit der fertigen Mail. Falls nicht, tipp auf den Knopf.</p>
+<a class="btn wide" id="open-mail" href="{{ mailto }}">Mail öffnen <svg class="ic"><use href="#i-mail"/></svg></a>
+<p class="small muted" style="margin-bottom:0">Klappt das in WhatsApp nicht, öffne den Link im Browser (oben rechts „In Safari öffnen“) oder kopier Adresse und Text unten in eine neue Mail.</p>
+</div>
+<div class="card" style="margin-top:16px">
+<h3 class="h3">An</h3>
+<div class="copy-row"><input class="copy-val" value="{{ doc.customer_email }}" readonly aria-label="Empfänger"><button class="copy-btn" type="button" data-copy="{{ doc.customer_email }}">Kopieren</button></div>
+<h3 class="h3" style="margin-top:16px">Betreff</h3>
+<div class="copy-row"><input class="copy-val" value="{{ fu.subject }}" readonly aria-label="Betreff"><button class="copy-btn" type="button" data-copy="{{ fu.subject }}">Kopieren</button></div>
+<h3 class="h3" style="margin-top:16px">Text</h3>
+<pre class="tap-text" id="tap-text">{{ body }}</pre>
+<div class="btn-row" style="margin-top:12px"><button class="btn sm" type="button" data-copy="Betreff: {{ fu.subject }}&#10;&#10;{{ body }}">Text kopieren</button></div>
+</div>
+{% if fu.tap_state == 'open' %}
+<div class="wa-actions" style="margin-top:16px">
+<form method="post" action="/w/{{ fu.tap_token }}/sent"><button class="btn sm" type="submit">Gesendet</button></form>
+{% if doc.kind == DocKind.INVOICE %}<form method="post" action="/w/{{ fu.tap_token }}/paid"><button class="btn ghost sm" type="submit">Ist bezahlt</button></form>{% else %}<form method="post" action="/w/{{ fu.tap_token }}/replied"><button class="btn ghost sm" type="submit">Hat geantwortet</button></form>{% endif %}
+<form method="post" action="/w/{{ fu.tap_token }}/skip"><button class="btn ghost sm" type="submit">Diesmal nicht</button></form>
+</div>
+{% endif %}
+</div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){var a=document.getElementById('open-mail');if(!a)return;try{if(!sessionStorage.getItem('mt-{{ fu.tap_token }}')){sessionStorage.setItem('mt-{{ fu.tap_token }}','1');setTimeout(function(){window.location.href=a.href;},300);}}catch(_){setTimeout(function(){window.location.href=a.href;},300);}})();
+</script>
+{% endblock %}

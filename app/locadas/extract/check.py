@@ -11,6 +11,7 @@ import re
 from dataclasses import dataclass, field
 
 from ..config import settings
+from ..ops import usage
 
 log = logging.getLogger(__name__)
 
@@ -66,8 +67,10 @@ def check_offer(text: str) -> CheckResult | None:
             messages=[{"role": "user", "content": _PROMPT.replace("{text}", text[:20000])}],
         )
     except Exception as exc:
+        usage.record("check", settings.claude_model, error=True)
         log.warning("Angebots-Check fehlgeschlagen: %s", exc)
         return None
+    usage.record("check", settings.claude_model, resp)
     raw = "".join(getattr(b, "text", "") for b in resp.content)
     return parse_check_json(raw)
 

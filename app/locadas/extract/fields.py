@@ -13,6 +13,7 @@ from types import SimpleNamespace
 from datetime import date, datetime, timedelta, timezone
 
 from ..config import settings
+from ..ops import usage
 from ..db import DocKind
 
 log = logging.getLogger(__name__)
@@ -94,8 +95,10 @@ def _claude_extract(kind_hint: DocKind | None, subject: str, recipients: str, ma
             messages=[{"role": "user", "content": prompt}],
         )
     except Exception as exc:
+        usage.record("extract", settings.claude_fast_model, error=True)
         log.warning("Claude-Extraktion fehlgeschlagen: %s", exc)
         return None
+    usage.record("extract", settings.claude_fast_model, resp)
     raw = "".join(getattr(b, "text", "") for b in resp.content).strip()
     return parse_claude_json(raw, kind_hint)
 

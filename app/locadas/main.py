@@ -44,6 +44,8 @@ from .channels import web as wab_web
 from .channels import webhook as wab_webhook
 from .engine import trial
 from .web import trial_routes
+from .web import admin_routes
+from . import ops
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG if settings.debug else logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -199,6 +201,7 @@ def set_session(response: Response, business: Business) -> Response:
 
 
 trial_routes.install(app, render, get_db, current_business, set_session, client_ip)  # Testen ohne Postfach
+admin_routes.install(app, render, get_db, current_business, client_ip)  # Admin-Cockpit /admin und /healthz
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -221,6 +224,7 @@ def _startup():
         from .mail import inbound_smtp
 
         _inbound_smtp = inbound_smtp.start()
+    ops.on_startup(_scheduler, _inbound_smtp)  # Fehler-Feed, Health-Check
 
 
 @app.on_event("shutdown")
@@ -405,18 +409,10 @@ def reconnect_submit(request: Request, session: Session = Depends(get_db), token
 
 
 def _background_scan(account_id: int) -> None:
-    from .engine.scheduler import cycle_lock
+    """Erst-Scan nach dem Verbinden. Sperre je Postfach: läuft es schon im Durchlauf, liest der es gerade."""
+    from .engine.scheduler import scan_one
 
-    # Nicht gleichzeitig mit dem Scheduler dasselbe Postfach lesen
-    if not cycle_lock.acquire(timeout=600):
-        return
-    try:
-        with new_session() as s:
-            account = s.get(MailAccount, account_id)
-            if account is not None:
-                scan_account(s, account)
-    finally:
-        cycle_lock.release()
+    scan_one(account_id, force=True)
 
 
 @app.get("/start", response_class=HTMLResponse)
@@ -425,6 +421,9 @@ def start(request: Request, business: Business = Depends(require_business), sess
     account = business.accounts[-1] if business.accounts else None
     scanning = account is not None and account.last_scan_at is None
     return render(request, "start.html", business=business, docs=docs, account=account, scanning=scanning, wa_msg=whatsapp)
+
+
+WA_OPTIN_VERSION = trial_routes.WA_OPTIN_VERSION
 
 
 def _save_whatsapp(session: Session, b: Business, number: str, opt_in: bool) -> str:
@@ -436,6 +435,8 @@ def _save_whatsapp(session: Session, b: Business, number: str, opt_in: bool) -> 
     changed = normalized != b.whatsapp_number
     b.whatsapp_number = normalized
     b.whatsapp_opt_in = bool(opt_in and normalized)
+    if b.whatsapp_opt_in and (changed or b.wa_optin_at is None or b.wa_optout_at is not None):
+        b.wa_optin_at, b.wa_optin_text, b.wa_optout_at = utcnow(), WA_OPTIN_VERSION, None  # Nachweis der Einwilligung
     if changed:
         b.whatsapp_last_inbound_at = None  # neues Handy, neues 24h-Fenster
         b.whatsapp_context = ""
@@ -970,7 +971,12 @@ def tap_redirect(request: Request, token: str, session: Session = Depends(get_db
         if fu.tap_state == "open" and human:
             taps.record_tap(fu, utcnow())
             session.commit()
-        return RedirectResponse(trial.mailto_link(doc.customer_email, fu.subject, fu.body or fu.wa_text), status_code=302)
+        # Kleine Seite statt 302 auf mailto: (In-App-Browser wie WhatsApp unter iOS blocken die Weiterleitung)
+        resp = render(request, "tap_mailto.html", fu=fu, doc=doc, mailto=trial.mailto_link(doc.customer_email, fu.subject, fu.body or fu.wa_text),
+                      body=trial.clip_body(fu.body or fu.wa_text))
+        resp.headers["X-Robots-Tag"] = "noindex, nofollow"
+        resp.headers["Cache-Control"] = "no-store"
+        return resp
     if not doc.customer_mobile or not fu.wa_text:
         return render(request, "approval.html", title="Keine Handynummer", text="Für diesen Kunden ist keine Handynummer hinterlegt. Trag sie beim Dokument ein.", doc=doc, fu=fu)
     if fu.tap_state == "open" and human:
@@ -1395,9 +1401,12 @@ def scan_now(business: Business = Depends(require_business), session: Session = 
     if not cycle_lock.acquire(blocking=False):
         return RedirectResponse("/dashboard?msg=laeuft", status_code=303)
     try:
+        from .engine.scheduler import scan_one
+
         for a in business.accounts:
             if a.status != AccountStatus.DISCONNECTED:
-                scan_account(session, a, force=True)
+                scan_one(a.id, force=True)  # eigene Session, Sperre je Postfach (Nachzügler des Durchlaufs)
+        session.expire_all()
         fu_engine.process_due(session, business_id=business.id)
         session.commit()
     finally:

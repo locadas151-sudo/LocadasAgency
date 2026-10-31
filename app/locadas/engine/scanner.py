@@ -392,6 +392,7 @@ def _take_sent(session: Session, account: MailAccount, mail: ParsedMail | None, 
         return 0
     if not _mark_seen(session, account, mail.message_id):
         return 0
+    session.commit()  # Schreibsperre freigeben, bevor Claude liest (parallele Scans warten sonst darauf)
     if _is_own_followup(session, mail.message_id) or mail.headers.get(OWN_HEADER.lower()):
         return 0
     if first_run and not mail.pdf_attachments:

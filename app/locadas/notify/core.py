@@ -41,6 +41,7 @@ class Notification:
     template_url: str | None = None             # Vorlage mit URL-Knopf: dynamischer Teil der URL (Index 0)
     context: dict | None = None     # wird bei Zustellung per WhatsApp am Betrieb gemerkt (z. B. Liste für „Stopp 3“)
     channel: str | None = None      # nach send(): "whatsapp", "email" oder None
+    wa_mode: str = ""               # nach send() per WhatsApp: "session" (im 24h-Fenster, kostenlos) oder "template"
 
     def __post_init__(self) -> None:
         if self.kind not in KINDS:
@@ -57,26 +58,46 @@ def send(session: Session, n: Notification, now: datetime | None = None) -> bool
     """Zustellen. WhatsApp, wenn eingerichtet und erlaubt; bei Fehler oder ohne passende Vorlage per Mail."""
     now = now or utcnow()
     b = n.business
+    error = ""
     if whatsapp_ready(b):
         try:
             if _deliver_whatsapp(b, n, now):
                 n.channel = "whatsapp"
                 if n.context is not None:
                     b.whatsapp_context = json.dumps(n.context)
+                _log(session, n, True)
                 return True
         except wa.WhatsAppError as exc:
-            log.warning("WhatsApp an Betrieb %s fehlgeschlagen, nehme Mail: %s", b.id, exc)
+            error = str(exc)[:500]
+            log.warning("WhatsApp an Betrieb %s fehlgeschlagen, nehme Mail: %s", b.id, exc, extra={"business_id": b.id})
     if not n.email_subject:
+        _log(session, n, False, error or "kein Kanal")
         return False
     if send_email(session, b, n.email_subject, n.email_body):
         n.channel = "email"
+        _log(session, n, True, error)
         return True
+    _log(session, n, False, error or "Mail nicht zugestellt")
     return False
+
+
+def _log(session: Session, n: Notification, ok: bool, error: str = "") -> None:
+    """Protokoll fürs Admin-Cockpit (Tabelle notification_log), wirft nie."""
+    try:
+        from ..db import NotificationLog
+
+        session.add(NotificationLog(
+            business_id=getattr(n.business, "id", None), kind=n.kind, title=(n.title or n.email_subject or "")[:200],
+            channel=n.channel or "", wa_mode=n.wa_mode if n.channel == "whatsapp" else "", ok=ok, error=error[:1000],
+        ))
+    except Exception:  # pragma: no cover
+        log.debug("Benachrichtigung nicht protokolliert", exc_info=True)
 
 
 def _deliver_whatsapp(b: Business, n: Notification, now: datetime) -> bool:
     to = b.whatsapp_number
     if wa.in_window(b, now):
+        n.wa_mode = "session"
         text = f"*{n.title}*\n\n{n.text}" if n.title else n.text
         if n.cta:
             wa.send_cta(to, text, n.cta[0], n.cta[1], n.footer)
@@ -96,6 +117,7 @@ def _deliver_whatsapp(b: Business, n: Notification, now: datetime) -> bool:
     if not name:
         return False
     payloads = n.template_buttons if n.template_buttons is not None else [p for _, p in n.buttons]
+    n.wa_mode = "template"
     wa.send_template(to, name, n.template_params, payloads, url_param=n.template_url)
     return True
 

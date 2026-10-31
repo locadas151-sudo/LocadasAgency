@@ -16,6 +16,7 @@ from dataclasses import dataclass, replace
 from typing import Iterable
 
 from ..config import settings
+from ..ops import usage
 from ..db import REPLY_INTENT_LABEL, DocKind, DocStatus, Document
 from ..extract.classify import FREEMAIL
 from ..mail.imap import ParsedMail
@@ -254,8 +255,10 @@ def classify_mail(mail: ParsedMail, body_text: str, docs: list[Document], known:
             max_tokens=1500,  # Denk-Blöcke zählen mit
             messages=[{"role": "user", "content": prompt}],
         )
+        usage.record("match", settings.claude_fast_model, resp)
         raw = "".join(getattr(b, "text", "") for b in resp.content)
     except Exception as exc:
+        usage.record("match", settings.claude_fast_model, error=True)
         log.warning("Claude-Zuordnung fehlgeschlagen: %s", exc)
         return None
     result = parse_result(raw, {d.id for d in docs})

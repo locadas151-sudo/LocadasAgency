@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Anmelden · Locadas Admin{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap wrap--narrow" style="max-width:520px">
+<div class="card">
+<h1 class="h2" style="font-size:30px">Cockpit</h1>
+{% if sent %}
+<p>Wenn die Adresse berechtigt ist, ist ein Link unterwegs. Er ist zwei Stunden gültig.</p>
+{% else %}
+<form method="post" action="/admin/login">
+<div class="field"><label for="email">Mailadresse</label><input id="email" name="email" type="email" required autocomplete="email"></div>
+<button class="btn sm" type="submit" style="margin-top:12px">Link schicken</button>
+</form>
+{% endif %}
+</div>
+</div>
+</section>
+{% endblock %}

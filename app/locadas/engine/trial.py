@@ -73,7 +73,7 @@ def placeholder_email(inbound_address: str) -> str:
 def create(session: Session, owner_name: str, business_name: str, whatsapp: str, email: str = "") -> Business:
     """Tester anlegen. whatsapp ist schon normalisiert (E.164 ohne +), email schon geprüft und frei."""
     b = Business(name=business_name.strip()[:200], owner_name=owner_name.strip()[:200], mode="trial",
-                 followup_channel="mail", whatsapp_number=whatsapp, whatsapp_opt_in=bool(whatsapp), email="pending")
+                 followup_channel="mail", whatsapp_number=whatsapp, whatsapp_opt_in=bool(whatsapp), email="pending", signup_source="testen")
     b.inbound_address = new_inbound_address(session, business_name or owner_name)
     b.email = (email or "").strip().lower()[:320] or placeholder_email(b.inbound_address)
     b.trial_active_at = utcnow()

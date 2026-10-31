@@ -254,7 +254,7 @@ def welcome(b: Business) -> Notification:
         business=b, kind="info", title="Hallo, hier ist dein Locadas-Sekretär",
         text=(
             "Ab jetzt melde ich mich hier statt per Mail. Ich sage dir Bescheid, wenn ein Kunde dein Angebot öffnet oder antwortet, "
-            "und bevor ich nachfasse. Du antwortest einfach mit den Knöpfen.\n\nSchreib „abmelden“, wenn du keine Nachrichten mehr willst."
+            "und bevor ich nachfasse. Du antwortest einfach mit den Knöpfen.\n\nSchreib STOP, wenn du keine Nachrichten mehr willst."
         ),
         buttons=[button("Alles klar", "ok")], template="welcome", template_params=[hello(b)],
     )
@@ -326,7 +326,7 @@ HELP = (
     "Antworte einfach mit den Knöpfen unter meinen Nachrichten. Außerdem verstehe ich:\n"
     "„Stopp 2“ stoppt den zweiten Kunden aus meiner letzten Liste\n"
     "eine Mailadresse, wenn eine Mail nicht ankam\n"
-    "„abmelden“ beendet die Nachrichten hier, dann kommt alles wieder per Mail"
+    "STOP beendet die Nachrichten hier, dann kommt alles wieder per Mail"
 )
 
 

@@ -25,9 +25,10 @@
 </div>
 <div class="field"><label for="whatsapp">Handynummer <small>(WhatsApp)</small></label><input id="whatsapp" name="whatsapp" type="tel" inputmode="tel" value="{{ values.whatsapp or '' }}" placeholder="0171 2345678" required autocomplete="tel"></div>
 <div class="field"><label for="email">E-Mail <small>(optional)</small></label><input id="email" name="email" type="email" inputmode="email" value="{{ values.email or '' }}" placeholder="info@mueller-haustechnik.de" autocomplete="email"></div>
+<label class="toggle optin"><input type="checkbox" name="wa_optin" value="1" required {% if values.wa_optin %}checked{% endif %}><div><b>{{ wa_optin_text }}</b></div></label>
 <div class="hp" aria-hidden="true"><label for="website">Website</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
 <button class="btn wide" type="submit" id="trial-submit">Weiter zu meiner Adresse <svg class="ic"><use href="#i-arrow"/></svg></button>
-<p class="fineprint">Dein Locadas-Sekretär schreibt dir an diese Nummer per WhatsApp. Abmelden jederzeit mit „abmelden“. Im Test gehen bis zu 10 Dokumente in 30 Tagen. Nach 60 Tagen ohne Aktivität löschen wir deine Testdaten. <a href="/datenschutz">Datenschutz</a></p>
+<p class="fineprint">Dein Locadas-Sekretär schreibt dir an diese Nummer per WhatsApp. Abmelden jederzeit mit STOP im Chat. Im Test gehen bis zu 10 Dokumente in 30 Tagen. Nach 60 Tagen ohne Aktivität löschen wir deine Testdaten. <a href="/datenschutz">Datenschutz</a></p>
 </form>
 {% endif %}
 </div>

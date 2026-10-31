@@ -25,7 +25,8 @@ log = logging.getLogger(__name__)
 
 _EMAIL = re.compile(r"^[\w.+'-]+@[\w-]+(?:\.[\w-]+)+$")
 _STOP_N = re.compile(r"^\s*stopp?\s*(\d{1,2})\s*[.!]?\s*$", re.I)
-_OPT_OUT = {"abmelden", "stop whatsapp", "stopp whatsapp", "keine nachrichten"}
+_OPT_OUT = {"abmelden", "stop whatsapp", "stopp whatsapp", "keine nachrichten", "stop", "stopp", "abbestellen", "unsubscribe"}
+_OPT_IN = {"start", "starten", "anmelden"}
 
 OUTCOME_LABEL = {"won": "Auftrag bekommen", "lost": "Nicht bekommen", "paid": "Bezahlt", "unpaid": "Nicht bezahlt, Betrieb kümmert sich"}
 OUTCOME_STATUS = {"won": DocStatus.WON, "lost": DocStatus.LOST, "paid": DocStatus.PAID, "unpaid": DocStatus.DONE}
@@ -73,6 +74,10 @@ def _first_time(session: Session, wamid: str, business_id: int | None) -> bool:
 
 def handle_message(session: Session, msg: dict, now: datetime) -> bool:
     sender = re.sub(r"\D", "", str(msg.get("from") or ""))
+    if sender:
+        from ..ops import alerts
+
+        alerts.note_admin_inbound(session, sender, now)  # Admin-Handy: 24h-Fenster für Alarme ohne Vorlage
     businesses = _businesses_for(session, sender) if sender else []
     if not businesses:
         log.info("WhatsApp von unbekannter Nummer ignoriert")
@@ -350,8 +355,18 @@ def run_text(session: Session, b: Business, text: str, now: datetime) -> tuple[s
     ctx = _context(b)
     if low in _OPT_OUT:
         b.whatsapp_opt_in = False
-        log_event(session, b.id, "whatsapp", "WhatsApp-Sekretär abgemeldet. Benachrichtigungen kommen wieder per Mail.")
-        return "Erledigt, ich schreibe dir hier nicht mehr. Alles Weitere kommt wieder per Mail. Du kannst das in den Einstellungen wieder einschalten.", None
+        b.wa_optout_at = now
+        log_event(session, b.id, "whatsapp", "WhatsApp-Sekretär abgemeldet (STOP). Benachrichtigungen kommen wieder per Mail.")
+        return "Erledigt, ich schreibe dir hier nicht mehr. Alles Weitere kommt per Mail. Mit START schalte ich WhatsApp wieder ein.", None
+    if low in _OPT_IN:
+        if b.whatsapp_opt_in:
+            return "WhatsApp ist schon eingeschaltet. Mit STOP kannst du es jederzeit abbestellen.", None
+        from ..web.trial_routes import WA_OPTIN_VERSION
+
+        b.whatsapp_opt_in = True
+        b.wa_optin_at, b.wa_optin_text, b.wa_optout_at = now, f"{WA_OPTIN_VERSION}:start", None
+        log_event(session, b.id, "whatsapp", "WhatsApp-Sekretär per START wieder eingeschaltet.")
+        return "Willkommen zurück. Ich schreibe dir wieder hier per WhatsApp. Abbestellen jederzeit mit STOP.", None
     hit = _STOP_N.match(text)
     if hit and ctx.get("list"):
         idx = int(hit.group(1))
@@ -393,7 +408,7 @@ TRIAL_HELP = (
     "Ich bin dein Locadas-Sekretär. Schick mir ein Angebot als PDF oder Foto, oder leite die Mail mit dem PDF an deine "
     "persönliche Adresse weiter. Ich erkenne Kunde und Betrag und melde mich mit der fertigen Nachfass-Nachricht, wenn sie dran ist.\n\n"
     "Fehlt mir die Nummer oder Mailadresse eines Kunden, schick sie mir einfach hier.\n"
-    "„abmelden“ beendet die Nachrichten hier."
+    "STOP beendet die Nachrichten hier."
 )
 
 

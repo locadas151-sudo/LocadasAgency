@@ -1,0 +1,33 @@
+{% extends "admin_base.html" %}
+{% block atitle %}Betriebe{% endblock %}
+{% block admin %}
+<div class="adm-head"><div><h1 class="h2">Betriebe</h1><p class="app-sub">{{ rows|length }} Treffer</p></div></div>
+<form class="adm-search" method="get" action="/admin/betriebe">
+<input name="q" value="{{ q }}" placeholder="Name, Inhaber, Mail, Nummer" aria-label="Suche">
+<input type="hidden" name="f" value="{{ f }}">
+<button class="btn sm" type="submit">Suchen</button>
+</form>
+<div class="tabs">
+{% for x in filters %}<a class="tab {% if f == x %}on{% endif %}" href="/admin/betriebe?f={{ x }}{% if q %}&q={{ q|urlencode }}{% endif %}">{{ {'alle': 'Alle', 'trial': 'Test', 'connected': 'Verbunden', 'error': 'Gestört', 'paused': 'Pausiert'}[x] }}</a>{% endfor %}
+</div>
+<div class="card adm-scroll" style="padding:8px 8px">
+<table class="adm-tbl">
+<tr><th>Betrieb</th><th>Telefon</th><th>Modus</th><th>Anbieter</th><th>Angemeldet</th><th>Zuletzt aktiv</th><th class="adm-num">Dok.</th><th class="adm-num">Nachgef.</th><th>Letzter Fehler</th></tr>
+{% for r in rows %}
+<tr>
+<td><a href="/admin/betrieb/{{ r.b.id }}"><b>{{ r.b.name }}</b></a><br><span class="small muted">{{ r.b.owner_name }}{% if r.b.owner_email %} · {{ r.b.owner_email }}{% endif %}</span>{% if r.b.onboarded_at %} <span class="pill good">Call erledigt</span>{% endif %}</td>
+<td class="small">{% if r.phone %}<a href="https://wa.me/{{ r.phone }}" target="_blank" rel="noopener">+{{ r.phone }}</a>{% else %}<span class="muted">fehlt</span>{% endif %}</td>
+<td>{% if r.b.mode == 'trial' %}<span class="pill open">Test</span>{% else %}<span class="pill good">verbunden</span>{% endif %}{% if r.b.paused %} <span class="pill warn">pausiert</span>{% endif %}{% if r.account and r.account.status.value == 'error' %} <span class="pill bad">gestört</span>{% endif %}</td>
+<td class="small">{{ r.account.provider if r.account else ('WhatsApp/Weiterleitung' if r.b.mode == 'trial' else '') }}</td>
+<td class="small">{{ r.b.created_at|datetime }}</td>
+<td class="small">{{ r.last_activity|datetime if r.last_activity else '' }}</td>
+<td class="adm-num">{{ r.docs }}</td>
+<td class="adm-num">{{ r.followups }}</td>
+<td class="adm-err">{{ r.last_error[:160] }}</td>
+</tr>
+{% else %}
+<tr><td colspan="9" class="muted">Keine Betriebe gefunden.</td></tr>
+{% endfor %}
+</table>
+</div>
+{% endblock %}

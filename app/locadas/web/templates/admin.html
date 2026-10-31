@@ -1,0 +1,64 @@
+{% extends "admin_base.html" %}
+{% block atitle %}Übersicht{% endblock %}
+{% block admin %}
+{% set msg = request.query_params.get('msg', '') %}
+<div class="adm-head">
+<div><h1 class="h2">Cockpit</h1><p class="app-sub">Kennzahlen live aus der Datenbank · Zeiten in {{ settings.timezone }}</p></div>
+<div class="btn-row">
+<form method="post" action="/admin/aktion/bericht"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn ghost sm" type="submit">Tagesbericht jetzt schicken</button></form>
+<form method="post" action="/admin/aktion/sicherung"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn ghost sm" type="submit">Sicherung jetzt</button></form>
+</div>
+</div>
+{% if msg %}<div class="note {% if 'fehler' in msg %}err{% endif %}" style="margin-bottom:16px">{{ {'sicherung_ok': 'Sicherung angelegt.', 'sicherung_fehler': 'Sicherung fehlgeschlagen, Details im Fehler-Feed.', 'bericht_ok': 'Tagesbericht ist raus.', 'bericht_fehler': 'Tagesbericht nicht zugestellt. ADMIN_WHATSAPP bzw. ADMIN_EMAILS und Versand prüfen.'}.get(msg, msg) }}</div>{% endif %}
+{% if not health_ok %}<div class="card danger" style="margin-bottom:16px"><b>Health-Check rot:</b> <span class="adm-mono">{{ hz }}</span></div>{% endif %}
+{% if not alerts_on %}<div class="note warn" style="margin-bottom:16px">Alarme sind aus: ADMIN_WHATSAPP (mit WhatsApp-Zugang) oder ADMIN_EMAILS setzen.</div>{% endif %}
+
+<div class="kpis kpis5">
+<div class="kpi"><span class="kpi-num">{{ k.businesses }}</span><span class="kpi-lbl">Betriebe</span><small>{{ k.trial }} Test · {{ k.connected }} verbunden · {{ k.paused }} pausiert</small></div>
+<div class="kpi"><span class="kpi-num">{{ k.signups_24h }}</span><span class="kpi-lbl">Anmeldungen 24 h</span><small>{{ k.signups_7d }} in 7 Tagen</small></div>
+<div class="kpi"><span class="kpi-num">{{ k.connected_24h }}</span><span class="kpi-lbl">Postfach verbunden 24 h</span><small>{{ k.connected_7d }} in 7 Tagen</small></div>
+<div class="kpi"><span class="kpi-num">{{ k.docs_today }}</span><span class="kpi-lbl">Dokumente heute</span><small>{{ k.docs_7d }} in 7 Tagen · {{ k.docs }} gesamt</small></div>
+<div class="kpi"><span class="kpi-num">{{ k.fu_today }}</span><span class="kpi-lbl">Nachgefasst heute</span><small>{{ k.fu_7d }} in 7 Tagen · {{ k.taps_7d }} Tipps</small></div>
+<div class="kpi"><span class="kpi-num">{{ k.replies_7d }}</span><span class="kpi-lbl">Antworten 7 Tage</span><small>{{ k.replies }} gesamt · {{ k.wins }} Aufträge/bezahlt</small></div>
+<div class="kpi"><span class="kpi-num" {% if k.accounts_error %}style="color:#991b1b"{% endif %}>{{ k.accounts_error }}</span><span class="kpi-lbl">Postfächer gestört</span><small><a href="/admin/betriebe?f=error">ansehen</a></small></div>
+<div class="kpi"><span class="kpi-num" {% if k.notify_failed_24h %}style="color:#991b1b"{% endif %}>{{ k.notify_failed_24h }}</span><span class="kpi-lbl">Nachrichten nicht zugestellt 24 h</span><small>{{ k.notify_failed_7d }} in 7 Tagen</small></div>
+<div class="kpi"><span class="kpi-num">{{ k.claude_today.calls }}</span><span class="kpi-lbl">Claude-Aufrufe heute</span><small>ca. {{ '%.2f'|format(k.claude_today.cost_usd) }} USD · 7 Tage {{ k.claude_7d.calls }} / {{ '%.2f'|format(k.claude_7d.cost_usd) }} USD</small></div>
+<div class="kpi"><span class="kpi-num">{{ k.wa_today.template + k.wa_today.session }}</span><span class="kpi-lbl">WhatsApp heute</span><small>{{ k.wa_today.template }} Vorlagen · {{ k.wa_today.session }} im Fenster · ca. {{ '%.2f'|format(k.wa_today.cost_eur) }} € · 7 Tage {{ '%.2f'|format(k.wa_7d.cost_eur) }} €</small></div>
+</div>
+
+<div class="adm-grid">
+<div class="card">
+<h3 class="h3">Funnel /testen</h3>
+<div class="adm-scroll"><table class="adm-tbl">
+<tr><th>Schritt</th><th class="adm-num">Gesamt</th><th></th><th class="adm-num">Anmeldung letzte 7 Tage</th></tr>
+{% for st in funnel %}{% set w = funnel_7d[loop.index0] %}
+<tr><td>{{ st.label }}</td><td class="adm-num">{{ st.n }} <span class="muted small">{{ st.pct_total }} %</span></td><td style="width:30%"><div class="adm-bar"><i style="width:{{ st.pct_total }}%"></i></div></td><td class="adm-num">{{ w.n }} <span class="muted small">{{ w.pct_total }} %</span></td></tr>
+{% endfor %}
+</table></div>
+<p class="small muted" style="margin-bottom:0">Prozent jeweils von den Anmeldungen. Kohorte nach Anmeldedatum.</p>
+</div>
+<div class="card">
+<h3 class="h3">Neueste Anmeldungen</h3>
+<div class="adm-scroll"><table class="adm-tbl">
+{% for b in recent %}
+<tr><td><a href="/admin/betrieb/{{ b.id }}">{{ b.name }}</a><br><span class="small muted">{{ b.owner_name }}</span></td><td><span class="pill {{ 'open' if b.mode == 'trial' else 'good' }}">{{ 'Test' if b.mode == 'trial' else 'verbunden' }}</span></td><td class="small">{{ b.created_at|datetime }}</td></tr>
+{% else %}<tr><td class="muted">Noch niemand.</td></tr>{% endfor %}
+</table></div>
+</div>
+<div class="card">
+<h3 class="h3">Betrieb</h3>
+<ul class="plain small">
+<li><b>Health:</b> {{ 'ok' if health_ok else 'rot' }} · Scheduler {{ hz.scheduler }} · letzter Durchlauf {% if hz.get('last_cycle_age_s') is not none %}vor {{ (hz.get('last_cycle_age_s') / 60)|round(1) }} min{% else %}noch keiner{% endif %} · SMTP-Empfänger {{ hz.inbound_smtp }}</li>
+<li><b>Letzter Durchlauf:</b> <span class="adm-mono">{{ cycle or 'noch keiner seit dem Start' }}</span></li>
+<li><b>Warnungen/Fehler 24 h:</b> {{ k.warnings_24h }} / {{ k.errors_24h }} <a href="/admin/fehler">Feed</a></li>
+<li><b>Claude nach Zweck heute:</b> {% for p, v in k.claude_today.by_purpose.items() %}{{ p }} {{ v.calls }}{% if not loop.last %}, {% endif %}{% else %}keine{% endfor %}</li>
+<li><b>WhatsApp 7 Tage:</b> {{ k.wa_7d.utility }} Utility, {{ k.wa_7d.marketing }} Marketing, {{ k.wa_7d.session }} im Fenster (kostenlos)</li>
+</ul>
+</div>
+<div class="card">
+<h3 class="h3">Sicherung</h3>
+{% if last_backup %}<p class="small" style="margin-top:0">Letzte: {% if last_backup.ok %}<span class="pill good">ok</span> {{ last_backup.file }} ({{ (last_backup.size / 1024)|round(0)|int }} KB){% if last_backup.s3 %} · {{ last_backup.s3 }}{% endif %}{% else %}<span class="pill bad">fehlgeschlagen</span> {{ last_backup.error }}{% endif %} · {{ last_backup.at[:16]|replace('T', ' ') }} UTC</p>{% else %}<p class="small muted" style="margin-top:0">Noch keine Sicherung gelaufen (täglich 03:15).</p>{% endif %}
+<ul class="plain small">{% for f in backups %}<li class="adm-mono">{{ f.file }} · {{ (f.size / 1024)|round(0)|int }} KB · {{ f.at|datetime }}</li>{% endfor %}</ul>
+</div>
+</div>
+{% endblock %}

@@ -41,7 +41,7 @@ Tester melden sich nur mit Name, Betrieb und Handynummer an und bekommen eine Ad
 - Auf dem Server darf nichts anderes auf Port 25 lauschen (`sudo ss -ltnp | grep :25`, ggf. `sudo systemctl disable --now postfix`).
 - Sicherheit: Angenommen wird nur bei `RCPT TO` an eine existierende Adresse `@angebot.locadas.de`, alles andere wird mit 550 abgelehnt (kein offenes Relay). Höchstens 25 MB je Mail, höchstens 20 Mails je Adresse und Stunde (`INBOUND_PER_HOUR`).
 - Prüfen: `swaks --to <adresse>@angebot.locadas.de --server app.locadas.de --attach angebot.pdf` (oder einfach eine Mail weiterleiten). Im Log steht `Eingang per SMTP: created`.
-- Hinweis: Der Empfänger bietet noch kein STARTTLS an. Große Anbieter (Gmail, GMX, Outlook) liefern trotzdem zu, die Verbindung zum Server ist dann aber unverschlüsselt. Wer das nicht will, nimmt Weg B.
+- **STARTTLS:** Der Empfänger bietet STARTTLS an (opportunistisch, also nicht Pflicht). Ohne eigene Einstellung erzeugt die App beim ersten Start ein selbst signiertes Zertifikat für `INBOUND_DOMAIN` in `DATA_DIR/tls/` (bleibt im Volume). Sendende Mailserver prüfen bei opportunistischem TLS das Zertifikat nicht, die Verbindung ist trotzdem verschlüsselt. Wer ein echtes Zertifikat will: `INBOUND_TLS_CERT` und `INBOUND_TLS_KEY` auf PEM-Dateien im Container zeigen lassen (z. B. per Volume aus Caddy oder certbot). Prüfen: `openssl s_client -starttls smtp -connect app.locadas.de:25 -crlf` zeigt das Zertifikat.
 
 **Weg B: Mail-Anbieter mit Rohmail-Webhook (Mailgun, Amazon SES, Postmark)**
 - Beim Anbieter die Domain `angebot.locadas.de` als Empfangsdomain einrichten (MX-Records laut Anbieter) und eine Route „alles an `*@angebot.locadas.de`“ → `POST https://app.locadas.de/inbound/raw` mit der **Rohmail (MIME) als Body**.
@@ -53,6 +53,12 @@ Tester melden sich nur mit Name, Betrieb und Handynummer an und bekommen eine Ad
 
 | Variable | Inhalt |
 |---|---|
+| `ADMIN_EMAILS` (Variable) | Kommaliste der Adressen mit Zugang zum Cockpit `/admin`. Leer = kein Cockpit, keine Mail-Alarme |
+| `ADMIN_WHATSAPP` (Secret) | Handynummer für Alarme und Tagesbericht (E.164 ohne +). Leer = Alarme per Mail an `ADMIN_EMAILS` |
+| `ADMIN_NAME`, `ADMIN_DIGEST_HOUR` | Anrede in den Alarmen (Standard `Julius`), Stunde des Tagesberichts (Standard `19`) |
+| `BACKUP_S3_BUCKET`, `BACKUP_S3_PREFIX` | optional, Sicherung zusätzlich nach S3 (braucht boto3, siehe 3b) |
+| `SCAN_WORKERS`, `SCAN_ACCOUNT_TIMEOUT` | Postfächer parallel lesen (Standard 8), Zeitlimit je Postfach in Sekunden (Standard 300) |
+| `INBOUND_TLS_CERT`, `INBOUND_TLS_KEY` | optional, eigenes Zertifikat für STARTTLS am SMTP-Empfänger (Pfade im Container). Leer = selbst signiert |
 | `INBOUND_DOMAIN` | Standard `angebot.locadas.de` |
 | `INBOUND_SMTP_PORT` | Port des SMTP-Empfängers im Container, Standard `2525` (leer = aus) |
 | `INBOUND_WEBHOOK_SECRET` | Secret, langer Zufallswert (`python3 -c "import secrets;print(secrets.token_urlsafe(32))"`). Leer = Webhook aus |
@@ -76,7 +82,31 @@ docker compose restart app
 docker compose exec app python -c "from locadas.engine.scheduler import run_cycle;print(run_cycle())"   # Scan sofort
 ```
 
-Daten (SQLite, PDFs, Verschlüsselungs-Key-Fallback) liegen im Docker-Volume `locadas-app_locadas-data`. Backup: `docker run --rm -v locadas-app_locadas-data:/data -v $PWD:/out alpine tar czf /out/locadas-backup.tgz /data`.
+Daten (SQLite, PDFs, Verschlüsselungs-Key-Fallback) liegen im Docker-Volume `locadas-app_locadas-data`. Komplettes Volume (inklusive PDFs) von Hand sichern: `docker run --rm -v locadas-app_locadas-data:/data -v $PWD:/out alpine tar czf /out/locadas-backup.tgz /data`.
+
+Health-Check: `GET /healthz` liefert JSON mit `db`, `scheduler`, `last_cycle_age_s` und `inbound_smtp`, Status 200 wenn alles läuft, sonst 503. Docker nutzt ihn als Healthcheck (`docker compose ps` zeigt `healthy`). `/health` bleibt als einfacher Ping.
+
+## 3a. Admin-Cockpit und Alarme
+
+- `ADMIN_EMAILS` (Variable, Kommaliste) setzen, z. B. `julius@locadas.de`. Wer mit einem Betrieb unter dieser Adresse angemeldet ist, sieht `/admin`. Sonst unter `/admin/login` einen Magic-Link anfordern (2 Stunden gültig, geht an `ADMIN_WHATSAPP` bzw. per Mail). Für alle anderen ist `/admin` eine 404.
+- Cockpit: Kennzahlen (Anmeldungen, Verbindungen, Dokumente, Nachfassen, Antworten, gestörte Postfächer, nicht zugestellte Nachrichten, Claude-Aufrufe und geschätzte Kosten, WhatsApp-Vorlagen und Kosten), Funnel `/testen`, Liste aller Betriebe mit Suche und Filter, Detailseite mit Pausieren, „Jetzt scannen“, „Login-Link schicken“ und Notiz „Onboarding-Call erledigt“, Fehler-Feed (Log ab WARNING).
+- `ADMIN_WHATSAPP` (Secret, E.164 ohne +): Alarme bei neuer Anmeldung, neu verbundenem Postfach, gestörtem Postfach und Fehlern im Hintergrund (höchstens einer je 15 Minuten und Art), dazu der Tagesbericht um 19 Uhr. Außerhalb des 24h-Fensters geht das als Vorlage `locadas_event` (kostet wie jede Utility-Vorlage). Schreib dem Sekretär einmal am Tag irgendwas, dann laufen die Alarme 24 Stunden kostenlos als normale Nachricht. Ohne WhatsApp gehen Alarme per Mail an `ADMIN_EMAILS` (über `SYSTEM_SMTP_*` oder das verbundene Postfach des Admin-Betriebs).
+
+## 3b. Sicherung und Wiederherstellung
+
+- Jede Nacht um 03:15 legt die App mit dem SQLite-Online-Backup eine konsistente Kopie an: `DATA_DIR/backups/locadas-YYYYMMDD.sqlite.gz` (im Volume), die neuesten 14 bleiben (`BACKUP_KEEP`). Das Cockpit zeigt die letzte Sicherung, dort gibt es auch „Sicherung jetzt“. Schlägt sie fehl, kommt ein Alarm.
+- Optional zusätzlich nach S3: Variable `BACKUP_S3_BUCKET` (und `BACKUP_S3_PREFIX`) setzen, `boto3` ins Image nehmen (`pip install boto3` in der `Dockerfile`) und der Instanz eine IAM-Rolle mit `s3:PutObject` auf den Bucket geben. Ohne boto3 steht nur ein Hinweis im Log, lokal wird trotzdem gesichert. Im Bucket eine Lifecycle-Regel (z. B. 30 Tage) anlegen.
+- Die PDFs (`DATA_DIR/pdf`) sind nicht in dieser Sicherung. Sie liegen im selben Volume, das Volume einmal pro Woche per `tar` (siehe oben) oder per EBS-Snapshot sichern.
+- Sicherungen auflisten: `docker compose exec app ls -la /data/backups`
+- **Wiederherstellen:**
+  ```
+  cd ~/locadas-app
+  docker compose stop app
+  docker compose run --rm --no-deps app python -m locadas.ops.backup --restore /data/backups/locadas-20261101.sqlite.gz
+  docker compose start app
+  ```
+  Das überschreibt `/data/locadas.db` und löscht die alten `-wal`/`-shm`-Dateien. Vorher die aktuelle Datei sichern, falls man sie noch braucht: `docker compose run --rm --no-deps app cp /data/locadas.db /data/locadas.db.vorher`.
+- Von S3 zurück: Datei mit `aws s3 cp s3://<bucket>/locadas/locadas-YYYYMMDD.sqlite.gz .` holen, per `docker cp` nach `/data/backups/` im Container legen, dann wie oben.
 
 ## 4. Lokal ausprobieren (ohne echtes Postfach)
 

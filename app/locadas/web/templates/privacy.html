@@ -16,8 +16,10 @@
 <div class="card" style="margin-top:16px" id="testen">
 <h3 class="h3">Testen ohne Postfach</h3>
 <ul class="plain">
-<li><b>Anmeldung:</b> Name, Betrieb, Handynummer und auf Wunsch eine Mailadresse. An die Handynummer schreibt dein Locadas-Sekretär per WhatsApp (abmelden mit „abmelden“).</li>
+<li><b>Anmeldung:</b> Name, Betrieb, Handynummer und auf Wunsch eine Mailadresse. An die Handynummer schreibt dein Locadas-Sekretär per WhatsApp, aber nur mit deiner ausdrücklichen Einwilligung (Haken bei der Anmeldung). Wann du eingewilligt hast und welcher Text dabei stand, speichern wir als Nachweis. Abbestellen geht jederzeit mit STOP im Chat, mit START schaltest du es wieder ein. Danach kommt alles per Mail.</li>
 <li><b>Was wir bekommen:</b> nur die Mails und Dateien, die du an deine persönliche Adresse weiterleitest, in CC oder BCC setzt oder per WhatsApp schickst. Daraus lesen wir Kunde, Nummer, Betrag und Kontaktdaten des Kunden, gespeichert werden diese Angaben und das PDF (Fotos als PDF). Den Mailtext speichern wir nicht.</li>
+<li><b>Weitergeleitete Mails:</b> Sie kommen direkt auf unserem Server in Frankfurt an. Der Empfang ist verschlüsselt (STARTTLS), sofern dein Mailanbieter das unterstützt, was alle großen Anbieter tun. Wir nehmen nur Mails an deine persönliche Adresse an und leiten nichts weiter.</li>
+<li><b>Dateien per WhatsApp:</b> PDFs und Fotos, die du dem Sekretär schickst, laufen über WhatsApp (Meta) und werden von dort einmal auf unseren Server geladen. Fotos und Scans liest Claude (siehe unten) und wir speichern sie als PDF.</li>
 <li><b>Was wir nicht tun:</b> Im Test schicken wir nichts an deine Kunden. Die Nachfass-Nachricht schickst du selbst mit einem Tipp.</li>
 <li><b>Löschen:</b> Nach 60 Tagen ohne Aktivität löschen wir den Testzugang mit allen Daten von selbst.</li>
 </ul>
@@ -25,8 +27,8 @@
 <div class="card" style="margin-top:16px">
 <h3 class="h3">KI-Auswertung durch Anthropic (Unterauftragsverarbeiter)</h3>
 <ul class="plain">
-<li>PDF-Texte, die oben genannten Mailtexte aus dem Posteingang und die Stilproben schicken wir zur Auswertung an <b>Anthropic PBC</b> (USA, KI-Modell Claude). Auch die Nachfass-Texte in deinem Stil lässt Claude schreiben, mit den Angaben zum Vorgang (Kunde, Nummer, Betrag, Daten).</li>
-<li>Die Übermittlung in die USA ist mit den <b>EU-Standardvertragsklauseln</b> (Art. 46 Abs. 2 lit. c DSGVO) abgesichert. Anthropic nutzt API-Daten nicht zum Training und löscht sie nach kurzer Aufbewahrung.</li>
+<li>PDF-Texte, Fotos und Scans von Angeboten, die oben genannten Mailtexte aus dem Posteingang und die Stilproben schicken wir zur Auswertung an <b>Anthropic PBC</b> (USA, KI-Modell Claude). Auch die Nachfass-Texte in deinem Stil lässt Claude schreiben, mit den Angaben zum Vorgang (Kunde, Nummer, Betrag, Daten). Anthropic ist unser Unterauftragsverarbeiter.</li>
+<li>Die Daten werden dafür in die USA übermittelt. Die Übermittlung ist mit den <b>EU-Standardvertragsklauseln</b> (Art. 46 Abs. 2 lit. c DSGVO) abgesichert. Anthropic nutzt API-Daten nicht zum Training und löscht sie nach kurzer Aufbewahrung. Gespeichert werden die Ergebnisse nur bei uns in Frankfurt.</li>
 <li>Gespeichert wird von einer Kundenantwort nur die Kurzfassung (ein Satz) und die erkannte Absicht, nicht der Mailtext.</li>
 </ul>
 </div>
@@ -37,6 +39,15 @@
 <li>Die erkannten Angebots- und Rechnungs-PDFs sowie die daraus gelesenen Angaben (Kunde, CC-Empfänger, Nummer, Betrag, Fälligkeit, Bankverbindung des Betriebs).</li>
 <li>Die Nachfass-Mails, die wir in deinem Namen geschickt haben, und den Verlauf dazu.</li>
 <li>Server-Standort Deutschland (AWS Frankfurt).</li>
+<li><b>Datensicherung:</b> Jede Nacht sichern wir die Datenbank. Die Sicherungen liegen ebenfalls in Frankfurt (AWS) und werden nach 14 Tagen gelöscht. Was du löschst, ist also spätestens nach 14 Tagen auch aus den Sicherungen verschwunden.</li>
+<li><b>Fehlerprotokoll und Support:</b> Technische Fehler speichern wir in einem Protokoll (die letzten 1.000 Einträge). Welche Benachrichtigung wann über welchen Kanal rausging, speichern wir 90 Tage. Damit wir dir beim Einrichten helfen können, sieht das Locadas-Team den Stand deines Zugangs (Verbindung, erkannte Dokumente, Benachrichtigungen). Postfach-Passwörter sieht niemand.</li>
+</ul>
+</div>
+<div class="card" style="margin-top:16px" id="whatsapp">
+<h3 class="h3">WhatsApp</h3>
+<ul class="plain">
+<li>Der WhatsApp-Sekretär läuft über die WhatsApp Business Plattform von <b>Meta Platforms Ireland Ltd.</b> Meta verarbeitet dabei deine Handynummer und die Nachrichten zwischen dir und dem Sekretär. Meta kann Daten auch in die USA übermitteln (EU-Standardvertragsklauseln bzw. EU-US Data Privacy Framework).</li>
+<li>Wir schreiben dir nur, wenn du eingewilligt hast, und nur zu deinen Angeboten und Rechnungen. Keine Werbung. Mit STOP bestellst du ab, mit START wieder an.</li>
 </ul>
 </div>
 <div class="card" style="margin-top:16px">
@@ -50,11 +61,11 @@
 <h3 class="h3">Was nie passiert</h3>
 <ul class="plain">
 <li>Keine Zahlungserinnerung ohne dein „Noch offen“. Angebote über deiner Freigabegrenze (Standard 10.000 €) gehen nur mit deiner Freigabe raus. Alle anderen Nachfass-Mails kündigen wir dir vorher in der Morgen-Vorschau an.</li>
-<li>Wir geben Kundendaten nicht an Dritte weiter (außer Anthropic wie oben beschrieben) und nutzen sie nicht für Werbung.</li>
+<li>Wir geben Kundendaten nicht an Dritte weiter (außer an die Unterauftragsverarbeiter aus dem <a href="/avv">AVV</a>, wie oben beschrieben) und nutzen sie nicht für Werbung.</li>
 <li>Trennst du die Verbindung, werden Zugangsdaten, Dokumente, PDFs und Verlauf sofort gelöscht.</li>
 </ul>
 </div>
-<p class="small muted" style="margin-top:20px">Verantwortlich für die Daten deiner Kunden bist du, wir verarbeiten sie in deinem Auftrag nach dem <a href="/avv">Auftragsverarbeitungsvertrag (AVV)</a>, den du beim Verbinden akzeptierst. Locadas GmbH, Gladbacher Straße 21, 52525 Heinsberg, <a href="mailto:info@locadas.de">info@locadas.de</a>. Allgemeine Datenschutzerklärung: <a href="https://locadas.de/datenschutz.html">locadas.de/datenschutz</a>.</p>
+<p class="small muted" style="margin-top:20px">Verantwortlich für die Daten deiner Kunden bist du, wir verarbeiten sie in deinem Auftrag nach dem <a href="/avv">Auftragsverarbeitungsvertrag (AVV)</a>, den du beim Verbinden akzeptierst. Locadas GmbH, Gladbacher Straße 21, 52525 Heinsberg, <a href="mailto:info@locadas.de">info@locadas.de</a>. Allgemeine Datenschutzerklärung: <a href="https://locadas.de/datenschutz.html">locadas.de/datenschutz</a>. <a href="https://locadas.de/impressum.html">Impressum</a>.</p>
 </div>
 </section>
 {% endblock %}

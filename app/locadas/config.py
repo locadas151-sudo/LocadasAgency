@@ -138,6 +138,27 @@ class Settings:
     trial_delete_after_days: int = field(default_factory=lambda: _env_int("TRIAL_DELETE_AFTER_DAYS", 60))
     calendly_url: str = field(default_factory=lambda: _env("CALENDLY_URL", "https://calendly.com/julius-locadas/julius-komorek"))
 
+    # Betrieb von Locadas selbst (locadas/ops/, Admin-Cockpit /admin)
+    # Wer ins Cockpit darf: Kommaliste von Mailadressen (angemeldeter Betrieb mit dieser Adresse oder Magic-Link)
+    admin_emails: tuple[str, ...] = field(default_factory=lambda: tuple(
+        e.strip().lower() for e in (_env("ADMIN_EMAILS", "") or "").split(",") if e.strip()))
+    # Alarme und Tagesbericht an diese WhatsApp-Nummer (E.164 ohne „+“), sonst/zusätzlich per Mail an ADMIN_EMAILS
+    admin_whatsapp: str = field(default_factory=lambda: "".join(c for c in (_env("ADMIN_WHATSAPP", "") or "") if c.isdigit()))
+    admin_name: str = field(default_factory=lambda: _env("ADMIN_NAME", "Julius"))
+    digest_hour: int = field(default_factory=lambda: _env_int("ADMIN_DIGEST_HOUR", 19))
+    # Nächtliche Sicherung der SQLite-Datenbank nach DATA_DIR/backups (14 Stück), optional zusätzlich nach S3
+    backup_enabled: bool = field(default_factory=lambda: _env_bool("BACKUP_ENABLED", True))
+    backup_keep: int = field(default_factory=lambda: _env_int("BACKUP_KEEP", 14))
+    backup_s3_bucket: str = field(default_factory=lambda: _env("BACKUP_S3_BUCKET", "") or "")
+    backup_s3_prefix: str = field(default_factory=lambda: _env("BACKUP_S3_PREFIX", "locadas/") or "")
+    # Scheduler: Postfächer parallel lesen (je Postfach nie zweimal gleichzeitig), Zeitlimit je Postfach in Sekunden
+    scan_workers: int = field(default_factory=lambda: _env_int("SCAN_WORKERS", 8))
+    scan_account_timeout: int = field(default_factory=lambda: _env_int("SCAN_ACCOUNT_TIMEOUT", 300))
+    # STARTTLS am SMTP-Empfänger: eigenes Zertifikat (z. B. von Caddy/Let's Encrypt), sonst selbst signiert in DATA_DIR
+    inbound_tls_cert: str = field(default_factory=lambda: _env("INBOUND_TLS_CERT", "") or "")
+    inbound_tls_key: str = field(default_factory=lambda: _env("INBOUND_TLS_KEY", "") or "")
+    inbound_tls: bool = field(default_factory=lambda: _env_bool("INBOUND_TLS", True))
+
     @property
     def whatsapp_enabled(self) -> bool:
         return bool(self.whatsapp_token and self.whatsapp_phone_number_id and self.whatsapp_app_secret)
