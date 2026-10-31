@@ -355,6 +355,44 @@ def document_pdf(doc_id: int, business: Business = Depends(require_business), se
     return FileResponse(doc.pdf_path, media_type="application/pdf", filename=doc.pdf_filename or "dokument.pdf")
 
 
+# --- Dokument-Link für Kunden (Lese-Tracking) ---------------------------------------
+
+@app.get("/a/{token}", response_class=HTMLResponse)
+def customer_view(request: Request, token: str, session: Session = Depends(get_db)):
+    doc = session.scalar(select(Document).where(Document.view_token == token)) if token else None
+    if doc is None or not doc.pdf_path or not Path(doc.pdf_path).exists():
+        raise HTTPException(404)
+    # Eigene Vorschau-Aufrufe des Betriebs nicht zählen
+    viewer = auth.business_from_token(session, request.cookies.get(auth.COOKIE))
+    if viewer is None or viewer.id != doc.business_id:
+        now = utcnow()
+        first = doc.first_opened_at is None
+        doc.open_count += 1
+        doc.last_opened_at = now
+        if first:
+            doc.first_opened_at = now
+            log_event(session, doc.business_id, "opened", f"{doc.customer_name or doc.customer_email} hat {doc.kind_label} {doc.document_number or doc.title} geöffnet.", doc.id)
+        session.commit()
+        if first and doc.business.notify_opened:
+            fu_engine.notify_business(
+                session, doc.business,
+                f"{doc.customer_name or doc.customer_email} hat dein {doc.kind_label} geöffnet",
+                f"Hallo {doc.business.owner_name or doc.business.name},\n\n"
+                f"{doc.customer_name or doc.customer_email} hat gerade {doc.kind_label} {doc.document_number or doc.title} geöffnet. "
+                f"Guter Moment für einen kurzen Anruf.\n\n{settings.base_url}/dokument/{doc.id}\n\nLocadas Nachfasser",
+            )
+            session.commit()
+    return render(request, "customer_view.html", doc=doc, token=token)
+
+
+@app.get("/a/{token}/pdf")
+def customer_pdf(token: str, session: Session = Depends(get_db)):
+    doc = session.scalar(select(Document).where(Document.view_token == token)) if token else None
+    if doc is None or not doc.pdf_path or not Path(doc.pdf_path).exists():
+        raise HTTPException(404)
+    return FileResponse(doc.pdf_path, media_type="application/pdf", filename=doc.pdf_filename or "dokument.pdf", content_disposition_type="inline")
+
+
 # --- Freigabe per Link (ohne Login) ------------------------------------------------
 
 @app.get("/f/{token}/{action}", response_class=HTMLResponse)
@@ -469,6 +507,7 @@ def settings_save(
     business: Business = Depends(require_business), session: Session = Depends(get_db),
     name: str = Form(""), owner_name: str = Form(""), phone: str = Form(""), signature: str = Form(""),
     followup_offers: str = Form(""), followup_invoices: str = Form(""), paused: str = Form(""), auto_mode: str = Form(""), notify_opened: str = Form(""),
+    include_view_link: str = Form(""),
 ):
     b = session.get(Business, business.id)
     b.name = name.strip() or b.name
@@ -480,6 +519,11 @@ def settings_save(
     b.paused = bool(paused)
     b.auto_mode = bool(auto_mode)
     b.notify_opened = bool(notify_opened)
+    b.include_view_link = bool(include_view_link)
+    for d in b.documents:
+        for f in d.followups:
+            if f.status == FollowUpStatus.SCHEDULED:
+                f.subject, f.body = "", ""
     for a in b.accounts:
         a.display_name = b.name
     session.commit()

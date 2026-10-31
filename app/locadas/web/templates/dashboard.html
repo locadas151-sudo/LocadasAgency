@@ -60,7 +60,7 @@
 </div>
 <div class="right">
 <span class="amt">{{ d.amount_gross|money }}</span>
-<div class="next">{% if d.status == DocStatus.OPEN %}{% if d.next_followup_at %}nachfassen {{ d.next_followup_at|rel }}{% elif d.followups_sent %}{{ d.followups_sent }}× nachgefasst{% endif %}{% else %}<span class="pill {{ STATUS_CLASS[d.status] }}">{{ STATUS_LABEL[d.status] }}</span>{% endif %}</div>
+<div class="next">{% if d.first_opened_at %}<span class="pill good" title="zuletzt {{ d.last_opened_at|datetime }}">geöffnet{% if d.open_count > 1 %} {{ d.open_count }}×{% endif %}</span> {% endif %}{% if d.status == DocStatus.OPEN %}{% if d.next_followup_at %}nachfassen {{ d.next_followup_at|rel }}{% elif d.followups_sent %}{{ d.followups_sent }}× nachgefasst{% endif %}{% else %}<span class="pill {{ STATUS_CLASS[d.status] }}">{{ STATUS_LABEL[d.status] }}</span>{% endif %}</div>
 </div>
 </li>
 {% endfor %}

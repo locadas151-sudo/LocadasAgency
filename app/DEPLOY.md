@@ -52,7 +52,7 @@ python demo.py
 
 Startet einen Test-Mailserver mit drei Beispiel-PDFs und die App auf http://localhost:8000. Im Formular unter „Server manuell eintragen“ die angezeigten Ports eintragen. Nachfass-Mails erscheinen im Terminal statt bei Kunden.
 
-Tests: `cd app && python -m pytest -q` (22 Tests, darunter ein kompletter Durchlauf über IMAP und SMTP gegen Testserver).
+Tests: `cd app && python -m pytest -q` (26 Tests, darunter ein kompletter Durchlauf über IMAP und SMTP gegen Testserver).
 
 ## 5. Was noch offen ist
 
@@ -60,6 +60,6 @@ Tests: `cd app && python -m pytest -q` (22 Tests, darunter ein kompletter Durchl
   - Google: Cloud Console → APIs & Dienste → OAuth-Zustimmungsbildschirm (extern, App „Locadas Nachfasser“, Scope `https://mail.google.com/`) → Anmeldedaten → OAuth-Client-ID (Webanwendung), autorisierte Weiterleitungs-URI `https://app.locadas.de/oauth/google/callback`. Bis zur Google-Verifizierung können nur Test-Nutzer verbinden (unter Zielgruppe eintragen).
   - Microsoft: Entra Admin Center → App-Registrierungen → neu (Konten in allen Organisationen und persönliche Konten), Redirect-URI (Web) `https://app.locadas.de/oauth/microsoft/callback`, Zertifikate und Geheimnisse → Client-Secret; API-Berechtigungen: `Office 365 Exchange Online → IMAP.AccessAsUser.All`, `SMTP.Send` plus `openid`, `email`, `offline_access`.
   - Secrets `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET` in GitHub eintragen, neu deployen. Live noch nicht getestet (nur mit gemocktem Token-Austausch).
-- **Lese-Tracking** („Kunde hat das Angebot geöffnet“) gibt es beim Postfach-Weg nicht, nur Antwort-Erkennung. Dafür müsste das Angebot als Link über Locadas verschickt werden, das ist eine zweite Ausbaustufe.
+- **Lese-Tracking** läuft über den Link in den Nachfass-Mails (`/a/<token>`): erstes Öffnen erzeugt einen Eintrag im Verlauf und eine Mail an den Betrieb, im Dashboard steht „geöffnet“. Die Ursprungsmail mit dem Angebot ist nicht getrackt, sie geht weiter direkt vom Betrieb raus. Abschaltbar in den Einstellungen.
 - **Claude-Extraktion** ist mit gemockter API getestet, nicht live. Nach dem ersten echten Postfach im Log prüfen, ob `extraction_source=claude` auftaucht und Beträge stimmen.
 - Rechnungen ohne erkennbares Zahlungsziel bekommen 14 Tage ab Versand (`DEFAULT_INVOICE_DUE_DAYS`).

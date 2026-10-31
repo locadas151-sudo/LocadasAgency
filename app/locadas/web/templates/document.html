@@ -10,7 +10,7 @@
 <h1 class="h2">{{ doc.customer_name or doc.customer_email }}</h1>
 <p class="app-sub"><span class="pill kind">{{ doc.kind_label }}{% if doc.document_number %} {{ doc.document_number }}{% endif %}</span> {% if doc.title %}{{ doc.title }} · {% endif %}gesendet {{ doc.sent_at|date }}{% if doc.amount_gross %} · {{ doc.amount_gross|money }}{% endif %}{% if doc.kind == DocKind.INVOICE and doc.due_date %} · fällig {{ doc.due_date|date }}{% endif %}</p>
 </div>
-<span class="pill {{ STATUS_CLASS[doc.status] }}">{{ STATUS_LABEL[doc.status] }}</span>
+<div class="btn-row">{% if doc.first_opened_at %}<span class="pill good">geöffnet {{ doc.open_count }}×, zuletzt {{ doc.last_opened_at|datetime }}</span>{% elif doc.followups_sent and doc.business.include_view_link %}<span class="pill muted">noch nicht geöffnet</span>{% endif %}<span class="pill {{ STATUS_CLASS[doc.status] }}">{{ STATUS_LABEL[doc.status] }}</span></div>
 </div>
 {% if msg == 'gespeichert' %}<div class="note" style="margin-bottom:16px">Gespeichert.</div>{% endif %}
 

@@ -95,6 +95,7 @@ class Business(Base):
     followup_invoices: Mapped[bool] = mapped_column(Boolean, default=True)
     paused: Mapped[bool] = mapped_column(Boolean, default=False)
     notify_opened: Mapped[bool] = mapped_column(Boolean, default=True)
+    include_view_link: Mapped[bool] = mapped_column(Boolean, default=True)
     approvals_done: Mapped[int] = mapped_column(Integer, default=0)
     auto_mode: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
@@ -174,6 +175,11 @@ class Document(Base):
     last_customer_reply_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     closed_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     close_reason: Mapped[str] = mapped_column(String(200), default="")
+    # Lese-Tracking über den Link in den Nachfass-Mails
+    view_token: Mapped[str] = mapped_column(String(64), default=lambda: __import__("secrets").token_urlsafe(18), index=True)
+    first_opened_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    last_opened_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    open_count: Mapped[int] = mapped_column(Integer, default=0)
     notes: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
