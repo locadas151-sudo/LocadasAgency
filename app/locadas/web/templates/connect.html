@@ -24,12 +24,22 @@
 {% set oap = oauth_providers() %}
 {% if oap %}
 <div class="btn-row" id="oauth-row">
-{% for p in oap %}<a class="btn ghost" href="/oauth/{{ p.key }}/start" data-oauth="{{ p.key }}">Mit {{ 'Google' if p.key == 'google' else 'Microsoft' }} verbinden</a>{% endfor %}
+{% for p in oap %}<a class="btn ghost" href="/oauth/{{ p.key }}/start" data-oauth="{{ p.key }}">{% if p.key == 'google' %}Mit Google verbinden{% else %}Mit Microsoft anmelden{% endif %}</a>{% endfor %}
 <span class="small muted">Ein Klick, kein Passwort. Oder unten mit Adresse und Passwort.</span>
 </div>
 {% endif %}
+{% set ms_on = oap|selectattr('key','equalto','microsoft')|list %}
+{% set ms_now = ms_on and provider and provider.key == 'outlook' %}
 <div class="field"><label for="email">Mailadresse, von der deine Angebote rausgehen</label><input id="email" name="email" type="email" value="{{ email or '' }}" placeholder="info@mueller-haustechnik.de" required autocomplete="email"></div>
-<div class="field"><label for="password">Passwort des Postfachs</label><input id="password" name="password" type="password" required autocomplete="current-password">
+{% if ms_on %}
+<div class="note" id="ms-box"{% if not ms_now %} hidden{% endif %}>
+<b>Dein Postfach liegt bei Microsoft (Outlook oder Microsoft 365).</b><br>
+Hier brauchst du kein Passwort. Melde dich einfach mit deinem Microsoft-Konto an.
+<div class="btn-row" style="margin-top:10px"><a class="btn" href="/oauth/microsoft/start" data-oauth="microsoft" id="ms-start">Mit Microsoft anmelden <svg class="ic"><use href="#i-arrow"/></svg></a></div>
+<p class="small muted" style="margin:8px 0 0">Verlangt Microsoft eine Freigabe durch deinen Administrator, zeigen wir dir danach genau, was zu tun ist.</p>
+</div>
+{% endif %}
+<div class="field" id="pw-field"{% if ms_now %} hidden{% endif %}><label for="password">Passwort des Postfachs</label><input id="password" name="password" type="password"{% if not ms_now %} required{% endif %} autocomplete="current-password">
 <p class="small muted" id="provider-hint" style="margin:0">{% if provider %}{{ provider.label }}: {{ provider.hint or 'Dein normales Postfach-Passwort.' }}{% else %}Das Passwort, mit dem du dich auch in deinem Mailprogramm anmeldest.{% endif %}</p></div>
 <div class="field"><label for="phone">Telefon <small>(optional, steht unter den Mails)</small></label><input id="phone" name="phone" value="{{ values.phone or '' }}" placeholder="0171 2345678"></div>
 
@@ -73,7 +83,7 @@
 <li><b>GMX, WEB.DE:</b> dein normales Passwort, IMAP muss in den Einstellungen eingeschaltet sein.</li>
 <li><b>T-Online:</b> das E-Mail-Passwort aus dem Kundencenter.</li>
 <li><b>IONOS, STRATO, eigene Domain:</b> dein normales Postfach-Passwort.</li>
-<li><b>Outlook, Microsoft 365:</b> {% if oauth_providers()|selectattr('key','equalto','microsoft')|list %}über „Mit Microsoft verbinden“, kein Passwort nötig.{% else %}noch nicht möglich, kommt.{% endif %}</li>
+<li><b>Outlook, Microsoft 365:</b> {% if oauth_providers()|selectattr('key','equalto','microsoft')|list %}über „Mit Microsoft anmelden“, kein Passwort nötig. Das gilt auch für deine eigene Domain, wenn sie bei Microsoft 365 liegt.{% else %}noch nicht möglich, kommt.{% endif %}</li>
 </ul>
 </div>
 </div>
@@ -88,7 +98,7 @@ var hints={{ hints_json|safe if hints_json else '{}' }};
 var map={"gmail.com":"gmail","googlemail.com":"gmail","outlook.com":"outlook","outlook.de":"outlook","hotmail.com":"outlook","hotmail.de":"outlook","live.de":"outlook","live.com":"outlook","gmx.de":"gmx","gmx.net":"gmx","gmx.at":"gmx","gmx.ch":"gmx","web.de":"webde","t-online.de":"tonline","magenta.de":"tonline","ionos.de":"ionos","1und1.de":"ionos","icloud.com":"icloud","me.com":"icloud","yahoo.de":"yahoo","yahoo.com":"yahoo","freenet.de":"freenet","posteo.de":"posteo","mailbox.org":"mailbox"};
 var texts={
  gmail:"Gmail: Du brauchst ein App-Passwort (Google-Konto → Sicherheit → App-Passwörter). Dein normales Passwort funktioniert nicht.",
- outlook:"Outlook und Microsoft 365 erlauben keinen Passwort-Login. Die Anbindung kommt in Kürze.",
+ outlook:"Outlook und Microsoft 365 erlauben keinen Passwort-Login. Melde dich oben mit Microsoft an.",
  gmx:"GMX: Dein normales Passwort. IMAP muss unter E-Mail → Einstellungen → POP3/IMAP eingeschaltet sein.",
  webde:"WEB.DE: Dein normales Passwort. IMAP muss unter E-Mail → Einstellungen → POP3/IMAP eingeschaltet sein.",
  tonline:"T-Online: Das E-Mail-Passwort aus dem Kundencenter (Passwörter → Passwort für E-Mail-Programme).",
@@ -97,10 +107,13 @@ var texts={
  yahoo:"Yahoo: Ein App-Passwort aus den Konto-Einstellungen.",
  freenet:"freenet: Dein normales Passwort.",posteo:"Posteo: Dein normales Passwort.",mailbox:"mailbox.org: Dein normales Passwort."};
 var email=document.getElementById('email'),hint=document.getElementById('provider-hint');
-function upd(){var d=(email.value.split('@')[1]||'').toLowerCase();var k=map[d];hint.textContent=k?texts[k]:(d?'Eigene Domain: Dein normales Postfach-Passwort. Wir suchen den Server automatisch.':'Das Passwort, mit dem du dich auch in deinem Mailprogramm anmeldest.');}
-email.addEventListener('input',upd);email.addEventListener('change',upd);
+var msBox=document.getElementById('ms-box'),pwField=document.getElementById('pw-field'),pw=document.getElementById('password'),msAsked={};
+function ms(on){if(!msBox)return;msBox.hidden=!on;pwField.hidden=on;pw.required=!on;}
+function upd(){var d=(email.value.split('@')[1]||'').toLowerCase();var k=map[d];hint.textContent=k?texts[k]:(d?'Eigene Domain: Dein normales Postfach-Passwort. Wir suchen den Server automatisch.':'Das Passwort, mit dem du dich auch in deinem Mailprogramm anmeldest.');if(k)ms(k==='outlook');else if(!d)ms(false);}
+function lookup(){var v=email.value.trim().toLowerCase(),d=(v.split('@')[1]||'');if(!msBox||!d||d.indexOf('.')<1||map[d])return;if(d in msAsked){ms(msAsked[d]);return;}fetch('/verbinden/anbieter?'+new URLSearchParams({email:v})).then(function(r){return r.ok?r.json():{microsoft:false};}).then(function(j){msAsked[d]=!!j.microsoft;if((email.value.split('@')[1]||'').toLowerCase()===d)ms(msAsked[d]);}).catch(function(){});}
+email.addEventListener('input',upd);email.addEventListener('change',function(){upd();lookup();});email.addEventListener('blur',lookup);
 var f=document.getElementById('connect'),b=document.getElementById('submit');
-document.querySelectorAll('[data-oauth]').forEach(function(a){a.addEventListener('click',function(e){var bn=document.getElementById('business_name').value.trim();if(!bn){e.preventDefault();document.getElementById('business_name').focus();document.getElementById('business_name').reportValidity();return;}var av=document.getElementById('avv');if(!av.checked){e.preventDefault();av.reportValidity();return;}var q=new URLSearchParams({business_name:bn,owner_name:document.getElementById('owner_name').value,phone:document.getElementById('phone').value,avv:'1',trial_token:document.getElementById('trial_token').value});a.href=a.getAttribute('href').split('?')[0]+'?'+q.toString();});});
+document.querySelectorAll('[data-oauth]').forEach(function(a){a.addEventListener('click',function(e){var bn=document.getElementById('business_name').value.trim();if(!bn){e.preventDefault();document.getElementById('business_name').focus();document.getElementById('business_name').reportValidity();return;}var av=document.getElementById('avv');if(!av.checked){e.preventDefault();av.reportValidity();return;}var q=new URLSearchParams({business_name:bn,owner_name:document.getElementById('owner_name').value,phone:document.getElementById('phone').value,avv:'1',trial_token:document.getElementById('trial_token').value,email:email.value.trim()});a.href=a.getAttribute('href').split('?')[0]+'?'+q.toString();});});
 f.addEventListener('submit',function(){b.disabled=true;b.textContent='Verbindung wird geprüft …';});
 })();
 </script>

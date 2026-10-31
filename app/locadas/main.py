@@ -252,6 +252,29 @@ def _trial_for_connect(session: Session, request: Request, token: str = "") -> B
     return b
 
 
+def _provider_for(email: str):
+    """Bekannter Anbieter, sonst Microsoft 365 per MX (eigene Domain bei Microsoft), sonst None."""
+    from .mail import autoconfig
+    from .mail.providers import OUTLOOK
+
+    p = detect_provider(email)
+    if p is None and "@" in email and autoconfig.is_microsoft_domain(email):
+        return OUTLOOK
+    return p
+
+
+@app.get("/verbinden/anbieter")
+def connect_provider_lookup(request: Request, email: str = ""):
+    """Für die Verbinden-Seite: liegt die Adresse bei Microsoft? Dann „Mit Microsoft anmelden“ zeigen."""
+    email = email.strip().lower()[:320]
+    if "@" not in email:
+        return JSONResponse({"microsoft": False})
+    if detect_provider(email) is None and rate_limited(request, "anbieter"):
+        return JSONResponse({"microsoft": False}, status_code=429)
+    p = _provider_for(email)
+    return JSONResponse({"microsoft": bool(p is not None and p.key == "outlook")})
+
+
 @app.get("/verbinden", response_class=HTMLResponse)
 def connect_form(request: Request, business: Business | None = Depends(current_business), session: Session = Depends(get_db), email: str = "", avv: str = "", b: str = "", reconnect: str = ""):
     if reconnect:  # Verbindungs-Wächter: „Neu verbinden“ aus der Nachricht an den Betrieb
@@ -261,7 +284,7 @@ def connect_form(request: Request, business: Business | None = Depends(current_b
     tester = _trial_for_connect(session, request, b)
     values = {"business_name": tester.name, "owner_name": tester.owner_name, "phone": phone_x.pretty(tester.whatsapp_number)} if tester else {}
     email = email or (tester.owner_email if tester else "")
-    provider = detect_provider(email) if email else None
+    provider = _provider_for(email) if email else None
     error = "Bitte akzeptiere zuerst den Auftragsverarbeitungsvertrag (AVV)." if avv == "fehlt" else None
     return render(request, "connect.html", business=business, email=email, provider=provider, error=error, hint=None, values=values,
                   trial_token=trial.connect_token(tester) if tester else "")
@@ -352,7 +375,7 @@ def _reconnect_page(request: Request, token: str, error: str | None = None, stat
         account = _reconnect_account(session, token)
         if account is None:
             return render(request, "error.html", title="Link abgelaufen", message="Dieser Link ist abgelaufen oder ungültig. Melde dich an und verbinde dein Postfach in den Einstellungen neu.", status_code=400)
-        provider = oauth.get(account.provider) if account.auth_type == "oauth" else None
+        provider = oauth.get(account.provider) if account.auth_type in acc.OAUTH_TYPES else None
         return render(request, "reconnect.html", token=token, email=account.email, account=account, provider=provider, error=error, status_code=status_code)
 
 
@@ -1063,55 +1086,101 @@ def _oauth_state_load(token: str) -> dict | None:
 
 
 @app.get("/oauth/{key}/start")
-def oauth_start(request: Request, key: str, business_name: str = "", owner_name: str = "", phone: str = "", avv: str = "", trial_token: str = "", session: Session = Depends(get_db)):
+def oauth_start(request: Request, key: str, business_name: str = "", owner_name: str = "", phone: str = "", avv: str = "", trial_token: str = "", email: str = "", session: Session = Depends(get_db)):
     p = oauth.get(key)
     if p is None or not p.enabled:
         raise HTTPException(404)
     if avv != "1":
         return RedirectResponse("/verbinden?avv=fehlt", status_code=303)
     tester = _trial_for_connect(session, request, trial_token)
-    state = _oauth_state({"k": key, "b": business_name.strip()[:200], "o": owner_name.strip()[:200], "p": phone.strip()[:60], "avv": 1, "t": tester.id if tester else 0})
-    return RedirectResponse(oauth.authorize_url(p, state), status_code=303)
+    hint = email.strip().lower()[:320] if re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email.strip()) else ""
+    state = _oauth_state({"k": key, "b": business_name.strip()[:200], "o": owner_name.strip()[:200], "p": phone.strip()[:60], "avv": 1, "t": tester.id if tester else 0, "e": hint})
+    return RedirectResponse(oauth.authorize_url(p, state, login_hint=hint), status_code=303)
+
+
+def _ms_consent_page(request: Request, email: str = "", done: bool = False, declined: bool = False):
+    """Microsoft 365: Nutzer dürfen die App nicht selbst erlauben. Link für den Admin plus Angebot zum Termin."""
+    from .mail.providers import detect_provider as _detect
+
+    p = oauth.get("microsoft")
+    domain = email.rsplit("@", 1)[-1] if "@" in email else ""
+    tenant = domain if domain and _detect(email) is None else "organizations"  # eigene Domain = Tenant-Name
+    link = oauth.admin_consent_url(p, tenant) if p is not None and p.enabled else ""
+    return render(request, "ms_consent.html", link=link, email=email, done=done, declined=declined)
+
+
+def _graph_mailbox(tok: dict) -> tuple[str, ConnectionConfig]:
+    """Microsoft über Graph: Adresse aus /me, Gesendet-Ordner muss lesbar sein. Wirft MailAuthError/MailConnectError."""
+    from .mail.graph import INBOX, SENT, GraphClient
+
+    client = GraphClient(lambda force: tok["access_token"])
+    email = client.email()
+    if not email:
+        raise MailAuthError("Microsoft hat keine Mailadresse geliefert.")
+    client.test()
+    host = "graph.microsoft.com"
+    return email, ConnectionConfig(
+        provider_key="microsoft", provider_label="Microsoft / Outlook", email=email, username=email,
+        imap_host=host, imap_port=443, imap_ssl=True, smtp_host=host, smtp_port=443, smtp_ssl=True,
+        sent_folder=SENT, inbox_folder=INBOX,
+    )
 
 
 @app.get("/oauth/{key}/callback", response_class=HTMLResponse)
-def oauth_callback(request: Request, key: str, session: Session = Depends(get_db), code: str = "", state: str = "", error: str = "", error_description: str = ""):
+def oauth_callback(request: Request, key: str, session: Session = Depends(get_db), code: str = "", state: str = "", error: str = "", error_description: str = "", admin_consent: str = ""):
     p = oauth.get(key)
+    if key == "microsoft" and p is not None and p.enabled and not code and (admin_consent or (error and not state)):
+        # Rückkehr vom Admin-Freigabe-Link (gleiche Redirect-URI, ohne unseren State)
+        ok = admin_consent.lower() == "true" and not error
+        return _ms_consent_page(request, done=ok, declined=not ok)
     data = _oauth_state_load(state) if state else None
     if p is None or not p.enabled or data is None or data.get("k") != key:
         raise HTTPException(status_code=400, detail="Die Anmeldung ist abgelaufen. Bitte noch einmal von vorn.")
     values = dict(business_name=data.get("b", ""), owner_name=data.get("o", ""), phone=data.get("p", ""))
 
     def fail(msg: str, hint: str = ""):
-        return render(request, "connect.html", business=None, email="", provider=None, values=values, error=msg, hint=hint)
+        return render(request, "connect.html", business=None, email=data.get("e", ""), provider=None, values=values, error=msg, hint=hint)
 
     if error or not code:
+        if key == "microsoft" and oauth.needs_admin_consent(error_description, error):
+            return _ms_consent_page(request, email=data.get("e", ""))
         return fail(f"{p.label} hat die Verbindung abgelehnt.", error_description or error)
     try:
         tok = oauth.exchange_code(p, code)
     except oauth.OAuthError as exc:
+        if key == "microsoft" and oauth.needs_admin_consent(str(exc)):
+            return _ms_consent_page(request, email=data.get("e", ""))
         return fail("Die Verbindung hat nicht geklappt.", str(exc))
-    email = oauth.email_from_id_token(tok.get("id_token"))
-    if not email:
-        return fail("Wir konnten deine Mailadresse nicht lesen.", "Bitte erlaube beim Verbinden den Zugriff auf die E-Mail-Adresse.")
-    try:
-        with ImapClient(p.imap_host, 993, True, email, tok["access_token"], "oauth") as c:
-            sent = c.find_sent_folder(p.sent_folders)
-    except (MailAuthError, MailConnectError) as exc:
-        return fail(f"Postfach {email} ist angebunden, aber IMAP antwortet nicht.", f"{exc}. Bei Microsoft 365 muss IMAP im Admin-Center für das Postfach erlaubt sein.")
-    if not sent:
-        return fail("Kein Gesendet-Ordner gefunden.")
-    cfg = ConnectionConfig(
-        provider_key=key, provider_label=p.label, email=email, username=email,
-        imap_host=p.imap_host, imap_port=993, imap_ssl=True,
-        smtp_host=p.smtp_host, smtp_port=p.smtp_port, smtp_ssl=p.smtp_ssl, sent_folder=sent,
-    )
+    auth_type = "oauth"
+    if key == "microsoft":
+        # Microsoft immer über Graph: geht auch, wenn IMAP/SMTP AUTH im Tenant abgeschaltet sind
+        auth_type = "graph"
+        try:
+            email, cfg = _graph_mailbox(tok)
+        except (MailAuthError, MailConnectError) as exc:
+            return fail("Die Anmeldung bei Microsoft hat geklappt, aber wir kommen nicht an dein Postfach.", f"{exc} Buch dir gern einen kurzen Termin, dann schauen wir gemeinsam drauf.")
+    else:
+        email = oauth.email_from_id_token(tok.get("id_token"))
+        if not email:
+            return fail("Wir konnten deine Mailadresse nicht lesen.", "Bitte erlaube beim Verbinden den Zugriff auf die E-Mail-Adresse.")
+        try:
+            with ImapClient(p.imap_host, 993, True, email, tok["access_token"], "oauth") as c:
+                sent = c.find_sent_folder(p.sent_folders)
+        except (MailAuthError, MailConnectError) as exc:
+            return fail(f"Postfach {email} ist angebunden, aber IMAP antwortet nicht.", str(exc))
+        if not sent:
+            return fail("Kein Gesendet-Ordner gefunden.")
+        cfg = ConnectionConfig(
+            provider_key=key, provider_label=p.label, email=email, username=email,
+            imap_host=p.imap_host, imap_port=993, imap_ssl=True,
+            smtp_host=p.smtp_host, smtp_port=p.smtp_port, smtp_ssl=p.smtp_ssl, sent_folder=sent,
+        )
     business = auth.business_by_email(session, email)
     same = next((a for a in business.accounts if a.email == email and a.status != AccountStatus.DISCONNECTED), None) if business else None
     if same is not None and tok.get("refresh_token"):
         # Dasselbe Postfach noch einmal (z. B. nach „Neu verbinden“): Zugang ersetzen, Dokumente und Verlauf bleiben
-        acc.reconnect(session, same, cfg, tok["refresh_token"], auth_type="oauth")
-        oauth._cache[f"acc:{same.id}"] = (tok["access_token"], __import__("time").time() + int(tok.get("expires_in", 3600)))
+        acc.reconnect(session, same, cfg, tok["refresh_token"], auth_type=auth_type)
+        oauth.remember(f"acc:{same.id}", tok)
         business.last_login_at = utcnow()
         session.commit()
         return set_session(RedirectResponse("/dashboard?msg=neu_verbunden", status_code=303), business)
@@ -1129,10 +1198,10 @@ def oauth_callback(request: Request, key: str, session: Session = Depends(get_db
         for a in business.accounts:
             a.status = AccountStatus.DISCONNECTED
     business.avv_accepted_at = utcnow()
-    account = acc.create_account(session, business, cfg, tok["refresh_token"], auth_type="oauth")
+    account = acc.create_account(session, business, cfg, tok["refresh_token"], auth_type=auth_type)
     if business.is_trial:
         trial.convert(session, business, account)
-    oauth._cache[f"acc:{account.id}"] = (tok["access_token"], __import__("time").time() + int(tok.get("expires_in", 3600)))
+    oauth.remember(f"acc:{account.id}", tok)
     business.last_login_at = utcnow()
     session.commit()
     threading.Thread(target=_background_scan, args=(account.id,), daemon=True).start()

@@ -188,7 +188,7 @@ class MailAccount(Base):
     provider: Mapped[str] = mapped_column(String(40))
     email: Mapped[str] = mapped_column(String(320), index=True)
     display_name: Mapped[str] = mapped_column(String(200), default="")
-    auth_type: Mapped[str] = mapped_column(String(20), default="password")  # password | oauth
+    auth_type: Mapped[str] = mapped_column(String(20), default="password")  # password | oauth (IMAP/SMTP) | graph (Microsoft Graph)
     username: Mapped[str] = mapped_column(String(320))
     secret_enc: Mapped[str] = mapped_column(Text)  # Passwort oder OAuth-Refresh-Token, verschlüsselt
     imap_host: Mapped[str] = mapped_column(String(200))
@@ -203,6 +203,8 @@ class MailAccount(Base):
     sent_last_uid: Mapped[int] = mapped_column(Integer, default=0)
     inbox_uidvalidity: Mapped[int | None] = mapped_column(Integer, nullable=True)
     inbox_last_uid: Mapped[int] = mapped_column(Integer, default=0)
+    # Nur auth_type "graph": Wasserstand statt UIDs, JSON {"sent": {"t": ISO, "ids": [...]}, "inbox": {...}}
+    graph_sync: Mapped[str] = mapped_column(Text, default="", server_default="")
     status: Mapped[AccountStatus] = mapped_column(Enum(AccountStatus), default=AccountStatus.ACTIVE)
     last_error: Mapped[str] = mapped_column(Text, default="")
     last_scan_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)

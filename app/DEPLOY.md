@@ -92,10 +92,34 @@ Tests: `cd app && python -m pytest -q` (26 Tests, darunter ein kompletter Durchl
 
 ## 5. Was noch offen ist
 
-- **Gmail-Ein-Klick und Outlook / Microsoft 365 (OAuth):** fertig gebaut (`/oauth/google/*`, `/oauth/microsoft/*`), erscheint auf der Verbinden-Seite automatisch, sobald die Secrets gesetzt sind. Dafür einmal anlegen:
+- **Gmail-Ein-Klick und Outlook / Microsoft 365 (OAuth):** fertig gebaut (`/oauth/google/*`, `/oauth/microsoft/*`), erscheint auf der Verbinden-Seite automatisch, sobald die Secrets gesetzt sind. Google einmal anlegen:
   - Google: Cloud Console → APIs & Dienste → OAuth-Zustimmungsbildschirm (extern, App „Locadas Nachfasser“, Scope `https://mail.google.com/`) → Anmeldedaten → OAuth-Client-ID (Webanwendung), autorisierte Weiterleitungs-URI `https://app.locadas.de/oauth/google/callback`. Bis zur Google-Verifizierung können nur Test-Nutzer verbinden (unter Zielgruppe eintragen).
-  - Microsoft: Entra Admin Center → App-Registrierungen → neu (Konten in allen Organisationen und persönliche Konten), Redirect-URI (Web) `https://app.locadas.de/oauth/microsoft/callback`, Zertifikate und Geheimnisse → Client-Secret; API-Berechtigungen: `Office 365 Exchange Online → IMAP.AccessAsUser.All`, `SMTP.Send` plus `openid`, `email`, `offline_access`.
-  - Secrets `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET` in GitHub eintragen, neu deployen. Live noch nicht getestet (nur mit gemocktem Token-Austausch).
+  - Microsoft: siehe nächster Abschnitt (Microsoft Graph).
+  - Secrets `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET` in GitHub eintragen, neu deployen.
+
+### Microsoft (Outlook.com und Microsoft 365) über Microsoft Graph
+
+Alle Microsoft-Konten laufen über Microsoft Graph (`mail/graph.py`, `auth_type="graph"`), nicht mehr über IMAP/SMTP. Grund: In vielen Microsoft-365-Tenants sind IMAP und vor allem SMTP AUTH abgeschaltet, Graph geht trotzdem. Lesen: Gesendete Elemente und Posteingang. Senden: dieselbe MIME-Mail wie bisher über `POST /me/sendMail` (Antwort-Verkettung bleibt, Microsoft legt die Mail selbst in „Gesendete Elemente“ ab). Alte Konten mit `auth_type="oauth"` (IMAP) laufen weiter, wechseln beim nächsten „Mit Microsoft anmelden“ automatisch auf Graph und machen dort weiter, wo sie waren.
+
+Einmal im Azure-Portal einrichten (ca. 15 Minuten), mit einem Konto, das App-Registrierungen anlegen darf (am besten im Locadas-eigenen Tenant, nicht in einem Kunden-Tenant):
+
+1. https://entra.microsoft.com → **Identität → Anwendungen → App-Registrierungen → Neue Registrierung**
+   - Name: `Locadas Nachfasser` (sehen die Kunden beim Anmelden)
+   - Unterstützte Kontotypen: **Konten in einem beliebigen Organisationsverzeichnis (beliebiger Microsoft Entra ID-Mandant – mehrinstanzenfähig) und persönliche Microsoft-Konten (z. B. Skype, Xbox)**
+   - Umleitungs-URI: Plattform **Web**, `https://app.locadas.de/oauth/microsoft/callback` (genau so, die App baut sie aus `BASE_URL` + `/oauth/microsoft/callback`; gleiche URI dient auch als Rückkehr nach der Admin-Freigabe)
+2. **Übersicht**: „Anwendungs-ID (Client)“ kopieren → GitHub-Secret **`MICROSOFT_CLIENT_ID`**.
+3. **Zertifikate & Geheimnisse → Neuer geheimer Clientschlüssel** (Laufzeit 24 Monate, Ablaufdatum im Kalender eintragen!) → den **Wert** (nicht die Geheimnis-ID) kopieren → GitHub-Secret **`MICROSOFT_CLIENT_SECRET`**. Nie ins Repo schreiben, das Repo ist öffentlich.
+4. **API-Berechtigungen → Berechtigung hinzufügen → Microsoft Graph → Delegierte Berechtigungen**: `offline_access`, `openid`, `email`, `profile`, `Mail.ReadWrite`, `Mail.Send`, `User.Read`. Die alten Berechtigungen `IMAP.AccessAsUser.All` und `SMTP.Send` (Office 365 Exchange Online) können drinbleiben, solange es noch alte IMAP-Konten gibt. **Keine** Anwendungsberechtigungen (Application permissions) anlegen. „Administratorzustimmung erteilen“ ist hier nicht nötig (das gilt nur für den eigenen Tenant).
+5. **Branding & Eigenschaften**: Startseiten-URL `https://locadas.de`, Link zu Nutzungsbedingungen und Datenschutzerklärung (`https://app.locadas.de/datenschutz`), Logo. Herausgeberdomäne `locadas.de` verifizieren (DNS-TXT bzw. Datei unter `/.well-known/microsoft-identity-association.json`).
+6. **Herausgeberüberprüfung (Publisher Verification)** so bald wie möglich: braucht ein Microsoft-Partner-Network-Konto (MPN/Partner Center, kostenlos) mit verifizierter Firma (Locadas GmbH) und die verifizierte Herausgeberdomäne. Ohne sie sehen Microsoft-365-Nutzer „nicht überprüft“ und **in vielen Tenants dürfen Nutzer unverifizierten Apps gar nicht selbst zustimmen** (Standard seit 2020 für Mail-Berechtigungen). Dann erscheint bei uns automatisch die Seite „Einmal kurz deine IT fragen“ mit dem Admin-Freigabe-Link `https://login.microsoftonline.com/<domain oder organizations>/adminconsent?client_id=…&redirect_uri=…` und dem Angebot für den kostenlosen Termin.
+7. GitHub → Repository → Settings → Secrets and variables → Actions: `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET` setzen (optional `MICROSOFT_TENANT`, Standard `common`; nicht ändern). Neu deployen.
+8. Testen: mit einem privaten Outlook.com-Konto und einem Microsoft-365-Konto auf https://app.locadas.de/verbinden „Mit Microsoft anmelden“. Im Dashboard sollten nach ein paar Minuten die Angebote der letzten 30 Tage stehen. Eine Nachfass-Mail an sich selbst schicken und in Outlook prüfen, dass sie im selben Verlauf hängt und in „Gesendete Elemente“ liegt.
+
+Gut zu wissen:
+- Eigene Domains bei Microsoft 365 (MX `*.mail.protection.outlook.com`) erkennt die Verbinden-Seite per DNS und zeigt dann „Mit Microsoft anmelden“ statt Passwortfeld.
+- Microsoft rotiert die Refresh-Tokens, die App speichert den jeweils neuen (sonst liefe die Verbindung nach 90 Tagen ab). Widerruft der Kunde den Zugriff oder ändert seine IT die Richtlinien, meldet der Verbindungs-Wächter das sofort mit Link zum Neu-Verbinden.
+- Graph drosselt mit 429. Die App wartet kurz (Retry-After, höchstens 30 s), sonst geht es im nächsten Durchlauf weiter.
+- Postfächer, die noch auf einem eigenen Exchange-Server liegen (nicht Exchange Online), gehen über Graph nicht. Die bekommen eine klare Meldung, Lösung: Passwort-Login mit eigenem Server über „Server manuell eintragen“.
 - **Lese-Tracking** läuft über den Link in den Nachfass-Mails (`/a/<token>`): erstes Öffnen erzeugt einen Eintrag im Verlauf und eine Mail an den Betrieb, im Dashboard steht „geöffnet“. Die Ursprungsmail mit dem Angebot ist nicht getrackt, sie geht weiter direkt vom Betrieb raus. Abschaltbar in den Einstellungen.
 - **Claude-Extraktion** ist mit gemockter API getestet, nicht live. Nach dem ersten echten Postfach im Log prüfen, ob `extraction_source=claude` auftaucht und Beträge stimmen.
 - Rechnungen ohne erkennbares Zahlungsziel bekommen 14 Tage ab Versand (`DEFAULT_INVOICE_DUE_DAYS`).

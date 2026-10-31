@@ -30,6 +30,7 @@ from ..extract.classify import classify, is_forward, looks_like_customer
 from ..extract.fields import extract_fields, paid_marker, utc_from_iso
 from ..holidays import add_workdays
 from ..extract.pdftext import pdf_to_text
+from ..mail.graph import INBOX, INBOX_SELECT, OWN_HEADER, SENT, SENT_SELECT, is_graph, parse_graph_time
 from ..mail.imap import Attachment, ImapClient, MailAuthError, MailConnectError, ParsedMail, since_days
 from . import accounts as acc
 from . import customers, matcher, style, taps
@@ -385,7 +386,29 @@ def process_sent_mail(session: Session, account: MailAccount, mail: ParsedMail, 
     return doc
 
 
+def _take_sent(session: Session, account: MailAccount, mail: ParsedMail | None, first_run: bool) -> int:
+    """Eine Mail aus dem Gesendet-Ordner (IMAP oder Graph) verarbeiten. Gibt 1 zurück, wenn ein Dokument neu ist."""
+    if mail is None or _seen(session, account, mail.message_id):
+        return 0
+    if not _mark_seen(session, account, mail.message_id):
+        return 0
+    if _is_own_followup(session, mail.message_id) or mail.headers.get(OWN_HEADER.lower()):
+        return 0
+    if first_run and not mail.pdf_attachments:
+        return 0  # alte Mails ohne PDF sind beim Erst-Scan uninteressant
+    created = 0
+    try:
+        if process_sent_mail(session, account, mail, first_run=first_run) is not None:
+            created = 1
+    except Exception as exc:  # pragma: no cover
+        log.exception("Fehler beim Verarbeiten von %s: %s", mail.message_id or mail.uid, exc)
+    session.commit()
+    return created
+
+
 def scan_sent(session: Session, account: MailAccount, client: ImapClient) -> int:
+    if is_graph(client):
+        return _scan_sent_graph(session, account, client)
     validity, uidnext = client.select(account.sent_folder)
     first_run = account.sent_uidvalidity is None
     if account.sent_uidvalidity is not None and validity != account.sent_uidvalidity:
@@ -402,24 +425,128 @@ def scan_sent(session: Session, account: MailAccount, client: ImapClient) -> int
             continue
         mail = client.fetch_message(uid)
         account.sent_last_uid = max(account.sent_last_uid, uid)
-        if mail is None or _seen(session, account, mail.message_id):
-            continue
-        if not _mark_seen(session, account, mail.message_id):
-            account.sent_last_uid = max(account.sent_last_uid, uid)
-            continue
-        if _is_own_followup(session, mail.message_id):
-            continue
-        if first_run and not mail.pdf_attachments:
-            continue  # alte Mails ohne PDF sind beim Erst-Scan uninteressant
-        try:
-            if process_sent_mail(session, account, mail, first_run=first_run) is not None:
-                created += 1
-        except Exception as exc:  # pragma: no cover
-            log.exception("Fehler beim Verarbeiten von UID %s: %s", uid, exc)
-        session.commit()
+        created += _take_sent(session, account, mail, first_run)
     if len(uids) <= MAX_PER_RUN:
         account.sent_last_uid = max(account.sent_last_uid, uidnext - 1)
     return created
+
+
+# --- Microsoft Graph: Zeitstempel als Wasserstand statt UIDs ------------------------------------
+# Gelesen wird ab (Wasserstand − GRAPH_OVERLAP), damit spät einsortierte Mails nicht durchrutschen. Was im
+# Überlappungsfenster schon dran war, steht mit Graph-ID in "ids" und wird übersprungen (Gesendet zusätzlich über
+# SeenMessage/Message-ID, ohne die Mail noch einmal zu laden).
+
+GRAPH_OVERLAP = timedelta(minutes=10)
+GRAPH_LIST_LIMIT = 500    # gelistete Mails je Ordner und Durchlauf
+INBOX_PER_RUN = 200
+
+
+def _graph_state(account: MailAccount) -> dict:
+    try:
+        state = json.loads(account.graph_sync or "{}")
+    except ValueError:
+        state = {}
+    return state if isinstance(state, dict) else {}
+
+
+class _Watermark:
+    """Stand eines Graph-Ordners: Zeitstempel der neuesten verarbeiteten Mail plus IDs im Überlappungsfenster."""
+
+    def __init__(self, account: MailAccount, key: str):
+        self.account, self.key = account, key
+        st = _graph_state(account).get(key)
+        self.first_run = not isinstance(st, dict) or not st.get("t")
+        self.t = None if self.first_run else parse_graph_time(st.get("t"))
+        # Erst-Scan läuft über mehrere Durchläufe, bis der Ordner einmal ganz gelesen ist
+        self.initial = self.first_run or bool(isinstance(st, dict) and st.get("init"))
+        self.ids: dict[str, str] = {}
+        if not self.first_run:
+            for item in st.get("ids") or []:
+                if isinstance(item, list) and len(item) == 2:
+                    self.ids[str(item[0])] = str(item[1])
+
+    def since(self) -> datetime:
+        return (self.t or utcnow()) - GRAPH_OVERLAP
+
+    def done(self, msg_id: str, when: datetime | None) -> None:
+        when = when or self.t or utcnow()
+        self.ids[msg_id] = when.isoformat()
+        if self.t is None or when > self.t:
+            self.t = when
+        self.save()
+
+    def set(self, when: datetime) -> None:
+        self.t = when
+        self.save()
+
+    def save(self) -> None:
+        limit = (self.t or utcnow()) - GRAPH_OVERLAP
+        keep = [[i, w] for i, w in self.ids.items() if (parse_graph_time(w) or limit) >= limit]
+        state = _graph_state(self.account)
+        state[self.key] = {"t": (self.t or utcnow()).isoformat(), "ids": keep[-1000:], "init": self.initial}
+        self.account.graph_sync = json.dumps(state)
+
+
+def _scan_sent_graph(session: Session, account: MailAccount, client) -> int:
+    wm = _Watermark(account, "sent")
+    first_run = wm.initial  # Semantik wie beim IMAP-Erst-Scan (ältere Dokumente nur mit Freigabe)
+    since = since_days(settings.initial_scan_days) if wm.first_run else wm.since()
+    metas = client.list_messages(SENT, "sentDateTime", since, SENT_SELECT, GRAPH_LIST_LIMIT, with_size=True)
+    created = fetched = 0
+    complete = len(metas) < GRAPH_LIST_LIMIT
+    for meta in metas:
+        msg_id = meta["id"]
+        if msg_id in wm.ids:
+            continue
+        when = parse_graph_time(meta.get("sentDateTime"))
+        imid = (meta.get("internetMessageId") or "").strip()
+        if imid and _seen(session, account, imid):
+            wm.done(msg_id, when)
+            continue
+        if first_run and not meta.get("hasAttachments"):
+            wm.done(msg_id, when)  # Erst-Scan: alte Mails ohne Anhang gar nicht erst laden
+            continue
+        if fetched >= MAX_PER_RUN:
+            complete = False
+            break  # Rest im nächsten Durchlauf, der Wasserstand steht vor dieser Mail
+        uid = client.remember(meta)
+        size = client.fetch_message_size(uid)
+        if size and size > MAX_SIZE:
+            wm.done(msg_id, when)
+            continue
+        fetched += 1
+        mail = client.fetch_message(uid)
+        wm.done(msg_id, when)
+        created += _take_sent(session, account, mail, first_run)
+    if wm.t is None:
+        wm.t = utcnow()  # leerer Ordner: ab jetzt
+    if complete:
+        wm.initial = False
+    wm.save()
+    return created
+
+
+def _scan_inbox_graph(session: Session, account: MailAccount, client) -> int:
+    wm = _Watermark(account, "inbox")
+    if wm.first_run:
+        wm.initial = False
+        wm.set(utcnow())  # Erstlauf: nur ab jetzt, alte Antworten gelten nicht
+        return 0
+    metas = client.list_messages(INBOX, "receivedDateTime", wm.since(), INBOX_SELECT, GRAPH_LIST_LIMIT)
+    replies = handled = 0
+    budget = [MAX_CLASSIFY_PER_RUN]
+    for meta in metas:
+        msg_id = meta["id"]
+        if msg_id in wm.ids:
+            continue
+        if handled >= INBOX_PER_RUN:
+            break
+        handled += 1
+        uid = client.remember(meta)
+        mail = client.fetch_headers(uid)
+        wm.done(msg_id, parse_graph_time(meta.get("receivedDateTime")))
+        replies += _take_inbox(session, account, client, mail, budget)
+    return replies
 
 
 _BOUNCE_ADDR = re.compile(r"[\w.+'-]+@[\w-]+(?:\.[\w-]+)+")
@@ -594,7 +721,50 @@ def postpone_for_absence(session: Session, doc: Document, named: "datetime.date"
     return True
 
 
+def _take_inbox(session: Session, account: MailAccount, client: ImapClient, mail: ParsedMail | None, budget: list[int]) -> int:
+    """Eine Mail aus dem Posteingang (IMAP oder Graph): Antwort, Abwesenheit oder Unzustellbar. 1 = Kundenantwort."""
+    if mail is None or not mail.from_addr or mail.from_addr == account.email:
+        return 0
+    if mail.is_bounce:
+        _handle_bounce(session, account, mail, client)
+        return 0
+    # Billig zuerst: Thread-Bezug über In-Reply-To/References
+    doc = _doc_in_thread(session, account, _thread_ids(mail))
+    if mail.is_auto_reply:
+        doc = doc or _doc_in_thread(session, account, set(), customer=mail.from_addr)
+        if doc is not None:
+            if is_receipt_ack(mail.subject, _ack_body(client, mail)):
+                if doc.ack_at is None:
+                    doc.ack_at = mail.date
+                    log_event(session, doc.business_id, "ack", f"{mail.from_addr} hat den Eingang von {doc.kind_label} {doc.document_number or doc.title} automatisch bestätigt.", doc.id)
+            else:
+                text = (mail.text or "") or _mail_body(client, mail)[:3000]
+                back = parse_return_date(f"{mail.subject}\n{text}", mail.date.astimezone(ZoneInfo(settings.timezone)))
+                if back is None or not postpone_for_absence(session, doc, back[0], back[1], mail):
+                    log_event(session, doc.business_id, "autoreply", f"Abwesenheitsnotiz von {mail.from_addr}. Ich fasse trotzdem weiter nach.", doc.id)
+            session.commit()
+        return 0
+    if doc is not None:
+        result = _classify_thread_reply(client, mail, doc, budget)
+    else:
+        doc, result = _match_free_mail(session, account, client, mail, budget)
+    if doc is None:
+        return 0
+    if not doc.customer_mobile:
+        try:  # Signatur der Antwort: Handynummer fürs nächste Mal (Kunde und künftige Dokumente)
+            taps.learn_from_reply(session, doc, mail.text or _mail_body(client, mail))
+        except Exception as exc:
+            log.info("Signatur nicht auswertbar: %s", exc)
+    status = _close_on_reply(session, doc, mail, result)
+    session.commit()
+    if doc.business.notify_opened:
+        _notify_reply(session, doc, mail, status)
+    return 1
+
+
 def scan_inbox(session: Session, account: MailAccount, client: ImapClient) -> int:
+    if is_graph(client):
+        return _scan_inbox_graph(session, account, client)
     validity, uidnext = client.select(account.inbox_folder)
     if account.inbox_uidvalidity is None or validity != account.inbox_uidvalidity:
         # Erstlauf: nur ab jetzt, alte Antworten gelten nicht
@@ -604,47 +774,11 @@ def scan_inbox(session: Session, account: MailAccount, client: ImapClient) -> in
     uids = client.search_uids(account.inbox_last_uid + 1)
     replies = 0
     budget = [MAX_CLASSIFY_PER_RUN]
-    for uid in uids[:200]:
+    for uid in uids[:INBOX_PER_RUN]:
         mail = client.fetch_headers(uid)
         account.inbox_last_uid = max(account.inbox_last_uid, uid)
-        if mail is None or not mail.from_addr or mail.from_addr == account.email:
-            continue
-        if mail.is_bounce:
-            _handle_bounce(session, account, mail, client)
-            continue
-        # Billig zuerst: Thread-Bezug über In-Reply-To/References
-        doc = _doc_in_thread(session, account, _thread_ids(mail))
-        if mail.is_auto_reply:
-            doc = doc or _doc_in_thread(session, account, set(), customer=mail.from_addr)
-            if doc is not None:
-                if is_receipt_ack(mail.subject, _ack_body(client, mail)):
-                    if doc.ack_at is None:
-                        doc.ack_at = mail.date
-                        log_event(session, doc.business_id, "ack", f"{mail.from_addr} hat den Eingang von {doc.kind_label} {doc.document_number or doc.title} automatisch bestätigt.", doc.id)
-                else:
-                    text = (mail.text or "") or _mail_body(client, mail)[:3000]
-                    back = parse_return_date(f"{mail.subject}\n{text}", mail.date.astimezone(ZoneInfo(settings.timezone)))
-                    if back is None or not postpone_for_absence(session, doc, back[0], back[1], mail):
-                        log_event(session, doc.business_id, "autoreply", f"Abwesenheitsnotiz von {mail.from_addr}. Ich fasse trotzdem weiter nach.", doc.id)
-                session.commit()
-            continue
-        if doc is not None:
-            result = _classify_thread_reply(client, mail, doc, budget)
-        else:
-            doc, result = _match_free_mail(session, account, client, mail, budget)
-        if doc is None:
-            continue
-        if not doc.customer_mobile:
-            try:  # Signatur der Antwort: Handynummer fürs nächste Mal (Kunde und künftige Dokumente)
-                taps.learn_from_reply(session, doc, mail.text or _mail_body(client, mail))
-            except Exception as exc:
-                log.info("Signatur nicht auswertbar: %s", exc)
-        status = _close_on_reply(session, doc, mail, result)
-        replies += 1
-        session.commit()
-        if doc.business.notify_opened:
-            _notify_reply(session, doc, mail, status)
-    if len(uids) <= 200:
+        replies += _take_inbox(session, account, client, mail, budget)
+    if len(uids) <= INBOX_PER_RUN:
         account.inbox_last_uid = max(account.inbox_last_uid, uidnext - 1)
     return replies
 

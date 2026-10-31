@@ -8,7 +8,8 @@
 {% if provider %}
 <div class="form-card">
 <p style="margin:0">Dein Postfach <b>{{ email }}</b> ist über {{ provider.label }} angebunden. Melde dich dort einmal neu an.</p>
-<a class="btn" href="/oauth/{{ provider.key }}/start?avv=1">Mit {{ 'Google' if provider.key == 'google' else 'Microsoft' }} neu verbinden</a>
+<a class="btn" href="/oauth/{{ provider.key }}/start?avv=1&amp;email={{ email|urlencode }}">Mit {{ 'Google' if provider.key == 'google' else 'Microsoft' }} neu verbinden</a>
+{% if account.last_error %}<p class="small muted" style="margin:0">Meldung von {{ provider.label }}: {{ account.last_error[:300] }}</p>{% endif %}
 </div>
 {% else %}
 <form class="form-card" method="post" action="/verbinden/neu" autocomplete="on" id="reconnect">

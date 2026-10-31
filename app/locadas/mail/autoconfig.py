@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import random
+import re
 import socket
 import struct
 import urllib.request
@@ -239,3 +240,32 @@ def resolve(email: str) -> ServerConfig | None:
     if p is not None:
         return ServerConfig(p.imap_host, p.imap_port, p.imap_ssl, p.smtp_host, p.smtp_port, p.smtp_ssl, "", "mx", p)
     return from_own_host(domain)
+
+
+# --- Microsoft erkennen (für „Mit Microsoft anmelden“) -----------------------------------------
+
+_MS_CACHE: dict[str, tuple[bool, float]] = {}
+_MS_CACHE_TTL = 3600.0
+
+
+def is_microsoft_domain(email: str) -> bool:
+    """Outlook.com/Hotmail/Live oder eigene Domain mit MX bei Microsoft 365 (*.mail.protection.outlook.com)."""
+    import time
+
+    from .providers import detect_provider
+
+    domain = email.rsplit("@", 1)[-1].lower().strip().rstrip(".")
+    if not domain or "." not in domain or len(domain) > 253 or not re.fullmatch(r"[a-z0-9.-]+", domain):
+        return False
+    known = detect_provider(email)
+    if known is not None:
+        return known.key == OUTLOOK.key
+    now = time.monotonic()
+    hit = _MS_CACHE.get(domain)
+    if hit is not None and hit[1] > now:
+        return hit[0]
+    result = provider_for_mx(mx_lookup(domain)) is OUTLOOK
+    if len(_MS_CACHE) > 5000:
+        _MS_CACHE.clear()
+    _MS_CACHE[domain] = (result, now + _MS_CACHE_TTL)
+    return result

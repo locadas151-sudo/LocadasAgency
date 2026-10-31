@@ -73,7 +73,7 @@
 <h3 class="h3">Postfach</h3>
 {% if account %}
 <p style="margin:0 0 4px"><b>{{ account.email }}</b> <span class="pill {% if account.status.value == 'active' %}good{% else %}bad{% endif %}">{{ 'verbunden' if account.status.value == 'active' else 'nicht verbunden' }}</span></p>
-<p class="small muted" style="margin:0">{{ account.imap_host }} · Ordner „{{ account.sent_folder }}“{% if account.last_scan_at %} · zuletzt geprüft {{ account.last_scan_at|datetime }}{% endif %}</p>
+<p class="small muted" style="margin:0">{% if account.auth_type == 'graph' %}Microsoft (Outlook / Microsoft 365) · Ordner „Gesendete Elemente“{% else %}{{ account.imap_host }} · Ordner „{{ account.sent_folder }}“{% endif %}{% if account.last_scan_at %} · zuletzt geprüft {{ account.last_scan_at|datetime }}{% endif %}</p>
 {% if account.last_error %}<p class="small" style="color:#991b1b">{{ account.last_error }}</p>{% endif %}
 <a class="btn ghost sm" href="{{ reconnect_link(account.id) }}" style="margin-top:12px">Neu verbinden</a>
 {% else %}

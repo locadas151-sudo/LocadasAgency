@@ -292,8 +292,8 @@ _AUTO_SAVES_SENT = {"gmail", "google", "outlook", "microsoft"}
 
 def _copy_to_sent(account, msg) -> None:
     """Damit der Betrieb seine Nachfass-Mails im eigenen Gesendet-Ordner sieht."""
-    if account.provider in _AUTO_SAVES_SENT:
-        return
+    if account.provider in _AUTO_SAVES_SENT or acc.is_graph(account):
+        return  # Graph (/sendMail) legt die Mail selbst in „Gesendete Elemente“ ab
     try:
         with acc.imap_for(account) as client:
             client.append(account.sent_folder, msg.as_bytes())

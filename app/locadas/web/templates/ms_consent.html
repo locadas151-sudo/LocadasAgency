@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{% if done %}Freigabe erteilt{% else %}Freigabe durch deine IT{% endif %} · Locadas Nachfasser{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap wrap--narrow" style="max-width:620px">
+{% if done %}
+<div class="app-head"><div><h1 class="h2">Freigabe <em>erteilt</em></h1><p class="app-sub">Danke! Ab jetzt kann sich jeder in eurem Betrieb mit Microsoft anmelden.</p></div></div>
+<div class="form-card">
+<p style="margin:0">Die App „Locadas Nachfasser“ ist für euer Microsoft 365 erlaubt. Jetzt fehlt nur noch die Anmeldung mit dem Postfach, aus dem eure Angebote rausgehen.</p>
+<a class="btn" href="/verbinden">Weiter zum Verbinden <svg class="ic"><use href="#i-arrow"/></svg></a>
+</div>
+{% else %}
+<div class="app-head"><div><h1 class="h2">Einmal kurz <em>deine IT fragen</em></h1><p class="app-sub">Das ist kein Fehler bei dir. Euer Microsoft 365 ist nur so eingestellt, dass neue Apps einmal von einem Administrator erlaubt werden müssen.</p></div></div>
+{% if declined %}<div class="note warn" style="margin-bottom:16px">Die Freigabe wurde nicht erteilt oder abgebrochen. Du kannst es jederzeit noch einmal versuchen.</div>{% endif %}
+<div class="form-card">
+<h3 class="h3" style="margin:0">So geht es</h3>
+<ol class="plain" style="margin:0;padding-left:20px">
+<li>Schick den Link unten an deinen Administrator oder deinen IT-Dienstleister.</li>
+<li>Er meldet sich damit einmal bei Microsoft an und klickt auf „Akzeptieren“. Das dauert eine Minute.</li>
+<li>Danach meldest du dich hier ganz normal mit Microsoft an.</li>
+</ol>
+{% if link %}
+<div class="copy-row">
+<div class="copy-val" id="consent-link">{{ link }}</div>
+<button class="copy-btn" type="button" id="copy" data-copy="{{ link }}">Kopieren</button>
+</div>
+<p class="small muted" style="margin:0">Wir bekommen nur Zugriff auf die Postfächer der Leute, die sich selbst anmelden. Die Rechte: Mails lesen und in ihrem Namen senden.</p>
+{% endif %}
+<div class="btn-row"><a class="btn ghost" href="/verbinden">Zurück zum Verbinden</a></div>
+</div>
+<div class="upgrade" style="margin-top:20px">
+<h3 class="h3">Kein IT-Dienstleister zur Hand?</h3>
+<p>Kein Problem. Buch dir 15 Minuten mit Julius, kostenlos. Wir klären das gemeinsam am Telefon und verbinden dein Postfach direkt mit.</p>
+<div class="btn-row"><a class="btn sm" href="{{ settings.calendly_url }}" target="_blank" rel="noopener"><svg class="ic"><use href="#i-cal"/></svg>Termin buchen</a></div>
+</div>
+{% endif %}
+</div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){
+var b=document.getElementById('copy');if(!b)return;
+b.addEventListener('click',function(){var t=b.getAttribute('data-copy');function ok(){b.textContent='Kopiert';b.classList.add('done');}
+if(navigator.clipboard){navigator.clipboard.writeText(t).then(ok,function(){});}else{var r=document.createRange();r.selectNodeContents(document.getElementById('consent-link'));var s=window.getSelection();s.removeAllRanges();s.addRange(r);try{document.execCommand('copy');ok();}catch(e){}}});
+})();
+</script>
+{% endblock %}

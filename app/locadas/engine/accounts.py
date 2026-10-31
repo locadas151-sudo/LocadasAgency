@@ -11,29 +11,61 @@ from ..crypto import decrypt, encrypt
 from ..db import AccountStatus, Business, DocKind, DocStatus, Document, FollowUpStatus, MailAccount, log_event, utcnow
 from ..mail.connect import ConnectionConfig
 from ..mail import oauth
-from ..mail.imap import ImapClient, MailAuthError
+from ..mail.graph import GraphClient
+from ..mail.imap import ImapClient, MailAuthError, MailConnectError
 from ..mail.smtp import SmtpClient
 
+OAUTH_TYPES = ("oauth", "graph")
 
-def _secret(account: MailAccount) -> str:
-    """Passwort, oder bei OAuth ein frisches Access-Token aus dem gespeicherten Refresh-Token."""
+
+def _store_refresh_token(account: MailAccount):
+    def store(token: str) -> None:
+        account.secret_enc = encrypt(token)
+    return store
+
+
+def _secret(account: MailAccount, force_refresh: bool = False) -> str:
+    """Passwort, oder bei OAuth ein frisches Access-Token aus dem gespeicherten Refresh-Token.
+
+    Token abgelehnt (invalid_grant, widerrufen): MailAuthError, der Verbindungs-Wächter meldet es sofort.
+    Token-Server nicht erreichbar: MailConnectError, zählt erst nach mehreren Durchläufen."""
     raw = decrypt(account.secret_enc)
-    if account.auth_type != "oauth":
+    if account.auth_type not in OAUTH_TYPES:
         return raw
     provider = oauth.get(account.provider)
     if provider is None:
         raise MailAuthError(f"OAuth-Anbieter {account.provider!r} unbekannt")
+    key = f"acc:{account.id}"
+    if force_refresh:
+        oauth.forget(key)
+    # Alte Microsoft-Konten (IMAP/SMTP) behalten ihre Scopes, sonst verlangt Microsoft eine neue Zustimmung
+    scopes = provider.legacy_scopes if account.auth_type == "oauth" and provider.legacy_scopes else provider.scopes
     try:
-        return oauth.access_token(provider, raw, cache_key=f"acc:{account.id}")
+        return oauth.access_token(provider, raw, cache_key=key, scopes=scopes, on_new_refresh_token=_store_refresh_token(account))
+    except oauth.OAuthUnavailable as exc:
+        raise MailConnectError(str(exc)) from exc
     except oauth.OAuthError as exc:
         raise MailAuthError(str(exc)) from exc
 
 
-def imap_for(account: MailAccount) -> ImapClient:
+def is_graph(account: MailAccount | None) -> bool:
+    return account is not None and account.auth_type == "graph"
+
+
+def graph_for(account: MailAccount) -> GraphClient:
+    """Token wird erst bei der ersten Anfrage geholt, Fehler kommen also im try des Aufrufers an."""
+    return GraphClient(lambda force: _secret(account, force_refresh=force), user=account.email)
+
+
+def imap_for(account: MailAccount) -> ImapClient | GraphClient:
+    if is_graph(account):
+        return graph_for(account)
     return ImapClient(account.imap_host, account.imap_port, account.imap_ssl, account.username, _secret(account), account.auth_type)
 
 
-def smtp_for(account: MailAccount) -> SmtpClient:
+def smtp_for(account: MailAccount) -> SmtpClient | GraphClient:
+    if is_graph(account):
+        return graph_for(account)
     return SmtpClient(account.smtp_host, account.smtp_port, account.smtp_ssl, account.username, _secret(account), account.auth_type)
 
 
@@ -207,6 +239,16 @@ def resume_followups(session: Session, account: MailAccount, now: datetime | Non
 
 def reconnect(session: Session, account: MailAccount, cfg: ConnectionConfig, secret: str, auth_type: str = "password", now: datetime | None = None) -> None:
     """Neue Zugangsdaten für dasselbe Postfach: alles bleibt (Dokumente, Verlauf, Stand der Ordner), nur der Fehler geht."""
+    if auth_type == "graph" and account.auth_type != "graph" and not account.graph_sync and account.last_scan_at is not None:
+        # Wechsel von IMAP auf Graph: dort weitermachen, wo IMAP aufgehört hat, statt neu ab 30 Tagen zu lesen
+        import json
+
+        account.graph_sync = json.dumps({
+            "sent": {"t": (account.last_scan_at - timedelta(days=1)).isoformat(), "ids": []},
+            "inbox": {"t": account.last_scan_at.isoformat(), "ids": []},
+        })
+    if "graph" in (auth_type, account.auth_type):  # Ordnernamen unterscheiden sich zwischen IMAP und Graph
+        account.sent_folder, account.inbox_folder = cfg.sent_folder or account.sent_folder, cfg.inbox_folder or account.inbox_folder
     account.secret_enc = encrypt(secret)
     account.auth_type = auth_type
     account.username = cfg.username
