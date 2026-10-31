@@ -373,7 +373,7 @@ def critique(r: dict, model: str) -> dict | None:
     client = anthropic.Anthropic()
     for _ in range(3):
         try:
-            resp = client.messages.create(model=model, max_tokens=1200, messages=[{"role": "user", "content": prompt}])
+            resp = client.messages.create(model=model, max_tokens=6000, messages=[{"role": "user", "content": prompt}])
             raw = "".join(getattr(b, "text", "") for b in resp.content)
             return json.loads(raw[raw.index("{"): raw.rindex("}") + 1])
         except Exception as exc:  # noqa: BLE001

@@ -9,6 +9,7 @@ os.environ.update({
     "BASE_URL": "http://testserver",
     "ANTHROPIC_API_KEY": "",
     "TZ": "Europe/Berlin",
+    "APPROVALS_BEFORE_AUTO": "5",
 })
 
 import pytest  # noqa: E402
