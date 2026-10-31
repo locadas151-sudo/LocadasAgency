@@ -32,7 +32,8 @@ from ..holidays import add_workdays
 from ..extract.pdftext import pdf_to_text
 from ..mail.imap import Attachment, ImapClient, MailAuthError, MailConnectError, ParsedMail, since_days
 from . import accounts as acc
-from . import customers, matcher, style
+from . import customers, matcher, style, taps
+from ..extract import phones
 from .absence import parse_return_date
 from ..notify import messages as wa_msgs
 from ..notify import send as notify
@@ -155,7 +156,9 @@ def _reschedule_from(doc: Document, new_base) -> None:
     base = new_base if doc.kind == DocKind.OFFER else (doc.due_date or new_base)
     now = utcnow()
     for f in doc.followups:
-        if f.status in (FollowUpStatus.SCHEDULED, FollowUpStatus.AWAITING_APPROVAL, FollowUpStatus.SKIPPED):
+        if f.status in (FollowUpStatus.SCHEDULED, FollowUpStatus.AWAITING_APPROVAL, FollowUpStatus.AWAITING_TAP, FollowUpStatus.SKIPPED):
+            if f.tap_state == "open":
+                f.tap_state = "cancelled"
             idx = min(f.step - 1, len(offsets) - 1)
             f.status = FollowUpStatus.SCHEDULED
             f.due_at = max(base + timedelta(days=offsets[idx]), now + timedelta(hours=1))
@@ -205,6 +208,31 @@ def close_won_offers(session: Session, account: MailAccount, mail: ParsedMail, r
         d.outcome_at = d.outcome_at or utcnow()
         log_event(session, d.business_id, "won", f"Du hast {d.customer_name or d.customer_email} eine {what} geschickt. {d.kind_label} {d.document_number or d.title} ist damit als „Auftrag bekommen“ markiert, ich fasse dort nicht mehr nach.", d.id)
     return hits
+
+
+def learn_phones(session: Session, account: MailAccount, doc: Document, pdf_text: str, mail: ParsedMail) -> None:
+    """Telefon/Handy des Kunden aus dem PDF, sonst aus dem zitierten Verlauf der Mail (Signatur der Anfrage).
+
+    Nummern des Betriebs (Einstellungen, eigene Signatur in dieser Mail, Briefkopf, Fußzeile) fallen raus."""
+    if doc.customer_mobile and doc.customer_phone:
+        return
+    try:
+        b = account.business
+        cc = phones.country_code(pdf_text, doc.currency)
+        fresh, _ = phones.split_quote(mail.text or "")
+        own = taps.own_numbers(b, fresh, cc=cc)
+        names = tuple(n for n in (b.name, b.owner_name, account.display_name) if n)
+        found = phones.from_document(pdf_text, doc.customer_name, own, names, cc)
+        if not found.mobile:
+            thread = phones.from_thread(mail.text or "", own, cc)
+            found.phone = found.phone or thread.phone
+            found.mobile = thread.mobile
+        had = doc.customer_mobile
+        taps.set_phones(session, doc, found.phone, found.mobile)
+        if doc.customer_mobile and not had:
+            log_event(session, doc.business_id, "phone", f"Handynummer von {doc.customer_name or doc.customer_email} erkannt: {phones.pretty(doc.customer_mobile)}. Damit geht Nachfassen auch per WhatsApp.", doc.id)
+    except Exception as exc:  # nie den Scan daran scheitern lassen
+        log.warning("Telefonnummer für Dokument %s nicht ermittelt: %s", doc.id, exc)
 
 
 def handle_manual_mail(session: Session, account: MailAccount, mail: ParsedMail) -> Document | None:
@@ -295,6 +323,7 @@ def process_sent_mail(session: Session, account: MailAccount, mail: ParsedMail, 
                     log_event(session, existing.business_id, "paid", f"{existing.kind_label} {existing.document_number}: {paid}. Ich erinnere hier nicht.", existing.id)
                     return None
                 _reschedule_from(existing, mail.date)
+                learn_phones(session, account, existing, text, mail)
                 log_event(session, existing.business_id, "updated", f"{existing.kind_label} {existing.document_number} wurde neu verschickt{_fmt_amount(existing.amount_gross, existing.currency)}. Nachfassen startet neu.", existing.id)
             return None
 
@@ -345,6 +374,7 @@ def process_sent_mail(session: Session, account: MailAccount, mail: ParsedMail, 
     else:
         schedule_followups(session, doc)
     customers.for_document(session, doc)
+    learn_phones(session, account, doc, text, mail)
     if doc.kind == DocKind.INVOICE:
         close_won_offers(session, account, mail, [a for _, a in recipients], text, doc.term)
         if not first_run:  # alte Rechnungen aus dem Erst-Scan: nicht nach längst fertigen Aufträgen fragen
@@ -602,6 +632,11 @@ def scan_inbox(session: Session, account: MailAccount, client: ImapClient) -> in
             doc, result = _match_free_mail(session, account, client, mail, budget)
         if doc is None:
             continue
+        if not doc.customer_mobile:
+            try:  # Signatur der Antwort: Handynummer fürs nächste Mal (Kunde und künftige Dokumente)
+                taps.learn_from_reply(session, doc, mail.text or _mail_body(client, mail))
+            except Exception as exc:
+                log.info("Signatur nicht auswertbar: %s", exc)
         status = _close_on_reply(session, doc, mail, result)
         replies += 1
         session.commit()

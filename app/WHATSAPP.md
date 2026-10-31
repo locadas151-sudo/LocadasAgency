@@ -1,6 +1,6 @@
 # WhatsApp-Sekretär einrichten
 
-Alles, was an den Betrieb geht (Morgen-Vorschau, Kunde hat geöffnet, Kunde hat geantwortet, Mail kam nicht an, Freigaben, „Wie ist es ausgegangen?“, Login-Link), läuft über einen Kanal (`locadas/notify/`):
+Alles, was an den Betrieb geht (Morgen-Vorschau, Kunde hat geöffnet, Kunde hat geantwortet, Mail kam nicht an, Freigaben, WhatsApp-Nachfassen mit einem Tipp, „Wie ist es ausgegangen?“, Login-Link), läuft über einen Kanal (`locadas/notify/`):
 
 1. **WhatsApp**, wenn der Server eingerichtet ist (`WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`) und der Betrieb seine Nummer hinterlegt und das Häkchen gesetzt hat.
 2. Sonst, oder wenn WhatsApp fehlschlägt: **Mail ins eigene Postfach** wie bisher.
@@ -99,6 +99,22 @@ Text:
 Knöpfe: `Ist bezahlt`, `Nicht bezahlt`
 Beispiel: {{1}} = Thomas, {{2}} = Peter Weber, {{3}} = Rechnung R-2026-301 über 224,91 €
 
+### locadas_tap
+WhatsApp-Nachfassen mit einem Tipp (`engine/taps.py`): Der Betrieb schickt die Nachfass-Nachricht selbst von seiner Nummer. Im 24h-Fenster kommt sie als interaktive Nachricht vom Typ `cta_url` („In WhatsApp öffnen“) plus eine Nachricht mit drei Antwort-Knöpfen, außerhalb mit dieser Vorlage.
+
+Text:
+> Hallo {{1}}, heute ist bei {{2}} ({{3}}) die nächste Nachfass-Nachricht dran, diesmal per WhatsApp von deiner Nummer: {{4}} Tipp auf „In WhatsApp öffnen“, schick sie ab und tipp dann auf „Gesendet“.
+
+Knöpfe in genau dieser Reihenfolge (gemischt, die URL zuerst):
+1. **URL-Knopf** (Website, dynamisch): Text `In WhatsApp öffnen`, URL `https://app.locadas.de/t/{{1}}`, Beispielwert `AbCdEf0123456789xyzTOKEN`
+2. Schnellantwort `Gesendet`
+3. Schnellantwort `Kunde hat geantwortet`
+4. Schnellantwort `Diesmal nicht`
+
+Beispiel: {{1}} = Thomas, {{2}} = Herr Dieter Lange, {{3}} = Angebot 17/2026 über 1.784,00 €, {{4}} = Hallo Herr Dieter Lange, ich wollte kurz nachhören, ob unser Angebot 17/2026 gut bei Ihnen angekommen ist. Haben Sie noch Fragen dazu? Viele Grüße Thomas Müller
+
+Der dynamische Teil der URL ist das Token der Nachfass-Stufe. `/t/{token}` merkt sich den Tipp und leitet auf `https://wa.me/<Kundennummer>?text=<Text>` weiter. Die Nachricht selbst ist höchstens 400 Zeichen lang und passt damit immer in {{4}}.
+
 ### locadas_event
 Text:
 > Hallo {{1}}, kurze Info von deinem Locadas-Sekretär: {{2}} Bei Fragen schreib mir einfach hier.
@@ -114,12 +130,14 @@ Beispiel: {{1}} = Thomas, {{2}} = Die Mail an Familie Schmidt zu Angebot A-2026-
   - „Senden“ / „Diesmal nicht“: Freigabe, danach kommt die nächste offene Freigabe
   - „Bezahlt“ / „Erledigt“ / „Bitte nachfassen“: Frage zu einem Vorgang von vor dem Start. Erst „Bitte nachfassen“ plant eine Nachfass-Mail (normaler Ablauf mit Vorschau). Diese Frage hat keine Vorlage: außerhalb des 24h-Fensters kommt sie per Mail.
   - „Auftrag bekommen“ / „Nicht bekommen“ / „Ist bezahlt“ / „Nicht bezahlt“: Ergebnis notieren, danach die nächste offene Frage
-  - „Jetzt anrufen“: Mailadresse und Link aufs PDF (Telefonnummer des Kunden kennen wir nicht, sie steht im Dokument)
+  - „Jetzt anrufen“: Telefonnummer des Kunden, wenn wir sie aus PDF oder Mail-Signatur kennen, sonst Mailadresse und Link aufs PDF
   - „Weiter nachfassen“: Vorgang wieder öffnen
+  - WhatsApp mit einem Tipp: „In WhatsApp öffnen“ öffnet den Chat des Betriebs mit dem Kunden, Text vorausgefüllt. „Gesendet“ vermerkt die Stufe als gesendet (`sent_via` = `whatsapp_tap`), die nächste Stufe folgt wie gewohnt. „Hat geantwortet“ (bei Rechnungen im 24h-Fenster „Ist bezahlt“) schließt den Vorgang, „Diesmal nicht“ überspringt die Stufe. Antworten des Kunden per WhatsApp sehen wir nicht, deshalb steht „Hat geantwortet“ in jeder weiteren WhatsApp-Nachricht und in der Morgen-Vorschau.
 - **Text**: „Stopp 3“ stoppt den dritten Kunden aus der letzten Liste. Eine Mailadresse nach „Mail kam nicht an“ wird als neue Kundenadresse übernommen. „abmelden“ schaltet WhatsApp ab. Alles andere bekommt eine kurze Hilfe.
 
 ## 5. Ruhe-Regeln
 
 - Höchstens eine Vorschau pro Tag (gebündelt), „Kunde hat geöffnet“ höchstens einmal pro Dokument.
+- WhatsApp mit einem Tipp: alle an einem Tag fälligen Kunden kommen mit der ersten Runde am Morgen, höchstens 5 „In WhatsApp öffnen“-Nachrichten pro Tag (eine URL je Nachricht erlaubt Meta), der Rest steht im Dashboard unter „Heute per WhatsApp“. Ohne Bestätigung nach 24 Stunden: Link geöffnet heißt gesendet, sonst einmal erinnern, nach 72 Stunden fällt die Stufe weg. Per Mail geht in diesem Kanal nie automatisch etwas an den Kunden.
 - Freigaben und Abschlussfragen kommen einzeln nacheinander: die nächste erst, wenn die vorige beantwortet ist.
 - Alles andere nur, wenn etwas passiert.

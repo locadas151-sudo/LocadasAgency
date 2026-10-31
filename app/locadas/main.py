@@ -23,6 +23,8 @@ from .db import AccountStatus, Business, Customer, DocKind, DocStatus, Document,
 from .engine import accounts as acc
 from .engine import customers as cust
 from .engine import followups as fu_engine
+from .engine import taps
+from .extract import phones as phone_x
 from .engine.scanner import scan_account
 from .engine.scheduler import run_cycle, start_scheduler
 from .extract.check import check_offer
@@ -101,6 +103,7 @@ STATUS_CLASS = {
 }
 FU_LABEL = {
     FollowUpStatus.SCHEDULED: "geplant", FollowUpStatus.AWAITING_APPROVAL: "wartet auf deine Freigabe",
+    FollowUpStatus.AWAITING_TAP: "wartet auf deinen WhatsApp-Tipp",
     FollowUpStatus.SENDING: "wird gesendet", FollowUpStatus.SENT: "gesendet", FollowUpStatus.SKIPPED: "übersprungen", FollowUpStatus.CANCELLED: "gestoppt",
     FollowUpStatus.FAILED: "fehlgeschlagen",
 }
@@ -112,7 +115,8 @@ templates.env.filters["rel"] = rel_date
 templates.env.globals.update(
     STATUS_LABEL=STATUS_LABEL, STATUS_CLASS=STATUS_CLASS, FU_LABEL=FU_LABEL, DocStatus=DocStatus, DocKind=DocKind,
     FollowUpStatus=FollowUpStatus, settings=settings, PROVIDERS=PROVIDERS, version=__version__,
-    review_question=fu_engine.review_question,
+    review_question=fu_engine.review_question, channel_for=taps.channel_for, CHANNEL_LABEL=taps.CHANNEL_LABEL,
+    phone_pretty=phone_x.pretty, configured_channel=taps.configured_channel,
     oauth_providers=lambda: [p for p in oauth.providers().values() if p.enabled],
 )
 
@@ -374,7 +378,8 @@ def dashboard(request: Request, business: Business = Depends(require_business), 
     customers = {c.email: c for c in session.scalars(select(Customer).where(Customer.business_id == business.id)).all()}
     counts["review_clicks"] = sum(1 for c in customers.values() if c.review_clicked_at)
     account = next((a for a in business.accounts if a.status != AccountStatus.DISCONNECTED), None)
-    return render(request, "dashboard.html", business=business, docs=docs, pending=pending, events=events, counts=counts, open_amount=open_amount, account=account, filter=filter, msg=msg, customers=customers)
+    wa_taps = taps.open_taps(session, business.id)
+    return render(request, "dashboard.html", business=business, docs=docs, pending=pending, events=events, counts=counts, open_amount=open_amount, account=account, filter=filter, msg=msg, customers=customers, wa_taps=wa_taps)
 
 
 @app.get("/freigaben", response_class=HTMLResponse)
@@ -468,10 +473,30 @@ def document_status(doc_id: int, action: str = Form(...), business: Business = D
 def document_edit(
     doc_id: int, business: Business = Depends(require_business), session: Session = Depends(get_db),
     customer_name: str = Form(""), customer_email: str = Form(""), amount_gross: str = Form(""), document_number: str = Form(""), title: str = Form(""), due_date: str = Form(""),
+    customer_mobile: str | None = Form(None), customer_phone: str | None = Form(None),
 ):
     doc = session.get(Document, doc_id)
     if doc is None or doc.business_id != business.id:
         raise HTTPException(404)
+    msg = "gespeichert"
+    if customer_mobile is not None or customer_phone is not None:  # Felder waren im Formular
+        cc = "41" if (doc.currency or "").upper() == "CHF" else "49"
+        mob = phone_x.normalize(customer_mobile or "", cc) if (customer_mobile or "").strip() else ""
+        tel = phone_x.normalize(customer_phone or "", cc) if (customer_phone or "").strip() else ""
+        bad = ((customer_mobile or "").strip() and not mob) or ((customer_phone or "").strip() and not tel)
+        if mob and not phone_x.is_mobile(mob):
+            bad = True  # Festnetz kann kein WhatsApp
+            tel, mob = tel or mob, ""
+        if bad:
+            msg = "nummer_ungueltig"
+        if (mob, tel) != (doc.customer_mobile, doc.customer_phone):
+            doc.customer_mobile, doc.customer_phone = mob, tel
+            c = cust.for_document(session, doc)
+            if c is not None:
+                c.mobile, c.phone = mob, tel
+            for f in doc.followups:
+                if f.status == FollowUpStatus.AWAITING_TAP:
+                    f.wa_text = ""  # wird unten neu geschrieben, die Nummer kommt beim Öffnen frisch aus dem Dokument
     doc.customer_name = customer_name.strip()[:200]
     doc.customer_email = customer_email.strip().lower()[:320]
     doc.document_number = document_number.strip()[:100]
@@ -492,7 +517,27 @@ def document_edit(
         if f.status in (FollowUpStatus.SCHEDULED,):
             f.subject = ""
             f.body = ""
+    for f in doc.followups:
+        if f.status == FollowUpStatus.AWAITING_TAP and not f.wa_text:
+            f.wa_text = taps.wa_texts.text_for(doc, f.step)
     log_event(session, business.id, "edit", f"{doc.kind_label} {doc.document_number or doc.title}: Angaben korrigiert.", doc.id)
+    session.commit()
+    return RedirectResponse(f"/dokument/{doc.id}?msg={msg}", status_code=303)
+
+
+@app.post("/dokument/{doc_id}/kanal")
+def document_channel(doc_id: int, whatsapp: str = Form(""), business: Business = Depends(require_business), session: Session = Depends(get_db)):
+    """Schalter „Diesen Kunden per WhatsApp nachfassen“ (überschreibt die Einstellung des Betriebs nur für dieses Dokument)."""
+    doc = session.get(Document, doc_id)
+    if doc is None or doc.business_id != business.id:
+        raise HTTPException(404)
+    biz = business.followup_channel or "mail"
+    if whatsapp:
+        doc.followup_channel = "" if biz in ("whatsapp_tap", "both") else "whatsapp_tap"
+    else:
+        doc.followup_channel = "" if biz == "mail" else "mail"
+    label = "per WhatsApp mit einem Tipp" if whatsapp else "per Mail"
+    log_event(session, business.id, "edit", f"{doc.kind_label} {doc.document_number or doc.title}: Nachfassen ab jetzt {label}.", doc.id)
     session.commit()
     return RedirectResponse(f"/dokument/{doc.id}?msg=gespeichert", status_code=303)
 
@@ -793,6 +838,73 @@ def approval_submit(request: Request, token: str, action: str, session: Session 
     return render(request, "approval.html", title=title, text=text, doc=doc, fu=fu)
 
 
+# --- WhatsApp mit einem Tipp (ohne Login, Token je Nachfass-Stufe) ----------------------------
+
+# Link-Vorschauen (Messenger, Mail-Scanner) öffnen Links automatisch: das zählt nicht als Tipp des Betriebs
+_BOT_UA = re.compile(r"(?i)bot|crawler|spider|preview|facebookexternalhit|whatsapp|slack|telegram|skype|discord|safelinks|proofpoint|mimecast|barracuda|curl|wget|python-requests|headless")
+
+
+@app.get("/t/{token}")
+def tap_redirect(request: Request, token: str, session: Session = Depends(get_db)):
+    """„In WhatsApp öffnen“: merkt den Tipp und leitet auf wa.me mit vorausgefülltem Text weiter."""
+    fu = taps.find(session, token)
+    if fu is None or fu_engine.link_expired(fu):
+        raise HTTPException(404)
+    doc = fu.document
+    if not doc.customer_mobile or not fu.wa_text:
+        return render(request, "approval.html", title="Keine Handynummer", text="Für diesen Kunden ist keine Handynummer hinterlegt. Trag sie beim Dokument ein.", doc=doc, fu=fu)
+    if fu.tap_state == "open" and not _BOT_UA.search(request.headers.get("user-agent", "")):
+        taps.record_tap(fu, utcnow())
+        session.commit()
+    return RedirectResponse(taps.wa_link(doc.customer_mobile, fu.wa_text), status_code=302)
+
+
+TAP_CONFIRM = {
+    "sent": ("Abgeschickt?", "Hast du die WhatsApp-Nachricht an {who} abgeschickt? Dann vermerke ich sie als gesendet.", "Ja, ist abgeschickt"),
+    "replied": ("Kunde hat geantwortet?", "Hat {who} schon geantwortet, zum Beispiel per WhatsApp oder am Telefon? Dann fasse ich nicht mehr nach.", "Ja, hat geantwortet"),
+    "paid": ("Schon bezahlt?", "Hat {who} schon bezahlt? Dann erinnere ich nicht mehr.", "Ja, ist bezahlt"),
+    "skip": ("Diesmal nicht?", "Diese Nachricht an {who} wird nicht geschickt, die nächste Stufe bleibt geplant.", "Diesmal nicht"),
+}
+
+
+def _tap_fu(session: Session, token: str, action: str) -> FollowUp:
+    if action not in taps.ACTIONS:
+        raise HTTPException(404)
+    fu = taps.find(session, token)
+    if fu is None:
+        raise HTTPException(404)
+    return fu
+
+
+@app.get("/w/{token}/{action}", response_class=HTMLResponse)
+def tap_action_link(request: Request, token: str, action: str, session: Session = Depends(get_db)):
+    """Bestätigungsseite. Ein GET ändert nie etwas (Link-Vorschau im Mailprogramm)."""
+    fu = _tap_fu(session, token, action)
+    if fu_engine.link_expired(fu):
+        return _expired(request)
+    doc = fu.document
+    state = None if action in ("replied", "paid") and doc.status == DocStatus.OPEN else taps.state_text(fu)
+    if action in ("replied", "paid") and doc.status != DocStatus.OPEN:
+        state = ("Schon erledigt", f"Bei {doc.customer_name or doc.customer_email} fasse ich nicht mehr nach.")
+    if state:
+        return render(request, "approval.html", title=state[0], text=state[1], doc=doc, fu=fu)
+    title, text, button = TAP_CONFIRM[action]
+    return render(request, "confirm.html", title=title, text=text.format(who=doc.customer_name or doc.customer_email), doc=doc, button=button,
+                  action=f"/w/{token}/{action}", preview=fu.wa_text if action == "sent" else None)
+
+
+@app.post("/w/{token}/{action}", response_class=HTMLResponse)
+def tap_action_submit(request: Request, token: str, action: str, session: Session = Depends(get_db), next: str = Form("")):
+    fu = _tap_fu(session, token, action)
+    if fu_engine.link_expired(fu):
+        return _expired(request)
+    title, text = taps.handle(session, fu, action, utcnow())
+    session.commit()
+    if next:
+        return RedirectResponse(_safe_next(next, "/dashboard") + "#whatsapp", status_code=303)
+    return render(request, "approval.html", title=title, text=text, doc=fu.document, fu=fu)
+
+
 # --- WhatsApp-Sekretär -----------------------------------------------------------
 
 @app.get("/webhook/whatsapp")
@@ -921,6 +1033,7 @@ def settings_save(
     approval_threshold: str | None = Form(None), notify_opened: str = Form(""),
     include_view_link: str = Form(""), personalize: str = Form(""), doc_delivery: str | None = Form(None), tone: str | None = Form(None),
     whatsapp_number: str | None = Form(None), whatsapp_opt_in: str = Form(""), google_review_url: str | None = Form(None), review_field: str = Form(""),
+    followup_channel: str | None = Form(None),
 ):
     b = session.get(Business, business.id)
     review_ok = True
@@ -956,6 +1069,8 @@ def settings_save(
         b.include_view_link = bool(include_view_link)
     if tone in fu_engine.texts.TONES:
         b.tone = tone
+    if followup_channel in taps.CHANNELS:
+        b.followup_channel = followup_channel
     b.personalize = bool(personalize)
     for d in b.documents:
         for f in d.followups:

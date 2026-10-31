@@ -43,6 +43,8 @@ from locadas.db import Business, DocStatus, Document, FollowUp, FollowUpStatus, 
 from locadas.engine import accounts as acc  # noqa: E402
 from locadas.engine import followups as fu  # noqa: E402
 from locadas.engine import scanner  # noqa: E402
+from locadas.engine import taps  # noqa: E402
+from locadas.extract import phones  # noqa: E402
 from locadas.mail.connect import connect_mailbox  # noqa: E402
 from locadas.mail.providers import detect_provider  # noqa: E402
 from sim.personas import Event, Persona, Sent, build, pdf_attachments  # noqa: E402
@@ -66,7 +68,7 @@ class Clock:
 
 
 def _patch_clock(clock: Clock) -> None:
-    for mod in (scanner, fu, dbmod):
+    for mod in (scanner, fu, dbmod, taps):
         mod.utcnow = clock
     import locadas.main as main
     main.utcnow = clock
@@ -130,7 +132,7 @@ def run_persona(p: Persona, days: int = 22) -> dict:
     check(cfg.sent_folder == p.sent_folder, f"Gesendet-Ordner gefunden: {cfg.sent_folder!r} (erwartet {p.sent_folder!r})")
     cfg.provider_key = provider.key if provider else "custom"
     with new_session() as s:
-        b = Business(name=p.business, owner_name=p.owner, email=p.email, phone=p.phone)
+        b = Business(name=p.business, owner_name=p.owner, email=p.email, phone=p.phone, followup_channel=p.channel)
         s.add(b)
         s.flush()
         account = acc.create_account(s, b, cfg, PASSWORD)
@@ -167,8 +169,16 @@ def run_persona(p: Persona, days: int = 22) -> dict:
             d = match[0]
             check(d.kind.value == e["kind"], f"{e['number'] or sent.subject}: Art {d.kind.value} (erwartet {e['kind']})")
             check(d.customer_email == e["customer"], f"{e['number'] or sent.subject}: Kunde {d.customer_email} (erwartet {e['customer']})")
+            if "mobile" in e:
+                check(d.customer_mobile == e["mobile"], f"{e['number']}: Kunden-Handy {d.customer_mobile or '–'} (erwartet {e['mobile'] or '–'})")
+            if "phone" in e:
+                check(d.customer_phone == e["phone"], f"{e['number']}: Kunden-Telefon {d.customer_phone or '–'} (erwartet {e['phone'] or '–'})")
             if e["amount"] is not None:
                 check(d.amount_gross is not None and abs(d.amount_gross - e["amount"]) < 0.02, f"{e['number']}: Betrag {d.amount_gross} (erwartet {e['amount']})")
+        # Nie die eigene Nummer des Betriebs als Kundennummer
+        own = phones.normalize(p.phone, phones.country_code(p.phone))
+        for d in docs:
+            check(own not in (d.customer_mobile, d.customer_phone), f"{d.document_number}: Kundennummer ist nicht die eigene ({d.customer_mobile or d.customer_phone or '–'})")
         # Kollegen / Steuerberater / Weiterleitung dürfen nirgends als Kunde stehen
         for d in docs:
             check(not d.customer_email.endswith(p.email.split("@")[1]) or p.email.split("@")[1] in ("gmail.com", "gmx.de", "web.de", "t-online.de", "outlook.de", "icloud.com", "gmx.ch"),
@@ -205,6 +215,13 @@ def run_persona(p: Persona, days: int = 22) -> dict:
     clicker = CLICKERS.get(p.key, False)
     to_click: dict[int, list[str]] = {}
     opened_tokens: set[str] = set()
+
+    wa_taps: list[tuple[str, str, str, str]] = []   # (Tag, Nummer aus wa.me, Text, Dokumentnummer)
+    tap_customers: set[str] = set()                  # Kunden, die per WhatsApp nachgefasst werden (keine Mail)
+    with new_session() as s:
+        for d in s.scalars(select(Document).where(Document.business_id == bid)).all():
+            if taps.channel_for(d) == "whatsapp_tap":
+                tap_customers.add(d.customer_email)
 
     for i, day in enumerate(_sim_days(t0, days)):
         clock.now = day
@@ -247,6 +264,21 @@ def run_persona(p: Persona, days: int = 22) -> dict:
             scanner.scan_account(s, s.get(MailAccount, aid))
             due_stats = fu.process_due(s, now=day)
         collect(label)
+        # Inhaber tippt „In WhatsApp öffnen“ (Handy-Browser), schickt ab und tippt „Gesendet“
+        with new_session() as s:
+            open_taps = [(f.tap_token, f.document.document_number, f.wa_text, f.document.customer_mobile) for f in taps.open_taps(s, bid)]
+        for token, nr, text, mobile in open_taps:
+            r = web.get(f"/t/{token}", headers={"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Mobile Safari"}, follow_redirects=False)
+            loc = r.headers.get("location", "")
+            m = re.match(r"https://wa\.me/(\d+)\?text=(.*)$", loc)
+            check(r.status_code == 302 and m is not None, f"{label}: „In WhatsApp öffnen“ für {nr} leitet auf wa.me ({r.status_code} {loc[:40]})")
+            if m:
+                from urllib.parse import unquote
+                wa_taps.append((label, m.group(1), unquote(m.group(2)), nr))
+                check(unquote(m.group(2)) == text, f"{label}: wa.me-Text für {nr} unverändert")
+            r2 = web.post(f"/w/{token}/sent", data={"next": "/dashboard"}, follow_redirects=False)
+            check(r2.status_code == 303, f"{label}: „Gesendet“ für {nr} ({r2.status_code})")
+            timeline.append(f"{label}: Inhaber schickt die WhatsApp-Nachricht an {nr} mit einem Tipp und bestätigt „Gesendet“")
         if due_stats["sent"] or due_stats["approval"] or due_stats.get("capped"):
             timeline.append(f"{label}: {due_stats['sent']} Nachfass-Mails gesendet, {due_stats['approval']} zur Freigabe, {due_stats.get('capped', 0)} wegen Tageslimit verschoben")
         # Inhaber reagiert noch am selben Tag auf Freigaben
@@ -315,6 +347,27 @@ def run_persona(p: Persona, days: int = 22) -> dict:
         check(bad is None, f"{day_label}: keine Weichspüler-/Drohformel in „{subj}“ ({bad.group(0) if bad else ''})")
         if chf:
             check("€" not in body, f"{day_label}: CHF-Betrieb ohne €-Zeichen ({subj})")
+    # WhatsApp mit einem Tipp: richtige Nummer, kurzer Text, keine Mail an diese Kunden
+    with new_session() as s:
+        docs = s.scalars(select(Document).where(Document.business_id == bid)).all()
+        mobiles = {d.document_number: d.customer_mobile for d in docs}
+        for d in docs:
+            if d.customer_email in tap_customers:
+                wa_sent = [f for f in d.followups if f.sent_via == "whatsapp_tap"]
+                mail_sent = [f for f in d.followups if f.status == FollowUpStatus.SENT and f.sent_via == "mail"]
+                check(not mail_sent, f"{d.document_number}: per WhatsApp nachgefasst, keine Mail ({len(mail_sent)} Mails)")
+                check(bool(wa_sent) or d.status != DocStatus.OPEN, f"{d.document_number}: mindestens eine WhatsApp-Nachricht als gesendet vermerkt ({len(wa_sent)})")
+    if p.channel == "whatsapp_tap":
+        check(bool(wa_taps), f"WhatsApp-Nachfassen genutzt ({len(wa_taps)} Taps)")
+    for day_label, number, text, nr in wa_taps:
+        check(number == mobiles.get(nr) and number != own, f"{day_label}: wa.me an {number} = Kunden-Handy von {nr} ({mobiles.get(nr)}), nicht die eigene Nummer")
+        check(len(text) <= 400, f"{day_label}: WhatsApp-Text für {nr} höchstens 400 Zeichen ({len(text)})")
+        check("–" not in text and "—" not in text, f"{day_label}: WhatsApp-Text für {nr} ohne Gedankenstrich")
+        if chf:
+            check("€" not in text, f"{day_label}: CHF-Betrieb, WhatsApp-Text ohne €-Zeichen ({nr})")
+    if p.channel != "both":
+        bad = [(day_label, to) for day_label, to, _, _ in customer_mails if any(c in to for c in tap_customers)]
+        check(not bad, f"Keine Mail an Kunden, die per WhatsApp nachgefasst werden ({bad[:2]})")
     per_day: dict[str, int] = {}
     for day_label, *_ in notifications:
         per_day[day_label] = per_day.get(day_label, 0) + 1
@@ -332,6 +385,7 @@ def run_persona(p: Persona, days: int = 22) -> dict:
         "customer_mails": customer_mails,
         "notifications": notifications,
         "approval_mails": approvals_mails,
+        "whatsapp": wa_taps,
     }
 
 
@@ -472,6 +526,7 @@ def main(argv: list[str]) -> int:
         "key": r["persona"].key, "business": r["persona"].business, "owner": r["persona"].owner, "trade": r["persona"].trade,
         "connect": r["connect"], "checks": [{"ok": ok, "msg": m} for ok, m in r["checks"]], "detected": r["detected"],
         "timeline": r["timeline"], "customer_mails": r["customer_mails"], "notifications": r["notifications"], "critique": r["critique"],
+        "whatsapp": r.get("whatsapp", []),
     } for r in results], ensure_ascii=False, indent=1, default=str))
     total = sum(len(r["checks"]) for r in results)
     bad = sum(1 for r in results for ok, _ in r["checks"] if not ok)

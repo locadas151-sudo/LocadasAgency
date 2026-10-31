@@ -26,6 +26,7 @@ ACTIONS = {
     "pick",     # Vorschau mit mehreren Kunden: wer hat angerufen?
     "fertig",   # Auftrag fertig: Abschluss-Mail an den Kunden (id = Kunde)
     "notyet",   # Auftrag noch nicht fertig (id = Kunde)
+    "tsent", "treplied", "tpaid", "tskip",  # WhatsApp mit einem Tipp: gesendet / Kunde hat geantwortet / bezahlt / diesmal nicht (id = FollowUp)
 }
 
 

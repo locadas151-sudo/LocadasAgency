@@ -13,6 +13,7 @@
 <div class="btn-row">{% if doc.first_opened_at %}<span class="pill good">geöffnet {{ doc.open_count }}×, zuletzt {{ doc.last_opened_at|datetime }}</span>{% elif doc.followups_sent and doc.business.include_view_link %}<span class="pill muted">noch nicht geöffnet</span>{% endif %}<span class="pill {{ STATUS_CLASS[doc.status] }}">{{ STATUS_LABEL[doc.status] }}</span></div>
 </div>
 {% if msg == 'gespeichert' %}<div class="note" style="margin-bottom:16px">Gespeichert.</div>{% endif %}
+{% if msg == 'nummer_ungueltig' %}<div class="note warn" style="margin-bottom:16px">Eine Nummer konnten wir nicht lesen oder sie ist kein Handy (WhatsApp geht nur mit Handynummer). Der Rest ist gespeichert.</div>{% endif %}
 
 <div class="grid2">
 <div>
@@ -40,17 +41,37 @@
 {% if not doc.customer_email %}<div class="note err" style="margin-bottom:12px">Keine Kunden-Mailadresse gefunden. Trag sie rechts ein, sonst können wir nicht nachfassen.</div>{% endif %}
 <ul class="steps">
 {% for f in doc.followups %}
-<details class="step" {% if f.status in (FollowUpStatus.AWAITING_APPROVAL,) %}open{% endif %}>
-<summary><span>Nachfass-Mail {{ f.step }}</span><span class="pill {% if f.status == FollowUpStatus.SENT %}good{% elif f.status == FollowUpStatus.AWAITING_APPROVAL %}warn{% elif f.status == FollowUpStatus.SCHEDULED %}open{% else %}muted{% endif %}">{{ FU_LABEL[f.status] }}{% if f.status == FollowUpStatus.SENT and f.sent_at %} {{ f.sent_at|date }}{% elif f.status == FollowUpStatus.SCHEDULED %} · {{ f.due_at|rel }}{% endif %}</span></summary>
+<details class="step" {% if f.status in (FollowUpStatus.AWAITING_APPROVAL, FollowUpStatus.AWAITING_TAP) or f.tap_state == 'open' %}open{% endif %}>
+<summary><span>{% if f.status == FollowUpStatus.AWAITING_TAP or f.sent_via == 'whatsapp_tap' %}WhatsApp-Nachricht{% else %}Nachfass-Mail{% endif %} {{ f.step }}{% if f.sent_via == 'mail+whatsapp_tap' %} + WhatsApp{% endif %}</span><span class="pill {% if f.status == FollowUpStatus.SENT %}good{% elif f.status in (FollowUpStatus.AWAITING_APPROVAL, FollowUpStatus.AWAITING_TAP) %}warn{% elif f.status == FollowUpStatus.SCHEDULED %}open{% else %}muted{% endif %}">{{ FU_LABEL[f.status] }}{% if f.status == FollowUpStatus.SENT and f.sent_at %} {{ f.sent_at|date }}{% elif f.status == FollowUpStatus.SCHEDULED %} · {{ f.due_at|rel }}{% endif %}</span></summary>
+{% if f.status == FollowUpStatus.AWAITING_TAP or f.sent_via == 'whatsapp_tap' %}
+<p class="sub"><b>Per WhatsApp an</b> {{ phone_pretty(doc.customer_mobile) }}{% if f.tapped_at %} · Link geöffnet {{ f.tapped_at|datetime }}{% endif %}</p>
+<pre>{{ f.wa_text or f.body }}</pre>
+{% else %}
 {% set sub = f.subject or (previews[f.id][0] if f.id in previews else '') %}
 {% set body = f.body or (previews[f.id][1] if f.id in previews else '') %}
 <p class="sub"><b>Betreff:</b> {{ sub }}</p>
 <pre>{{ body }}</pre>
+{% if f.wa_text and f.tap_state %}<p class="sub"><b>Dazu als WhatsApp-Vorschlag:</b></p><pre>{{ f.wa_text }}</pre>{% endif %}
+{% endif %}
+{% if f.tap_state == 'open' %}<a class="wa-open" href="/t/{{ f.tap_token }}" target="_blank" rel="noopener">In WhatsApp öffnen</a>
+<div class="wa-actions">
+<form method="post" action="/w/{{ f.tap_token }}/sent"><input type="hidden" name="next" value="/dokument/{{ doc.id }}"><button class="btn sm" type="submit">Gesendet</button></form>
+<form method="post" action="/w/{{ f.tap_token }}/{{ 'paid' if doc.kind == DocKind.INVOICE else 'replied' }}"><input type="hidden" name="next" value="/dokument/{{ doc.id }}"><button class="btn ghost sm" type="submit">{{ 'Ist bezahlt' if doc.kind == DocKind.INVOICE else 'Hat geantwortet' }}</button></form>
+<form method="post" action="/w/{{ f.tap_token }}/skip"><input type="hidden" name="next" value="/dokument/{{ doc.id }}"><button class="btn ghost sm" type="submit">Diesmal nicht</button></form>
+</div>{% endif %}
 {% if f.status == FollowUpStatus.AWAITING_APPROVAL %}<div class="btn-row" style="margin-top:12px">{% if doc.kind == DocKind.INVOICE %}<a class="btn sm" href="/f/{{ f.approval_token }}/send">Noch offen: erinnern</a><a class="btn ghost sm" href="/f/{{ f.approval_token }}/done">Bezahlt</a>{% else %}<a class="btn sm" href="/f/{{ f.approval_token }}/send">Jetzt senden</a><a class="btn ghost sm" href="/f/{{ f.approval_token }}/skip">Diesmal nicht</a>{% endif %}</div>{% endif %}
 {% if f.error %}<p class="sub" style="color:#991b1b">{{ f.error }}</p>{% endif %}
 </details>
 {% endfor %}
 </ul>
+</div>
+
+<div class="card" style="margin-top:16px">
+<h3 class="h3">WhatsApp</h3>
+<form method="post" action="/dokument/{{ doc.id }}/kanal">
+<label class="toggle" style="border-top:0;padding-top:0"><input type="checkbox" name="whatsapp" value="1" {% if configured_channel(doc) != 'mail' %}checked{% endif %} onchange="this.form.submit()"><div><b>Diesen Kunden per WhatsApp nachfassen</b><span>{% if doc.customer_mobile %}Du bekommst die fertige Nachricht und schickst sie mit einem Tipp von deinem Handy an {{ phone_pretty(doc.customer_mobile) }}.{% if configured_channel(doc) == 'both' %} Die Mail geht trotzdem automatisch raus (Mail plus WhatsApp).{% else %} Per Mail geht dann nichts raus.{% endif %}{% else %}Dafür brauche ich die Handynummer des Kunden. Trag sie bei „Kunden-Handy“ ein, bis dahin fasse ich per Mail nach.{% endif %}</span></div></label>
+<noscript><button class="btn ghost sm" type="submit">Speichern</button></noscript>
+</form>
 </div>
 
 <div class="card" style="margin-top:16px">
@@ -68,6 +89,10 @@
 <form method="post" action="/dokument/{{ doc.id }}/bearbeiten" style="display:flex;flex-direction:column;gap:14px">
 <div class="field"><label>Kunde</label><input name="customer_name" value="{{ doc.customer_name }}"></div>
 <div class="field"><label>Kunden-Mail</label><input name="customer_email" type="email" value="{{ doc.customer_email }}"></div>
+<div class="fields2">
+<div class="field"><label>Kunden-Handy <small>(WhatsApp)</small></label><input name="customer_mobile" type="tel" inputmode="tel" value="{{ phone_pretty(doc.customer_mobile) }}" placeholder="0171 2345678"></div>
+<div class="field"><label>Kunden-Telefon</label><input name="customer_phone" type="tel" inputmode="tel" value="{{ phone_pretty(doc.customer_phone) }}"></div>
+</div>
 <div class="fields2">
 <div class="field"><label>Nummer</label><input name="document_number" value="{{ doc.document_number }}"></div>
 <div class="field"><label>Betrag brutto</label><input name="amount_gross" value="{{ '%.2f'|format(doc.amount_gross)|replace('.', ',') if doc.amount_gross is not none else '' }}"></div>

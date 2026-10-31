@@ -136,6 +136,15 @@ def run_payload(session: Session, businesses: list[Business], value: str, now: d
             return "Die sind alle schon erledigt.", None
         return "", m.pick(docs[0].business, docs)
 
+    if action in ("tsent", "treplied", "tpaid", "tskip"):
+        from ..engine import taps
+
+        fu = own_fu(ids[0]) if ids else None
+        if fu is None:
+            return "Diesen Vorgang finde ich nicht mehr.", None
+        title, text = taps.handle(session, fu, action[1:], now)
+        return text, None
+
     if action in ("send", "skip", "gone", "settle"):
         fu = own_fu(ids[0]) if ids else None
         if fu is None:
@@ -251,8 +260,14 @@ def _next_hint(doc: Document) -> str:
 
 
 def _contact(doc: Document) -> str:
-    # Die Telefonnummer des Kunden kennen wir nicht (steht nur im PDF), also Mail und Dokument-Link
-    lines = [f"*{m.who(doc)} anrufen*", "Die Nummer habe ich nicht gespeichert, sie steht meist im Dokument. Tipp im PDF auf die Nummer, dann wählt dein Handy direkt."]
+    from ..extract.phones import pretty
+
+    number = doc.customer_mobile or doc.customer_phone
+    if number:
+        lines = [f"*{m.who(doc)} anrufen*", f"Tel. {pretty(number)}"]
+    else:
+        # Nummer nicht erkannt: Mail und Dokument-Link, im PDF steht sie meist
+        lines = [f"*{m.who(doc)} anrufen*", "Die Nummer habe ich nicht gefunden, sie steht meist im Dokument. Tipp im PDF auf die Nummer, dann wählt dein Handy direkt."]
     if doc.customer_email:
         lines.append(f"Mail: {doc.customer_email}")
     lines.append(f"{m.ref(doc)}{m.dmoney(doc)}")

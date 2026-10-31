@@ -82,6 +82,7 @@ class DocStatus(str, enum.Enum):
 class FollowUpStatus(str, enum.Enum):
     SCHEDULED = "scheduled"
     AWAITING_APPROVAL = "awaiting_approval"
+    AWAITING_TAP = "awaiting_tap"  # WhatsApp-Nachfassen: Betrieb schickt selbst mit einem Tipp, wir warten auf „Gesendet“
     SENDING = "sending"      # gerade beim SMTP-Versand (atomar beansprucht, verhindert Doppelversand)
     SENT = "sent"
     SKIPPED = "skipped"
@@ -134,6 +135,9 @@ class Business(Base):
     # Kundenportal: Link zur Google-Bewertung (jeder Kunde bekommt denselben Link, siehe engine/customers.py)
     google_review_url: Mapped[str] = mapped_column(String(500), default="", server_default="")
     review_hint_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)  # einmaliger Tipp „Bewertungslink hinterlegen“
+    # Nachfass-Kanal: "mail" (Standard), "whatsapp_tap" (WhatsApp mit einem Tipp, wenn Kunden-Handy bekannt, sonst Mail),
+    # "both" (Mail automatisch plus WhatsApp-Vorschlag). Siehe engine/taps.py
+    followup_channel: Mapped[str] = mapped_column(String(20), default="mail", server_default="mail")
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     last_login_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
 
@@ -200,6 +204,11 @@ class Document(Base):
     # Kunde
     customer_name: Mapped[str] = mapped_column(String(200), default="")
     customer_email: Mapped[str] = mapped_column(String(320), default="", index=True)
+    # Telefon des Kunden aus PDF bzw. Mail-Signatur (E.164 ohne „+“), Handy nur bei WhatsApp-fähiger Mobilvorwahl
+    customer_phone: Mapped[str] = mapped_column(String(20), default="", server_default="")
+    customer_mobile: Mapped[str] = mapped_column(String(20), default="", server_default="")
+    # Kanal nur für dieses Dokument: "" = wie im Betrieb eingestellt, sonst "mail" | "whatsapp_tap" | "both"
+    followup_channel: Mapped[str] = mapped_column(String(20), default="", server_default="")
     # CC der Ursprungsmail (JSON-Liste [[Name, Adresse], ...], ohne eigene Adresse), Nachfass-Mails behalten sie
     cc_json: Mapped[str] = mapped_column(Text, default="", server_default="")
     # Dokument
@@ -301,6 +310,8 @@ class Customer(Base):
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     email: Mapped[str] = mapped_column(String(320))  # immer kleingeschrieben
     name: Mapped[str] = mapped_column(String(200), default="")
+    phone: Mapped[str] = mapped_column(String(20), default="", server_default="")   # E.164 ohne „+“
+    mobile: Mapped[str] = mapped_column(String(20), default="", server_default="")  # nur Mobilnummern (WhatsApp)
     portal_token: Mapped[str] = mapped_column(String(64), default=_portal_token, unique=True, index=True)
     completed_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)         # Auftrag fertig gemeldet
     completion_asked_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)  # Betrieb einmal gefragt „Ist der Auftrag fertig?“
@@ -330,6 +341,15 @@ class FollowUp(Base):
     announced_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)  # in der Morgen-Vorschau angekündigt
     send_after: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)    # in der Vorschau genannte Versandzeit
     requested_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)  # Freigabe angefragt (Link-Ablauf)
+    # WhatsApp mit einem Tipp (engine/taps.py): Text für den Chat, eigener Token für /t/ (Weiterleitung) und /w/ (Aktionen)
+    sent_via: Mapped[str] = mapped_column(String(20), default="", server_default="")   # mail | whatsapp_tap | mail+whatsapp_tap
+    wa_text: Mapped[str] = mapped_column(Text, default="", server_default="")
+    tap_token: Mapped[str] = mapped_column(String(64), default="", server_default="", index=True)
+    tap_state: Mapped[str] = mapped_column(String(12), default="", server_default="")  # "" | open | sent | replied | skipped | expired | cancelled
+    tap_notice: Mapped[str] = mapped_column(String(12), default="", server_default="")  # whatsapp | email | dashboard
+    tap_notified_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    tapped_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)   # Link „In WhatsApp öffnen“ geöffnet
+    tap_reminded_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
 
     document: Mapped[Document] = relationship(back_populates="followups")
 

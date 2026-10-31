@@ -105,3 +105,18 @@ ul.plain li{margin:4px 0}
 .kpis.kpis5{grid-template-columns:repeat(5,minmax(0,1fr))}
 @media(max-width:1100px){.kpis.kpis5{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){.kpis.kpis5{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Heute per WhatsApp: fürs Handy gebaut, große Knöpfe */
+.wa-card{border-color:#86efac;background:#f0fdf4}
+.wa-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.wa-item{background:var(--surface);border:1px solid var(--bs);border-radius:var(--r);padding:14px 16px}
+.wa-item .t{font-weight:600;font-size:16px;color:var(--text);text-decoration:none}
+.wa-item .meta{color:var(--tm);font-size:13px;margin-top:3px}
+.wa-item details{margin-top:8px}
+.wa-item details summary{cursor:pointer;color:var(--tm);font-size:13px}
+.wa-item pre{white-space:pre-wrap;font:inherit;font-size:14px;line-height:1.5;color:var(--t2);background:var(--bg);border-radius:var(--rsm);padding:10px 12px;margin:8px 0 0}
+.wa-open{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;margin-top:12px;border-radius:var(--r);background:#25d366;color:#053b1b;font-weight:700;font-size:17px;text-decoration:none}
+.wa-open:hover{background:#1ebe5a;color:#053b1b}
+.wa-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+.wa-actions form{margin:0}
+.wa-actions .btn{width:100%;min-height:44px;padding:8px 6px;font-size:14px}
+@media(max-width:480px){.wa-actions{grid-template-columns:1fr}}

@@ -19,7 +19,7 @@ from ..notify import Notification, send_email
 from ..notify import messages as wa_msgs
 from ..notify import send as notify
 from . import accounts as acc
-from . import personalize, texts
+from . import personalize, taps, texts
 
 log = logging.getLogger(__name__)
 
@@ -95,10 +95,12 @@ def when_phrase(send_at: datetime, now: datetime) -> str:
 def cancel_open_followups(session: Session, doc: Document, reason: str) -> int:
     n = 0
     for fu in doc.followups:
-        if fu.status in (FollowUpStatus.SCHEDULED, FollowUpStatus.AWAITING_APPROVAL):
+        if fu.status in (FollowUpStatus.SCHEDULED, FollowUpStatus.AWAITING_APPROVAL, FollowUpStatus.AWAITING_TAP):
             fu.status = FollowUpStatus.CANCELLED
             fu.error = reason
             n += 1
+        if fu.tap_state == "open":
+            fu.tap_state = "cancelled"
     doc.next_followup_at = None
     return n
 
@@ -254,7 +256,13 @@ def send_followup(session: Session, fu: FollowUp) -> bool:
     _copy_to_sent(account, msg)
     fu.status = FollowUpStatus.SENT
     fu.sent_at = utcnow()
+    fu.sent_via = "mail"
     doc.followups_sent += 1
+    if taps.channel_for(doc) == "both":
+        try:  # Mail ist raus, dazu ein WhatsApp-Vorschlag (meldet process_due gebündelt)
+            taps.suggest(session, fu)
+        except Exception as exc:  # nie den Versand daran scheitern lassen
+            log.warning("WhatsApp-Vorschlag für Dokument %s fehlgeschlagen: %s", doc.id, exc)
     space_following(doc, fu, fu.sent_at)
     remaining = [f.due_at for f in doc.followups if f.status == FollowUpStatus.SCHEDULED]
     doc.next_followup_at = min(remaining) if remaining else None
@@ -506,11 +514,12 @@ def recover_stuck_sending(session: Session, now: datetime) -> int:
 def process_due(session: Session, now: datetime | None = None, business_id: int | None = None) -> dict[str, int]:
     """Alle fälligen Nachfass-Schritte: Fragen/Freigaben bündeln, Vorschau schicken oder senden, mit Tageslimit pro Betrieb."""
     now = now or utcnow()
-    stats = {"sent": 0, "approval": 0, "skipped": 0, "capped": 0}
+    stats = {"sent": 0, "approval": 0, "skipped": 0, "capped": 0, "tap": 0}
     recover_stuck_sending(session, now)
     if not in_send_window(now):
         return stats
-    q = select(FollowUp).where(FollowUp.status == FollowUpStatus.SCHEDULED, FollowUp.due_at <= now)
+    # WhatsApp-Taps eines Tages kommen gebündelt mit der ersten Runde am Morgen, deshalb bis Tagesende schauen
+    q = select(FollowUp).where(FollowUp.status == FollowUpStatus.SCHEDULED, FollowUp.due_at <= _end_of_day(now))
     if business_id is not None:
         q = q.join(Document).where(Document.business_id == business_id)
     due = session.scalars(q.order_by(FollowUp.due_at)).all()
@@ -522,6 +531,8 @@ def process_due(session: Session, now: datetime | None = None, business_id: int 
             continue  # inzwischen woanders verschickt
         doc = fu.document
         business = doc.business
+        if fu.due_at > now and taps.channel_for(doc) != "whatsapp_tap":
+            continue  # Mail-Stufen erst, wenn sie wirklich fällig sind
         if doc.status != DocStatus.OPEN or business.paused:
             stats["skipped"] += 1
             continue
@@ -532,9 +543,15 @@ def process_due(session: Session, now: datetime | None = None, business_id: int 
             fu.status = FollowUpStatus.SKIPPED
             continue
         # Nur ein Schritt pro Dokument gleichzeitig
-        if any(f.status in (FollowUpStatus.AWAITING_APPROVAL, FollowUpStatus.SENDING) for f in doc.followups):
+        if any(f.status in (FollowUpStatus.AWAITING_APPROVAL, FollowUpStatus.SENDING, FollowUpStatus.AWAITING_TAP) for f in doc.followups):
             continue
         if any(f.document_id == doc.id for f in approvals.get(business.id, [])):
+            continue
+        if taps.channel_for(doc) == "whatsapp_tap":
+            # Der Betrieb schickt selbst per WhatsApp: keine Mail, keine Freigabe (er sieht den Text und tippt selbst)
+            taps.start_tap(session, fu, now)
+            stats["tap"] += 1
+            session.commit()
             continue
         if needs_approval(business, doc):
             approvals.setdefault(business.id, []).append(fu)
@@ -563,13 +580,27 @@ def process_due(session: Session, now: datetime | None = None, business_id: int 
         send_preview(session, fus[0].document.business, fus, now)
         stats["announced"] = stats.get("announced", 0) + len(fus)
         session.commit()
+    # Neue WhatsApp-Taps (auch Vorschläge bei „both“) und Erinnerungen gebündelt an den Betrieb
+    stats["tap_notified"] = taps.notify_pending(session, now, business_id)
+    session.commit()
     return stats
+
+
+def _end_of_day(now: datetime) -> datetime:
+    tz = ZoneInfo(settings.timezone)
+    local = now.astimezone(tz)
+    return datetime(local.year, local.month, local.day, 23, 59, 59, tzinfo=tz).astimezone(timezone.utc)
 
 
 def _preview_line_extra(d: Document) -> str:
     if d.owner_contact_at:
         return f" · du hast am {d.owner_contact_at.astimezone(ZoneInfo(settings.timezone)).strftime('%d.%m.')} selbst geschrieben"
     return ""
+
+
+def _last_whatsapp(d: Document) -> FollowUp | None:
+    wa = [f for f in d.followups if "whatsapp" in (f.sent_via or "") and f.sent_at]
+    return max(wa, key=lambda f: f.sent_at) if wa else None
 
 
 def send_preview(session: Session, business: Business, fus: list[FollowUp], now: datetime) -> None:
@@ -590,11 +621,14 @@ def send_preview(session: Session, business: Business, fus: list[FollowUp], now:
     ]
     for fu in fus:
         d = fu.document
-        lines += [
-            f"• {d.customer_name or d.customer_email}: {texts.term(d)} {d.document_number or d.title}{_money(d.amount_gross, d.currency)} (Nachfass-Mail {fu.step} von 3){_preview_line_extra(d)}",
-            f"  Stopp, hat sich gemeldet: {base}/f/{fu.approval_token}/stop",
-            "",
-        ]
+        lines.append(f"• {d.customer_name or d.customer_email}: {texts.term(d)} {d.document_number or d.title}{_money(d.amount_gross, d.currency)} (Nachfass-Mail {fu.step} von 3){_preview_line_extra(d)}")
+        wa_prev = _last_whatsapp(d)
+        if wa_prev is not None:
+            # Antworten per WhatsApp sehen wir nicht: der Betrieb sagt es uns
+            lines.append(f"  Zuletzt per WhatsApp am {wa_prev.sent_at.astimezone(ZoneInfo(settings.timezone)).strftime('%d.%m.')}. Kunde hat dort geantwortet: {base}/f/{fu.approval_token}/stop")
+        else:
+            lines.append(f"  Stopp, hat sich gemeldet: {base}/f/{fu.approval_token}/stop")
+        lines.append("")
     lines += ["Du musst sonst nichts tun.", "", "Locadas Nachfasser"]
     lines[2] = lines[2][0].upper() + lines[2][1:]
     names = ", ".join((f.document.customer_name or f.document.customer_email).split(" <")[0] for f in fus[:3]) + (" …" if len(fus) > 3 else "")
@@ -720,7 +754,7 @@ def finish_exhausted(session: Session, now: datetime | None = None, grace_days: 
     docs = session.scalars(select(Document).where(Document.status == DocStatus.OPEN, Document.next_followup_at.is_(None))).all()
     for doc in docs:
         sent = [f.sent_at for f in doc.followups if f.status == FollowUpStatus.SENT and f.sent_at]
-        pending = any(f.status in (FollowUpStatus.SCHEDULED, FollowUpStatus.AWAITING_APPROVAL) for f in doc.followups)
+        pending = any(f.status in (FollowUpStatus.SCHEDULED, FollowUpStatus.AWAITING_APPROVAL, FollowUpStatus.AWAITING_TAP) for f in doc.followups)
         if pending or not sent:
             continue
         if max(sent) + timedelta(days=grace) <= now:

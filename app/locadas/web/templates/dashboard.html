@@ -28,6 +28,28 @@
 <div class="kpi"><span class="kpi-num">{{ counts.review_clicks }}</span><span class="kpi-lbl">Bewertungs-Klicks{% if not business.google_review_url %} · <a href="/einstellungen#bewertung">Link hinterlegen</a>{% endif %}</span></div>
 </div>
 
+{% if wa_taps %}
+<div class="card wa-card" id="whatsapp" style="margin-bottom:20px">
+<h3 class="h3" style="margin:0 0 4px">Heute per WhatsApp ({{ wa_taps|length }})</h3>
+<p class="small muted" style="margin:0 0 12px">Tipp auf „In WhatsApp öffnen“, der Text steht schon im Chat mit dem Kunden. Abschicken und hier kurz auf „Gesendet“. Antworten per WhatsApp sehe ich nicht, sag mir dann „Hat geantwortet“.</p>
+<ul class="wa-list">
+{% for f in wa_taps %}{% set d = f.document %}
+<li class="wa-item">
+<a class="t" href="/dokument/{{ d.id }}">{{ d.customer_name or d.customer_email }}</a>
+<div class="meta">{{ d.term }} {{ d.document_number or d.title }}{% if d.amount_gross %} · {{ d.amount_gross|money(d.currency) }}{% endif %} · Nachricht {{ f.step }} · {{ phone_pretty(d.customer_mobile) }}{% if f.status != FollowUpStatus.AWAITING_TAP %} · Mail ist schon raus{% endif %}{% if f.tapped_at %} · geöffnet {{ f.tapped_at|datetime }}{% endif %}</div>
+<details><summary>Text ansehen</summary><pre>{{ f.wa_text }}</pre></details>
+<a class="wa-open" href="/t/{{ f.tap_token }}" target="_blank" rel="noopener">In WhatsApp öffnen</a>
+<div class="wa-actions">
+<form method="post" action="/w/{{ f.tap_token }}/sent"><input type="hidden" name="next" value="/dashboard"><button class="btn sm" type="submit">Gesendet</button></form>
+{% if d.kind == DocKind.INVOICE %}<form method="post" action="/w/{{ f.tap_token }}/paid"><input type="hidden" name="next" value="/dashboard"><button class="btn ghost sm" type="submit">Ist bezahlt</button></form>{% else %}<form method="post" action="/w/{{ f.tap_token }}/replied"><input type="hidden" name="next" value="/dashboard"><button class="btn ghost sm" type="submit">Hat geantwortet</button></form>{% endif %}
+<form method="post" action="/w/{{ f.tap_token }}/skip"><input type="hidden" name="next" value="/dashboard"><button class="btn ghost sm" type="submit">Diesmal nicht</button></form>
+</div>
+</li>
+{% endfor %}
+</ul>
+</div>
+{% endif %}
+
 {% if pending %}
 <div class="card warn" style="margin-bottom:20px">
 <div class="app-head" style="margin-bottom:6px"><h3 class="h3" style="margin:0">Wartet auf dich ({{ pending|length }})</h3><a class="btn sm" href="/freigaben">Alle durchgehen</a></div>
@@ -68,7 +90,7 @@
 <span class="amt">{{ d.amount_gross|money(d.currency) }}</span>
 {% set c = customers.get((d.customer_email or '')|lower) %}
 {% if d.kind == DocKind.OFFER and d.status == DocStatus.WON and c %}<div class="next">{% if c.completed_at %}<span class="pill good">fertig {{ c.completed_at|date }}</span>{% else %}<form method="post" action="/kunde/{{ c.id }}/fertig" class="inline-form"><input type="hidden" name="next" value="/dashboard?filter={{ filter }}"><button class="btn ghost sm" type="submit" onclick="return confirm('Auftrag fertig melden? Der Kunde bekommt dann eine kurze Abschluss-Mail in deinem Namen.')">Fertig melden</button></form>{% endif %}</div>{% endif %}
-<div class="next">{% if d.first_opened_at %}<span class="pill good" title="zuletzt {{ d.last_opened_at|datetime }}">geöffnet{% if d.open_count > 1 %} {{ d.open_count }}×{% endif %}</span> {% endif %}{% if d.status == DocStatus.OPEN %}{% if d.next_followup_at %}nachfassen {{ d.next_followup_at|rel }}{% elif d.followups_sent %}{{ d.followups_sent }}× nachgefasst{% endif %}{% else %}<span class="pill {{ STATUS_CLASS[d.status] }}">{{ STATUS_LABEL[d.status] }}</span>{% endif %}</div>
+<div class="next">{% if d.status == DocStatus.OPEN and channel_for(d) != 'mail' %}<span class="pill good">WhatsApp</span> {% endif %}{% if d.first_opened_at %}<span class="pill good" title="zuletzt {{ d.last_opened_at|datetime }}">geöffnet{% if d.open_count > 1 %} {{ d.open_count }}×{% endif %}</span> {% endif %}{% if d.status == DocStatus.OPEN %}{% if d.next_followup_at %}nachfassen {{ d.next_followup_at|rel }}{% elif d.followups_sent %}{{ d.followups_sent }}× nachgefasst{% endif %}{% else %}<span class="pill {{ STATUS_CLASS[d.status] }}">{{ STATUS_LABEL[d.status] }}</span>{% endif %}</div>
 </div>
 </li>
 {% endfor %}
@@ -93,6 +115,7 @@
 <li>{% if business.review_mode == 'all' %}Angebote: jede Mail mit deiner Freigabe{% else %}Angebote: automatisch mit Vorschau am Morgen, über {{ business.threshold|money }} mit Freigabe{% endif %}</li>
 <li>Rechnungen: nur nach deinem „Noch offen“</li>
 <li>Versand nur werktags (ohne Feiertage) {{ settings.send_hour_from }} bis {{ settings.send_hour_to }} Uhr</li>
+<li>Kanal: {{ CHANNEL_LABEL.get(business.followup_channel or 'mail', 'Per Mail') }}</li>
 </ul>
 <a class="btn ghost sm" href="/einstellungen" style="margin-top:12px">Einstellungen</a>
 </div>

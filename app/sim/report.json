@@ -20,6 +20,14 @@
    },
    {
     "ok": true,
+    "msg": "AN-2026-0412: Kunden-Handy – (erwartet –)"
+   },
+   {
+    "ok": true,
+    "msg": "AN-2026-0412: Kunden-Telefon 492161998877 (erwartet 492161998877)"
+   },
+   {
+    "ok": true,
     "msg": "AN-2026-0412: Betrag 7389.9 (erwartet 7389.9)"
    },
    {
@@ -53,6 +61,18 @@
    {
     "ok": true,
     "msg": "Ignoriert: „Angebot Brandt zur Info“ an marco@selbmann-haustechnik.de"
+   },
+   {
+    "ok": true,
+    "msg": "AN-2026-0412: Kundennummer ist nicht die eigene (492161998877)"
+   },
+   {
+    "ok": true,
+    "msg": "RE-2026-0877: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "RE-2026-0901: Kundennummer ist nicht die eigene (–)"
    },
    {
     "ok": true,
@@ -172,6 +192,10 @@
    },
    {
     "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
+   },
+   {
+    "ok": true,
     "msg": "Höchstens 4 Mails von uns an den Betrieb pro Tag (max 2)"
    },
    {
@@ -236,31 +260,31 @@
     "Tag 1 (Tue 27.10.)",
     "brandt.familie@t-online.de",
     "Ihr Angebot AN-2026-0412 Heizungstausch",
-    "Guten Tag Familie Brandt,\r\n\r\nam 23.10.2026 habe ich Ihnen unser Angebot (Nr. AN-2026-0412 Heizungstausch) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/fRH1UstbNiKQ8mwkUDMO9utK\r\n\r\nViele Grüße\r\nJulius Selbmann\r\nSelbmann Haustechnik GmbH\r\n02161 4455\r\n"
+    "Guten Tag Familie Brandt,\r\n\r\nam 23.10.2026 habe ich Ihnen unser Angebot (Nr. AN-2026-0412 Heizungstausch) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/e8bNyDDiuH5JzDx2Bt9Pe-2t\r\n\r\nViele Grüße\r\nJulius Selbmann\r\nSelbmann Haustechnik GmbH\r\n02161 4455\r\n"
    ],
    [
     "Tag 21 (Mon 16.11.)",
     "technik@hv-kraus.de",
     "Zahlungserinnerung: Rechnung RE-2026-0901 WEG Gartenstraße 12",
-    "Guten Tag,\r\n\r\nunsere Rechnung (Nr. RE-2026-0901 WEG Gartenstraße) über 2.211,02 €, fällig am 12.11.2026, ist laut meinen Unterlagen noch offen.\r\n\r\nBitte überweisen Sie 2.211,02 € bis 23.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: RE-2026-0901.\r\n\r\nFür Rückfragen zur Rechnung stehe ich gern zur Verfügung.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/ouvEaJZWNsziK5M0g_UXH01p\r\n\r\nViele Grüße\r\nJulius Selbmann\r\nSelbmann Haustechnik GmbH\r\n02161 4455\r\n"
+    "Guten Tag,\r\n\r\nunsere Rechnung (Nr. RE-2026-0901 WEG Gartenstraße) über 2.211,02 €, fällig am 12.11.2026, ist laut meinen Unterlagen noch offen.\r\n\r\nBitte überweisen Sie 2.211,02 € bis 23.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: RE-2026-0901.\r\n\r\nFür Rückfragen zur Rechnung stehe ich gern zur Verfügung.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/4DxR_XKyTjM7En6ERxkkxQI8\r\n\r\nViele Grüße\r\nJulius Selbmann\r\nSelbmann Haustechnik GmbH\r\n02161 4455\r\n"
    ],
    [
     "Tag 21 (Ende)",
     "technik@hv-kraus.de",
     "WEG Gartenstraße: abgeschlossen",
-    "Guten Tag,\r\n\r\nIhr Auftrag „WEG Gartenstraße“ ist abgeschlossen. Vielen Dank für Ihr Vertrauen!\r\n\r\nAngebot, Rechnung und den Stand Ihres Auftrags finden Sie jederzeit hier:\r\nhttps://app.locadas.de/k/jamMKUxeQwWlNwAm3ebqlBvuElbOWHyS\r\n\r\nWir würden uns sehr über Ihre ehrliche Bewertung bei Google freuen. Das dauert nur eine Minute und hilft anderen bei der Suche nach einem guten Betrieb:\r\nhttps://app.locadas.de/k/jamMKUxeQwWlNwAm3ebqlBvuElbOWHyS/bewerten\r\n\r\nWenn noch etwas ist, erreichen Sie uns jederzeit unter 02161 4455.\r\n\r\nViele Grüße\r\nJulius Selbmann\r\nSelbmann Haustechnik GmbH\r\n02161 4455\r\n"
+    "Guten Tag,\r\n\r\nIhr Auftrag „WEG Gartenstraße“ ist abgeschlossen. Vielen Dank für Ihr Vertrauen!\r\n\r\nAngebot, Rechnung und den Stand Ihres Auftrags finden Sie jederzeit hier:\r\nhttps://app.locadas.de/k/Esz9R0zGlOVI1cxiqu7sXkVFp5Ga0gTz\r\n\r\nWir würden uns sehr über Ihre ehrliche Bewertung bei Google freuen. Das dauert nur eine Minute und hilft anderen bei der Suche nach einem guten Betrieb:\r\nhttps://app.locadas.de/k/Esz9R0zGlOVI1cxiqu7sXkVFp5Ga0gTz/bewerten\r\n\r\nWenn noch etwas ist, erreichen Sie uns jederzeit unter 02161 4455.\r\n\r\nViele Grüße\r\nJulius Selbmann\r\nSelbmann Haustechnik GmbH\r\n02161 4455\r\n"
    ]
   ],
   "notifications": [
    [
     "Tag 0 (Mon 26.10.)",
     "Noch offen? Rechnung RE-2026-0877 von Klaus Peters",
-    "Hallo Julius Selbmann,\r\n\r\nRechnung RE-2026-0877 an Klaus Peters über 224,31 € ist seit 20.10.2026 fällig. Noch offen?\r\n\r\nNoch offen, Zahlungserinnerung schicken: https://app.locadas.de/f/3IzakdNPyb0KYm4exL6X0n0QD0rJ5wSK/send\r\nIst bezahlt, nicht erinnern:            https://app.locadas.de/f/3IzakdNPyb0KYm4exL6X0n0QD0rJ5wSK/done\r\n\r\nErst wenn du „Noch offen“ klickst, schicke ich die Zahlungserinnerung in deinem Namen. Ich sehe dein Konto nicht, deshalb frage ich vor jeder Erinnerung.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Julius Selbmann,\r\n\r\nRechnung RE-2026-0877 an Klaus Peters über 224,31 € ist seit 20.10.2026 fällig. Noch offen?\r\n\r\nNoch offen, Zahlungserinnerung schicken: https://app.locadas.de/f/NjXCy5ZqkKQW_PINP0xJSu92DYnSaFth/send\r\nIst bezahlt, nicht erinnern:            https://app.locadas.de/f/NjXCy5ZqkKQW_PINP0xJSu92DYnSaFth/done\r\n\r\nErst wenn du „Noch offen“ klickst, schicke ich die Zahlungserinnerung in deinem Namen. Ich sehe dein Konto nicht, deshalb frage ich vor jeder Erinnerung.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 0 (Mon 26.10.)",
     "Heute nachfassen: Familie Brandt",
-    "Hallo Julius Selbmann,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Familie Brandt: Angebot AN-2026-0412 über 7.389,90 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/lTUF_QeBFeTMOZ_DHHJR-UUkWXSpYb-4/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Julius Selbmann,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Familie Brandt: Angebot AN-2026-0412 über 7.389,90 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/QTRY4Lhgipyb60rBOhnTYbgBHpOXYipN/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 2 (Wed 28.10.)",
@@ -270,7 +294,7 @@
    [
     "Tag 8 (Tue 03.11.)",
     "Heute nachfassen: Familie Brandt",
-    "Hallo Julius Selbmann,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Familie Brandt: Angebot AN-2026-0412 über 7.389,90 € (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/FyyQRni82QClAnjtEOmsIrXdt1nkEZcI/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Julius Selbmann,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Familie Brandt: Angebot AN-2026-0412 über 7.389,90 € (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/taR5t1L6BmyMFl3lR8mmHzXorNN198qe/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 9 (Wed 04.11.)",
@@ -280,10 +304,11 @@
    [
     "Tag 21 (Mon 16.11.)",
     "Noch offen? Rechnung RE-2026-0901 von Hausverwaltung Kraus",
-    "Hallo Julius Selbmann,\r\n\r\nRechnung RE-2026-0901 an Hausverwaltung Kraus über 2.211,02 € ist seit 12.11.2026 fällig. Noch offen?\r\n\r\nNoch offen, Zahlungserinnerung schicken: https://app.locadas.de/f/Muv-kHYLrMScvAd-_7fUt37N-j8kGFvE/send\r\nIst bezahlt, nicht erinnern:            https://app.locadas.de/f/Muv-kHYLrMScvAd-_7fUt37N-j8kGFvE/done\r\n\r\nErst wenn du „Noch offen“ klickst, schicke ich die Zahlungserinnerung in deinem Namen. Ich sehe dein Konto nicht, deshalb frage ich vor jeder Erinnerung.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Julius Selbmann,\r\n\r\nRechnung RE-2026-0901 an Hausverwaltung Kraus über 2.211,02 € ist seit 12.11.2026 fällig. Noch offen?\r\n\r\nNoch offen, Zahlungserinnerung schicken: https://app.locadas.de/f/3dLMCYqgy3yucGR6K4L6wfrkPS7QsTWk/send\r\nIst bezahlt, nicht erinnern:            https://app.locadas.de/f/3dLMCYqgy3yucGR6K4L6wfrkPS7QsTWk/done\r\n\r\nErst wenn du „Noch offen“ klickst, schicke ich die Zahlungserinnerung in deinem Namen. Ich sehe dein Konto nicht, deshalb frage ich vor jeder Erinnerung.\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": []
  },
  {
   "key": "galabau",
@@ -319,6 +344,14 @@
    {
     "ok": true,
     "msg": "A-26-1203: Betrag 9139.2 (erwartet 9139.2)"
+   },
+   {
+    "ok": true,
+    "msg": "A-26-1187: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "A-26-1203: Kundennummer ist nicht die eigene (–)"
    },
    {
     "ok": true,
@@ -386,6 +419,10 @@
    },
    {
     "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
+   },
+   {
+    "ok": true,
     "msg": "Höchstens 4 Mails von uns an den Betrieb pro Tag (max 2)"
    },
    {
@@ -440,26 +477,26 @@
     "Tag 1 (Tue 27.10.)",
     "s.wolff@web.de",
     "Angebot Gartenneugestaltung",
-    "Guten Tag Sabine Wolff,\r\n\r\nam 17.10.2026 habe ich Ihnen unser Angebot (Nr. A-26-1187 Gartenneugestaltung) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/Q6yAv1Fcczl417vRbL5iDiMq\r\n\r\nViele Grüße\r\nTim Albers\r\nLandschaft Kreativ GmbH\r\n02151 77880\r\n"
+    "Guten Tag Sabine Wolff,\r\n\r\nam 17.10.2026 habe ich Ihnen unser Angebot (Nr. A-26-1187 Gartenneugestaltung) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/ScYVBkiqKwHvremVlYiWI5Hq\r\n\r\nViele Grüße\r\nTim Albers\r\nLandschaft Kreativ GmbH\r\n02151 77880\r\n"
    ],
    [
     "Tag 7 (Mon 02.11.)",
     "s.wolff@web.de",
     "Angebot Gartenneugestaltung",
-    "Guten Tag Sabine Wolff,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. A-26-1187 Gartenneugestaltung). Falls Sie sich schon entschieden haben, freue ich mich über eine kurze Rückmeldung, auch wenn es nichts wird. Dann kann ich besser planen.\r\n\r\nFalls Sie noch überlegen: Gern besprechen wir Umfang oder Termin, damit es für Sie passt.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/Q6yAv1Fcczl417vRbL5iDiMq\r\n\r\nViele Grüße\r\nTim Albers\r\nLandschaft Kreativ GmbH\r\n02151 77880\r\n"
+    "Guten Tag Sabine Wolff,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. A-26-1187 Gartenneugestaltung). Falls Sie sich schon entschieden haben, freue ich mich über eine kurze Rückmeldung, auch wenn es nichts wird. Dann kann ich besser planen.\r\n\r\nFalls Sie noch überlegen: Gern besprechen wir Umfang oder Termin, damit es für Sie passt.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/ScYVBkiqKwHvremVlYiWI5Hq\r\n\r\nViele Grüße\r\nTim Albers\r\nLandschaft Kreativ GmbH\r\n02151 77880\r\n"
    ],
    [
     "Tag 11 (Fri 06.11.)",
     "s.wolff@web.de",
     "Angebot Gartenneugestaltung",
-    "Guten Tag Sabine Wolff,\r\n\r\nzu unserem Angebot (Nr. A-26-1187 Gartenneugestaltung) habe ich bisher nichts von Ihnen gehört. Vielleicht passt es gerade nicht oder Sie haben sich anders entschieden, beides ist völlig in Ordnung. Das Angebot gilt bis 21.11.2026.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 02151 77880.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/Q6yAv1Fcczl417vRbL5iDiMq\r\n\r\nViele Grüße\r\nTim Albers\r\nLandschaft Kreativ GmbH\r\n02151 77880\r\n"
+    "Guten Tag Sabine Wolff,\r\n\r\nzu unserem Angebot (Nr. A-26-1187 Gartenneugestaltung) habe ich bisher nichts von Ihnen gehört. Vielleicht passt es gerade nicht oder Sie haben sich anders entschieden, beides ist völlig in Ordnung. Das Angebot gilt bis 21.11.2026.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 02151 77880.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/ScYVBkiqKwHvremVlYiWI5Hq\r\n\r\nViele Grüße\r\nTim Albers\r\nLandschaft Kreativ GmbH\r\n02151 77880\r\n"
    ]
   ],
   "notifications": [
    [
     "Tag 0 (Mon 26.10.)",
     "Schon erledigt? Sabine Wolff (Angebot A-26-1187)",
-    "Hallo Tim Albers,\r\n\r\nDieses Angebot A-26-1187 über 20.108,62 € hast du am 17.10.2026 an Sabine Wolff verschickt, also vor deinem Start bei uns. Ist es schon erledigt?\r\n\r\nBitte nachfassen: https://app.locadas.de/f/7oRuVHmiighRwf62GpJTSreUta2zOK9w/send\r\nErledigt, nicht nachfassen: https://app.locadas.de/f/7oRuVHmiighRwf62GpJTSreUta2zOK9w/done\r\n\r\nErst wenn du „Bitte nachfassen“ klickst, plane ich eine Nachfass-Mail. Du siehst sie vorher noch.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Tim Albers,\r\n\r\nDieses Angebot A-26-1187 über 20.108,62 € hast du am 17.10.2026 an Sabine Wolff verschickt, also vor deinem Start bei uns. Ist es schon erledigt?\r\n\r\nBitte nachfassen: https://app.locadas.de/f/Oo1m8bx11AS9__MVuv11qTkoXoCBBV_t/send\r\nErledigt, nicht nachfassen: https://app.locadas.de/f/Oo1m8bx11AS9__MVuv11qTkoXoCBBV_t/done\r\n\r\nErst wenn du „Bitte nachfassen“ klickst, plane ich eine Nachfass-Mail. Du siehst sie vorher noch.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 1 (Tue 27.10.)",
@@ -469,17 +506,17 @@
    [
     "Tag 1 (Tue 27.10.)",
     "Nachfassen bei Sabine Wolff? (Angebot A-26-1187)",
-    "Hallo Tim Albers,\r\n\r\nich würde jetzt bei Sabine Wolff nachfassen (Angebot A-26-1187 über 20.108,62 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Angebot Gartenneugestaltung\r\n---\r\nGuten Tag Sabine Wolff,\r\n\r\nam 17.10.2026 habe ich Ihnen unser Angebot (Nr. A-26-1187 Gartenneugestaltung) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/Q6yAv1Fcczl417vRbL5iDiMq\r\n\r\nViele Grüße\r\nTim Albers\r\nLandschaft Kreativ GmbH\r\n02151 77880\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/7oRuVHmiighRwf62GpJTSreUta2zOK9w/send\r\nDiesmal nicht: https://app.locadas.de/f/7oRuVHmiighRwf62GpJTSreUta2zOK9w/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/7oRuVHmiighRwf62GpJTSreUta2zOK9w/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Tim Albers,\r\n\r\nich würde jetzt bei Sabine Wolff nachfassen (Angebot A-26-1187 über 20.108,62 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Angebot Gartenneugestaltung\r\n---\r\nGuten Tag Sabine Wolff,\r\n\r\nam 17.10.2026 habe ich Ihnen unser Angebot (Nr. A-26-1187 Gartenneugestaltung) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/ScYVBkiqKwHvremVlYiWI5Hq\r\n\r\nViele Grüße\r\nTim Albers\r\nLandschaft Kreativ GmbH\r\n02151 77880\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/Oo1m8bx11AS9__MVuv11qTkoXoCBBV_t/send\r\nDiesmal nicht: https://app.locadas.de/f/Oo1m8bx11AS9__MVuv11qTkoXoCBBV_t/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/Oo1m8bx11AS9__MVuv11qTkoXoCBBV_t/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 7 (Mon 02.11.)",
     "Nachfassen bei Sabine Wolff? (Angebot A-26-1187)",
-    "Hallo Tim Albers,\r\n\r\nich würde jetzt bei Sabine Wolff nachfassen (Angebot A-26-1187 über 20.108,62 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Angebot Gartenneugestaltung\r\n---\r\nGuten Tag Sabine Wolff,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. A-26-1187 Gartenneugestaltung). Falls Sie sich schon entschieden haben, freue ich mich über eine kurze Rückmeldung, auch wenn es nichts wird. Dann kann ich besser planen.\r\n\r\nFalls Sie noch überlegen: Gern besprechen wir Umfang oder Termin, damit es für Sie passt.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/Q6yAv1Fcczl417vRbL5iDiMq\r\n\r\nViele Grüße\r\nTim Albers\r\nLandschaft Kreativ GmbH\r\n02151 77880\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/9tKHVjRFLq7oEK0yyQ6NtM05Epd97_aZ/send\r\nDiesmal nicht: https://app.locadas.de/f/9tKHVjRFLq7oEK0yyQ6NtM05Epd97_aZ/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/9tKHVjRFLq7oEK0yyQ6NtM05Epd97_aZ/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Tim Albers,\r\n\r\nich würde jetzt bei Sabine Wolff nachfassen (Angebot A-26-1187 über 20.108,62 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Angebot Gartenneugestaltung\r\n---\r\nGuten Tag Sabine Wolff,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. A-26-1187 Gartenneugestaltung). Falls Sie sich schon entschieden haben, freue ich mich über eine kurze Rückmeldung, auch wenn es nichts wird. Dann kann ich besser planen.\r\n\r\nFalls Sie noch überlegen: Gern besprechen wir Umfang oder Termin, damit es für Sie passt.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/ScYVBkiqKwHvremVlYiWI5Hq\r\n\r\nViele Grüße\r\nTim Albers\r\nLandschaft Kreativ GmbH\r\n02151 77880\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/NnUOD896Cb5JTuaF7ap-sAOuak2sQC1v/send\r\nDiesmal nicht: https://app.locadas.de/f/NnUOD896Cb5JTuaF7ap-sAOuak2sQC1v/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/NnUOD896Cb5JTuaF7ap-sAOuak2sQC1v/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 11 (Fri 06.11.)",
     "Nachfassen bei Sabine Wolff? (Angebot A-26-1187)",
-    "Hallo Tim Albers,\r\n\r\nich würde jetzt bei Sabine Wolff nachfassen (Angebot A-26-1187 über 20.108,62 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Angebot Gartenneugestaltung\r\n---\r\nGuten Tag Sabine Wolff,\r\n\r\nzu unserem Angebot (Nr. A-26-1187 Gartenneugestaltung) habe ich bisher nichts von Ihnen gehört. Vielleicht passt es gerade nicht oder Sie haben sich anders entschieden, beides ist völlig in Ordnung. Das Angebot gilt bis 21.11.2026.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 02151 77880.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/Q6yAv1Fcczl417vRbL5iDiMq\r\n\r\nViele Grüße\r\nTim Albers\r\nLandschaft Kreativ GmbH\r\n02151 77880\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/7vEkxsDX6xhdy76FV6drj6QdDb_QesQP/send\r\nDiesmal nicht: https://app.locadas.de/f/7vEkxsDX6xhdy76FV6drj6QdDb_QesQP/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/7vEkxsDX6xhdy76FV6drj6QdDb_QesQP/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Tim Albers,\r\n\r\nich würde jetzt bei Sabine Wolff nachfassen (Angebot A-26-1187 über 20.108,62 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Angebot Gartenneugestaltung\r\n---\r\nGuten Tag Sabine Wolff,\r\n\r\nzu unserem Angebot (Nr. A-26-1187 Gartenneugestaltung) habe ich bisher nichts von Ihnen gehört. Vielleicht passt es gerade nicht oder Sie haben sich anders entschieden, beides ist völlig in Ordnung. Das Angebot gilt bis 21.11.2026.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 02151 77880.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/ScYVBkiqKwHvremVlYiWI5Hq\r\n\r\nViele Grüße\r\nTim Albers\r\nLandschaft Kreativ GmbH\r\n02151 77880\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/M1lbfC3A4TNMetLkEmfptF2PefRk47ig/send\r\nDiesmal nicht: https://app.locadas.de/f/M1lbfC3A4TNMetLkEmfptF2PefRk47ig/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/M1lbfC3A4TNMetLkEmfptF2PefRk47ig/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 12 (Sat 07.11.)",
@@ -487,7 +524,8 @@
     "Hallo Tim Albers,\r\n\r\nRheinlogistik Einkauf hat auf Angebot A-26-1203 geantwortet (Betreff: AW: Angebot Pflegevertrag 2027).\r\n\r\nIch fasse dort nicht mehr nach.\r\n\r\nWenn das nicht stimmt oder du doch weiter nachfassen willst, kannst du das hier ändern: https://app.locadas.de/dokument/2\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": []
  },
  {
   "key": "glas",
@@ -523,6 +561,14 @@
    {
     "ok": true,
     "msg": "2026-074: Betrag 2749.0 (erwartet 2749.0)"
+   },
+   {
+    "ok": true,
+    "msg": "2026-071: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "2026-074: Kundennummer ist nicht die eigene (–)"
    },
    {
     "ok": true,
@@ -626,6 +672,10 @@
    },
    {
     "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
+   },
+   {
+    "ok": true,
     "msg": "Höchstens 4 Mails von uns an den Betrieb pro Tag (max 2)"
    },
    {
@@ -678,49 +728,49 @@
     "Tag 2 (Wed 28.10.)",
     "a.huber@raumausstattung-huber.de",
     "Dusche Meier Grünwald",
-    "Guten Tag Andrea Huber,\r\n\r\nam 18.10.2026 habe ich Ihnen unser Angebot (Nr. 2026-071 Dusche Meier Grünwald) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/3WD9ueMO6Bc3DQSq4d-WV25W\r\n\r\nViele Grüße\r\nJeffrey Kraft\r\nKraft Glasdesign\r\n0176 2233445\r\n"
+    "Guten Tag Andrea Huber,\r\n\r\nam 18.10.2026 habe ich Ihnen unser Angebot (Nr. 2026-071 Dusche Meier Grünwald) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/jkGL77metAwJFZV-1_mnOmUE\r\n\r\nViele Grüße\r\nJeffrey Kraft\r\nKraft Glasdesign\r\n0176 2233445\r\n"
    ],
    [
     "Tag 2 (Wed 28.10.)",
     "thomas.graf@icloud.com",
     "Ihr Angebot Eckdusche",
-    "Guten Tag Thomas Graf,\r\n\r\nam 24.10.2026 habe ich Ihnen unser Angebot (Nr. 2026-074 Eckdusche) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/u7ZbRrJEKc6hyatl_MOdewK1\r\n\r\nViele Grüße\r\nJeffrey Kraft\r\nKraft Glasdesign\r\n0176 2233445\r\n"
+    "Guten Tag Thomas Graf,\r\n\r\nam 24.10.2026 habe ich Ihnen unser Angebot (Nr. 2026-074 Eckdusche) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/atT0SANyVsvEGbk-rFfzPEVf\r\n\r\nViele Grüße\r\nJeffrey Kraft\r\nKraft Glasdesign\r\n0176 2233445\r\n"
    ],
    [
     "Tag 10 (Thu 05.11.)",
     "a.huber@raumausstattung-huber.de",
     "Dusche Meier Grünwald",
-    "Guten Tag Andrea Huber,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. 2026-071 Dusche Meier Grünwald). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/3WD9ueMO6Bc3DQSq4d-WV25W\r\n\r\nViele Grüße\r\nJeffrey Kraft\r\nKraft Glasdesign\r\n0176 2233445\r\n"
+    "Guten Tag Andrea Huber,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. 2026-071 Dusche Meier Grünwald). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/jkGL77metAwJFZV-1_mnOmUE\r\n\r\nViele Grüße\r\nJeffrey Kraft\r\nKraft Glasdesign\r\n0176 2233445\r\n"
    ],
    [
     "Tag 10 (Thu 05.11.)",
     "thomas.graf@icloud.com",
     "Ihr Angebot Eckdusche",
-    "Guten Tag Thomas Graf,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. 2026-074 Eckdusche). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/u7ZbRrJEKc6hyatl_MOdewK1\r\n\r\nViele Grüße\r\nJeffrey Kraft\r\nKraft Glasdesign\r\n0176 2233445\r\n"
+    "Guten Tag Thomas Graf,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. 2026-074 Eckdusche). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/atT0SANyVsvEGbk-rFfzPEVf\r\n\r\nViele Grüße\r\nJeffrey Kraft\r\nKraft Glasdesign\r\n0176 2233445\r\n"
    ],
    [
     "Tag 15 (Tue 10.11.)",
     "a.huber@raumausstattung-huber.de",
     "Dusche Meier Grünwald",
-    "Guten Tag Andrea Huber,\r\n\r\nfalls Sie noch Fragen zum Angebot (Nr. 2026-071 Dusche Meier Grünwald) haben, helfe ich Ihnen gern weiter.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0176 2233445.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/3WD9ueMO6Bc3DQSq4d-WV25W\r\n\r\nViele Grüße\r\nJeffrey Kraft\r\nKraft Glasdesign\r\n0176 2233445\r\n"
+    "Guten Tag Andrea Huber,\r\n\r\nfalls Sie noch Fragen zum Angebot (Nr. 2026-071 Dusche Meier Grünwald) haben, helfe ich Ihnen gern weiter.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0176 2233445.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/jkGL77metAwJFZV-1_mnOmUE\r\n\r\nViele Grüße\r\nJeffrey Kraft\r\nKraft Glasdesign\r\n0176 2233445\r\n"
    ],
    [
     "Tag 16 (Wed 11.11.)",
     "thomas.graf@icloud.com",
     "Ihr Angebot Eckdusche",
-    "Guten Tag Thomas Graf,\r\n\r\nfalls Sie noch Fragen zum Angebot (Nr. 2026-074 Eckdusche) haben, helfe ich Ihnen gern weiter.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0176 2233445.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/u7ZbRrJEKc6hyatl_MOdewK1\r\n\r\nViele Grüße\r\nJeffrey Kraft\r\nKraft Glasdesign\r\n0176 2233445\r\n"
+    "Guten Tag Thomas Graf,\r\n\r\nfalls Sie noch Fragen zum Angebot (Nr. 2026-074 Eckdusche) haben, helfe ich Ihnen gern weiter.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0176 2233445.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/atT0SANyVsvEGbk-rFfzPEVf\r\n\r\nViele Grüße\r\nJeffrey Kraft\r\nKraft Glasdesign\r\n0176 2233445\r\n"
    ]
   ],
   "notifications": [
    [
     "Tag 0 (Mon 26.10.)",
     "Schon erledigt? Andrea Huber (Angebot 2026-071)",
-    "Hallo Jeffrey Kraft,\r\n\r\nDieses Angebot 2026-071 über 4.058,00 € hast du am 18.10.2026 an Andrea Huber verschickt, also vor deinem Start bei uns. Ist es schon erledigt?\r\n\r\nBitte nachfassen: https://app.locadas.de/f/YtIhtqVqPHLhK1y-jVW4iCeLbBQA_-wm/send\r\nErledigt, nicht nachfassen: https://app.locadas.de/f/YtIhtqVqPHLhK1y-jVW4iCeLbBQA_-wm/done\r\n\r\nErst wenn du „Bitte nachfassen“ klickst, plane ich eine Nachfass-Mail. Du siehst sie vorher noch.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Jeffrey Kraft,\r\n\r\nDieses Angebot 2026-071 über 4.058,00 € hast du am 18.10.2026 an Andrea Huber verschickt, also vor deinem Start bei uns. Ist es schon erledigt?\r\n\r\nBitte nachfassen: https://app.locadas.de/f/uhPCoOYC4WiwSq1jJxXqpYIII2F_xyxA/send\r\nErledigt, nicht nachfassen: https://app.locadas.de/f/uhPCoOYC4WiwSq1jJxXqpYIII2F_xyxA/done\r\n\r\nErst wenn du „Bitte nachfassen“ klickst, plane ich eine Nachfass-Mail. Du siehst sie vorher noch.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 1 (Tue 27.10.)",
     "Heute nachfassen: Andrea Huber, Thomas Graf",
-    "Hallo Jeffrey Kraft,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesen 2 Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Andrea Huber: Angebot 2026-071 über 4.058,00 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/YtIhtqVqPHLhK1y-jVW4iCeLbBQA_-wm/stop\r\n\r\n• Thomas Graf: Angebot 2026-074 über 2.749,00 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/py1JnklEJ04D01bLDt6XQU__qw5BYrgS/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Jeffrey Kraft,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesen 2 Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Andrea Huber: Angebot 2026-071 über 4.058,00 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/uhPCoOYC4WiwSq1jJxXqpYIII2F_xyxA/stop\r\n\r\n• Thomas Graf: Angebot 2026-074 über 2.749,00 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/RpGt7bwOeOS7ISuZMP7UtiPbF3fd_COI/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 3 (Thu 29.10.)",
@@ -735,20 +785,21 @@
    [
     "Tag 9 (Wed 04.11.)",
     "Heute nachfassen: Andrea Huber, Thomas Graf",
-    "Hallo Jeffrey Kraft,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesen 2 Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Andrea Huber: Angebot 2026-071 über 4.058,00 € (Nachfass-Mail 2 von 3) · du hast am 30.10. selbst geschrieben\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/psUYsWd6EsR4jV-g3xeULumywnGTSKLG/stop\r\n\r\n• Thomas Graf: Angebot 2026-074 über 2.749,00 € (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/zEdQa4peQY2I_uCZldWTmuzlsOXfO5KY/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Jeffrey Kraft,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesen 2 Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Andrea Huber: Angebot 2026-071 über 4.058,00 € (Nachfass-Mail 2 von 3) · du hast am 30.10. selbst geschrieben\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/XMFzuGz-sQAeLJknBpGedKOhPHawWQRt/stop\r\n\r\n• Thomas Graf: Angebot 2026-074 über 2.749,00 € (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/LQKM2YzkqdzfAMG6wdcyQhVcSIAeJclL/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 14 (Mon 09.11.)",
     "Heute nachfassen: Andrea Huber",
-    "Hallo Jeffrey Kraft,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Andrea Huber: Angebot 2026-071 über 4.058,00 € (Nachfass-Mail 3 von 3) · du hast am 30.10. selbst geschrieben\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/GdpR_QYGtuzGYQyV4n6uHpze2HfJciFD/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Jeffrey Kraft,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Andrea Huber: Angebot 2026-071 über 4.058,00 € (Nachfass-Mail 3 von 3) · du hast am 30.10. selbst geschrieben\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/A5GfH-HqSgEdguSw13bmETv0l4OvSi8l/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 15 (Tue 10.11.)",
     "Heute nachfassen: Thomas Graf",
-    "Hallo Jeffrey Kraft,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Thomas Graf: Angebot 2026-074 über 2.749,00 € (Nachfass-Mail 3 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/4ncH9DsBLSJMUrqDEhf8OeQva-0cljX2/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Jeffrey Kraft,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Thomas Graf: Angebot 2026-074 über 2.749,00 € (Nachfass-Mail 3 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/pjFmNA1wobHhCyjqC6uxXoyzpRXvB9um/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": []
  },
  {
   "key": "solo_ch",
@@ -771,7 +822,15 @@
    },
    {
     "ok": true,
+    "msg": "O-0007: Kunden-Handy 41795551234 (erwartet 41795551234)"
+   },
+   {
+    "ok": true,
     "msg": "O-0007: Betrag 2151.19 (erwartet 2151.19)"
+   },
+   {
+    "ok": true,
+    "msg": "O-0007: Kundennummer ist nicht die eigene (41795551234)"
    },
    {
     "ok": true,
@@ -779,15 +838,51 @@
    },
    {
     "ok": true,
-    "msg": "O-0007: Nachfass-Mail 1 nicht am Wochenende (Wed)"
+    "msg": "Tag 0 (Mon 26.10.): „In WhatsApp öffnen“ für O-0007 leitet auf wa.me (302 https://wa.me/41795551234?text=Hallo%20L)"
    },
    {
     "ok": true,
-    "msg": "O-0007: Nachfass-Mail 2 nicht am Wochenende (Thu)"
+    "msg": "Tag 0 (Mon 26.10.): wa.me-Text für O-0007 unverändert"
    },
    {
     "ok": true,
-    "msg": "O-0007: Nachfass-Mail 3 nicht am Wochenende (Tue)"
+    "msg": "Tag 0 (Mon 26.10.): „Gesendet“ für O-0007 (303)"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 4 (Fri 30.10.): „In WhatsApp öffnen“ für O-0007 leitet auf wa.me (302 https://wa.me/41795551234?text=Hallo%20L)"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 4 (Fri 30.10.): wa.me-Text für O-0007 unverändert"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 4 (Fri 30.10.): „Gesendet“ für O-0007 (303)"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 10 (Thu 05.11.): „In WhatsApp öffnen“ für O-0007 leitet auf wa.me (302 https://wa.me/41795551234?text=Hallo%20L)"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 10 (Thu 05.11.): wa.me-Text für O-0007 unverändert"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 10 (Thu 05.11.): „Gesendet“ für O-0007 (303)"
+   },
+   {
+    "ok": true,
+    "msg": "O-0007: Nachfass-Mail 1 nicht am Wochenende (Mon)"
+   },
+   {
+    "ok": true,
+    "msg": "O-0007: Nachfass-Mail 2 nicht am Wochenende (Fri)"
+   },
+   {
+    "ok": true,
+    "msg": "O-0007: Nachfass-Mail 3 nicht am Wochenende (Thu)"
    },
    {
     "ok": true,
@@ -795,7 +890,7 @@
    },
    {
     "ok": true,
-    "msg": "Geöffnet-Status sichtbar (1 Dokumente geöffnet, 1 Klicks)"
+    "msg": "Geöffnet-Status sichtbar (0 Dokumente geöffnet, 0 Klicks)"
    },
    {
     "ok": true,
@@ -803,39 +898,67 @@
    },
    {
     "ok": true,
-    "msg": "Tag 2 (Wed 28.10.): Betreff ohne vorgetäuschtes „AW:“ (Offerte Badezimmer)"
+    "msg": "O-0007: per WhatsApp nachgefasst, keine Mail (0 Mails)"
    },
    {
     "ok": true,
-    "msg": "Tag 2 (Wed 28.10.): keine Weichspüler-/Drohformel in „Offerte Badezimmer“ ()"
+    "msg": "O-0007: mindestens eine WhatsApp-Nachricht als gesendet vermerkt (3)"
    },
    {
     "ok": true,
-    "msg": "Tag 2 (Wed 28.10.): CHF-Betrieb ohne €-Zeichen (Offerte Badezimmer)"
+    "msg": "WhatsApp-Nachfassen genutzt (3 Taps)"
    },
    {
     "ok": true,
-    "msg": "Tag 10 (Thu 05.11.): Betreff ohne vorgetäuschtes „AW:“ (Offerte Badezimmer)"
+    "msg": "Tag 0 (Mon 26.10.): wa.me an 41795551234 = Kunden-Handy von O-0007 (41795551234), nicht die eigene Nummer"
    },
    {
     "ok": true,
-    "msg": "Tag 10 (Thu 05.11.): keine Weichspüler-/Drohformel in „Offerte Badezimmer“ ()"
+    "msg": "Tag 0 (Mon 26.10.): WhatsApp-Text für O-0007 höchstens 400 Zeichen (295)"
    },
    {
     "ok": true,
-    "msg": "Tag 10 (Thu 05.11.): CHF-Betrieb ohne €-Zeichen (Offerte Badezimmer)"
+    "msg": "Tag 0 (Mon 26.10.): WhatsApp-Text für O-0007 ohne Gedankenstrich"
    },
    {
     "ok": true,
-    "msg": "Tag 15 (Tue 10.11.): Betreff ohne vorgetäuschtes „AW:“ (Offerte Badezimmer)"
+    "msg": "Tag 0 (Mon 26.10.): CHF-Betrieb, WhatsApp-Text ohne €-Zeichen (O-0007)"
    },
    {
     "ok": true,
-    "msg": "Tag 15 (Tue 10.11.): keine Weichspüler-/Drohformel in „Offerte Badezimmer“ ()"
+    "msg": "Tag 4 (Fri 30.10.): wa.me an 41795551234 = Kunden-Handy von O-0007 (41795551234), nicht die eigene Nummer"
    },
    {
     "ok": true,
-    "msg": "Tag 15 (Tue 10.11.): CHF-Betrieb ohne €-Zeichen (Offerte Badezimmer)"
+    "msg": "Tag 4 (Fri 30.10.): WhatsApp-Text für O-0007 höchstens 400 Zeichen (299)"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 4 (Fri 30.10.): WhatsApp-Text für O-0007 ohne Gedankenstrich"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 4 (Fri 30.10.): CHF-Betrieb, WhatsApp-Text ohne €-Zeichen (O-0007)"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 10 (Thu 05.11.): wa.me an 41795551234 = Kunden-Handy von O-0007 (41795551234), nicht die eigene Nummer"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 10 (Thu 05.11.): WhatsApp-Text für O-0007 höchstens 400 Zeichen (331)"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 10 (Thu 05.11.): WhatsApp-Text für O-0007 ohne Gedankenstrich"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 10 (Thu 05.11.): CHF-Betrieb, WhatsApp-Text ohne €-Zeichen (O-0007)"
+   },
+   {
+    "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
    },
    {
     "ok": true,
@@ -843,7 +966,7 @@
    },
    {
     "ok": true,
-    "msg": "Nachfass-Mails im Gesendet-Ordner abgelegt (3 von 3)"
+    "msg": "Nachfass-Mails im Gesendet-Ordner abgelegt (0 von 0)"
    }
   ],
   "detected": [
@@ -863,61 +986,49 @@
   ],
   "timeline": [
    "Tag 0: Postfach verbunden (GMX), Erst-Scan 1 Dokumente in 0 s",
-   "Tag 0 (Mon 26.10.): 0 Nachfass-Mails gesendet, 1 zur Freigabe, 0 wegen Tageslimit verschoben",
-   "Tag 0 (Mon 26.10.): Inhaber entscheidet send für Angebot O-0007",
-   "Tag 2 (Wed 28.10.): 1 Nachfass-Mails gesendet, 0 zur Freigabe, 0 wegen Tageslimit verschoben",
-   "Tag 3: Kunde klickt den Link in der Nachfass-Mail (HTTP 200)",
-   "Tag 10 (Thu 05.11.): 1 Nachfass-Mails gesendet, 0 zur Freigabe, 0 wegen Tageslimit verschoben",
-   "Tag 15 (Tue 10.11.): 1 Nachfass-Mails gesendet, 0 zur Freigabe, 0 wegen Tageslimit verschoben"
+   "Tag 0 (Mon 26.10.): Inhaber schickt die WhatsApp-Nachricht an O-0007 mit einem Tipp und bestätigt „Gesendet“",
+   "Tag 4 (Fri 30.10.): Inhaber schickt die WhatsApp-Nachricht an O-0007 mit einem Tipp und bestätigt „Gesendet“",
+   "Tag 10 (Thu 05.11.): Inhaber schickt die WhatsApp-Nachricht an O-0007 mit einem Tipp und bestätigt „Gesendet“"
   ],
-  "customer_mails": [
-   [
-    "Tag 2 (Wed 28.10.)",
-    "lea.brunner@bluewin.ch",
-    "Offerte Badezimmer",
-    "Guten Tag Lea Brunner,\r\n\r\nam 22.10.2026 habe ich Ihnen unsere Offerte (Nr. O-0007 Badezimmer) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDie Offerte als PDF: https://app.locadas.de/a/J43Z2_nUbDLkoNMDjq4-fYIf\r\n\r\nViele Grüße\r\nMykhaylo Pannasch\r\nPannasch Renovationen\r\n+41 78 123 45 67\r\n"
-   ],
-   [
-    "Tag 10 (Thu 05.11.)",
-    "lea.brunner@bluewin.ch",
-    "Offerte Badezimmer",
-    "Guten Tag Lea Brunner,\r\n\r\nich melde mich noch einmal zu unserer Offerte (Nr. O-0007 Badezimmer). Falls Sie noch Fragen zur Offerte haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDie Offerte als PDF: https://app.locadas.de/a/J43Z2_nUbDLkoNMDjq4-fYIf\r\n\r\nViele Grüße\r\nMykhaylo Pannasch\r\nPannasch Renovationen\r\n+41 78 123 45 67\r\n"
-   ],
-   [
-    "Tag 15 (Tue 10.11.)",
-    "lea.brunner@bluewin.ch",
-    "Offerte Badezimmer",
-    "Guten Tag Lea Brunner,\r\n\r\nfalls Sie noch Fragen zur Offerte (Nr. O-0007 Badezimmer) haben, helfe ich Ihnen gern weiter. Die Offerte gilt bis 25.11.2026.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter +41 78 123 45 67.\r\n\r\nDie Offerte als PDF: https://app.locadas.de/a/J43Z2_nUbDLkoNMDjq4-fYIf\r\n\r\nViele Grüße\r\nMykhaylo Pannasch\r\nPannasch Renovationen\r\n+41 78 123 45 67\r\n"
-   ]
-  ],
+  "customer_mails": [],
   "notifications": [
    [
     "Tag 0 (Mon 26.10.)",
-    "Schon erledigt? Lea Brunner (Offerte O-0007)",
-    "Hallo Mykhaylo Pannasch,\r\n\r\nDiese Offerte O-0007 über CHF 2'151.19 hast du am 22.10.2026 an Lea Brunner verschickt, also vor deinem Start bei uns. Ist sie schon erledigt?\r\n\r\nBitte nachfassen: https://app.locadas.de/f/_f6W4FKYa0barLjTjeI-xtpt4i8Mr3hh/send\r\nErledigt, nicht nachfassen: https://app.locadas.de/f/_f6W4FKYa0barLjTjeI-xtpt4i8Mr3hh/done\r\n\r\nErst wenn du „Bitte nachfassen“ klickst, plane ich eine Nachfass-Mail. Du siehst sie vorher noch.\r\n\r\nLocadas Nachfasser\r\n"
+    "Heute per WhatsApp nachfassen: Lea Brunner",
+    "Hallo Mykhaylo Pannasch,\r\n\r\nHeute ist bei diesem Kunden die nächste Nachfass-Nachricht per WhatsApp dran. Der Link öffnet deinen WhatsApp-Chat mit dem Kunden, der Text steht schon drin. Abschicken und kurz auf „Abgeschickt“ klicken.\r\n\r\n• Lea Brunner: Offerte O-0007 über CHF 2'151.19 (Nachricht 1 von 3)\r\n  ---\r\n  Hallo Lea Brunner,\r\n\r\n  ich wollte kurz nachhören, ob unsere Offerte O-0007 (Badezimmer) gut bei Ihnen angekommen ist. Haben Sie noch Fragen dazu? Dann melden Sie sich gern, hier oder telefonisch.\r\n\r\n  Die Offerte als PDF: https://app.locadas.de/a/Cpo9gCnw9zoyVgTAGw_0asan\r\n\r\n  Viele Grüße\r\n  Mykhaylo Pannasch\r\n  ---\r\n  In WhatsApp öffnen:          https://app.locadas.de/t/yIJ-ACjKM1liDWv6Xdvb0WnOydtoQYr0\r\n  Abgeschickt:                 https://app.locadas.de/w/yIJ-ACjKM1liDWv6Xdvb0WnOydtoQYr0/sent\r\n  Kunde hat schon geantwortet: https://app.locadas.de/w/yIJ-ACjKM1liDWv6Xdvb0WnOydtoQYr0/replied\r\n  Diesmal nicht:               https://app.locadas.de/w/yIJ-ACjKM1liDWv6Xdvb0WnOydtoQYr0/skip\r\n\r\nAlles auf einer Seite, auch fürs Handy: https://app.locadas.de/dashboard#whatsapp\r\n\r\nPer Mail schicke ich diesen Kunden nichts, das machst du per WhatsApp.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
-    "Tag 1 (Tue 27.10.)",
-    "Heute nachfassen: Lea Brunner",
-    "Hallo Mykhaylo Pannasch,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Lea Brunner: Offerte O-0007 über CHF 2'151.19 (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/_f6W4FKYa0barLjTjeI-xtpt4i8Mr3hh/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Tag 4 (Fri 30.10.)",
+    "Heute per WhatsApp nachfassen: Lea Brunner",
+    "Hallo Mykhaylo Pannasch,\r\n\r\nHeute ist bei diesem Kunden die nächste Nachfass-Nachricht per WhatsApp dran. Der Link öffnet deinen WhatsApp-Chat mit dem Kunden, der Text steht schon drin. Abschicken und kurz auf „Abgeschickt“ klicken.\r\n\r\n• Lea Brunner: Offerte O-0007 über CHF 2'151.19 (Nachricht 2 von 3)\r\n  Die letzte Nachricht ging am 26.10. per WhatsApp raus. Hat Lea Brunner dort geantwortet? Dann unten auf „Kunde hat schon geantwortet“.\r\n  ---\r\n  Hallo Lea Brunner,\r\n\r\n  ich melde mich noch einmal zu unserer Offerte O-0007 (Badezimmer). Haben Sie sich schon entschieden? Eine kurze Rückmeldung hilft mir bei der Planung, auch wenn es nichts wird.\r\n\r\n  Die Offerte als PDF: https://app.locadas.de/a/Cpo9gCnw9zoyVgTAGw_0asan\r\n\r\n  Viele Grüße\r\n  Mykhaylo Pannasch\r\n  ---\r\n  In WhatsApp öffnen:          https://app.locadas.de/t/CIUE3hTAhX6mXxt9uetaIlZjlWBWHMh1\r\n  Abgeschickt:                 https://app.locadas.de/w/CIUE3hTAhX6mXxt9uetaIlZjlWBWHMh1/sent\r\n  Kunde hat schon geantwortet: https://app.locadas.de/w/CIUE3hTAhX6mXxt9uetaIlZjlWBWHMh1/replied\r\n  Diesmal nicht:               https://app.locadas.de/w/CIUE3hTAhX6mXxt9uetaIlZjlWBWHMh1/skip\r\n\r\nAlles auf einer Seite, auch fürs Handy: https://app.locadas.de/dashboard#whatsapp\r\n\r\nPer Mail schicke ich diesen Kunden nichts, das machst du per WhatsApp.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
-    "Tag 3 (Thu 29.10.)",
-    "Lea Brunner hat dein Angebot geöffnet",
-    "Hallo Mykhaylo Pannasch,\r\n\r\nLea Brunner hat gerade Angebot O-0007 geöffnet. Guter Moment für einen kurzen Anruf.\r\n\r\nhttps://app.locadas.de/dokument/1\r\n\r\nLocadas Nachfasser\r\n"
-   ],
-   [
-    "Tag 9 (Wed 04.11.)",
-    "Heute nachfassen: Lea Brunner",
-    "Hallo Mykhaylo Pannasch,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Lea Brunner: Offerte O-0007 über CHF 2'151.19 (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/Vkwz87L1Th1jDdt3U2R-1P0QDGObK-Ch/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
-   ],
-   [
-    "Tag 14 (Mon 09.11.)",
-    "Heute nachfassen: Lea Brunner",
-    "Hallo Mykhaylo Pannasch,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Lea Brunner: Offerte O-0007 über CHF 2'151.19 (Nachfass-Mail 3 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/hLNRMSHJ5yDYy28oiuh8X8SdJwdt6iv7/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Tag 10 (Thu 05.11.)",
+    "Heute per WhatsApp nachfassen: Lea Brunner",
+    "Hallo Mykhaylo Pannasch,\r\n\r\nHeute ist bei diesem Kunden die nächste Nachfass-Nachricht per WhatsApp dran. Der Link öffnet deinen WhatsApp-Chat mit dem Kunden, der Text steht schon drin. Abschicken und kurz auf „Abgeschickt“ klicken.\r\n\r\n• Lea Brunner: Offerte O-0007 über CHF 2'151.19 (Nachricht 3 von 3)\r\n  Die letzte Nachricht ging am 30.10. per WhatsApp raus. Hat Lea Brunner dort geantwortet? Dann unten auf „Kunde hat schon geantwortet“.\r\n  ---\r\n  Hallo Lea Brunner,\r\n\r\n  zu unserer Offerte O-0007 (Badezimmer) habe ich noch nichts von Ihnen gehört. Das ist völlig in Ordnung, falls es gerade nicht passt. Ich melde mich nicht weiter, Sie können mir aber jederzeit hier schreiben.\r\n\r\n  Die Offerte als PDF: https://app.locadas.de/a/Cpo9gCnw9zoyVgTAGw_0asan\r\n\r\n  Viele Grüße\r\n  Mykhaylo Pannasch\r\n  ---\r\n  In WhatsApp öffnen:          https://app.locadas.de/t/IpBJInnf9vmB2U6utJS6k7n48c3adoTu\r\n  Abgeschickt:                 https://app.locadas.de/w/IpBJInnf9vmB2U6utJS6k7n48c3adoTu/sent\r\n  Kunde hat schon geantwortet: https://app.locadas.de/w/IpBJInnf9vmB2U6utJS6k7n48c3adoTu/replied\r\n  Diesmal nicht:               https://app.locadas.de/w/IpBJInnf9vmB2U6utJS6k7n48c3adoTu/skip\r\n\r\nAlles auf einer Seite, auch fürs Handy: https://app.locadas.de/dashboard#whatsapp\r\n\r\nPer Mail schicke ich diesen Kunden nichts, das machst du per WhatsApp.\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": [
+   [
+    "Tag 0 (Mon 26.10.)",
+    "41795551234",
+    "Hallo Lea Brunner,\n\nich wollte kurz nachhören, ob unsere Offerte O-0007 (Badezimmer) gut bei Ihnen angekommen ist. Haben Sie noch Fragen dazu? Dann melden Sie sich gern, hier oder telefonisch.\n\nDie Offerte als PDF: https://app.locadas.de/a/Cpo9gCnw9zoyVgTAGw_0asan\n\nViele Grüße\nMykhaylo Pannasch",
+    "O-0007"
+   ],
+   [
+    "Tag 4 (Fri 30.10.)",
+    "41795551234",
+    "Hallo Lea Brunner,\n\nich melde mich noch einmal zu unserer Offerte O-0007 (Badezimmer). Haben Sie sich schon entschieden? Eine kurze Rückmeldung hilft mir bei der Planung, auch wenn es nichts wird.\n\nDie Offerte als PDF: https://app.locadas.de/a/Cpo9gCnw9zoyVgTAGw_0asan\n\nViele Grüße\nMykhaylo Pannasch",
+    "O-0007"
+   ],
+   [
+    "Tag 10 (Thu 05.11.)",
+    "41795551234",
+    "Hallo Lea Brunner,\n\nzu unserer Offerte O-0007 (Badezimmer) habe ich noch nichts von Ihnen gehört. Das ist völlig in Ordnung, falls es gerade nicht passt. Ich melde mich nicht weiter, Sie können mir aber jederzeit hier schreiben.\n\nDie Offerte als PDF: https://app.locadas.de/a/Cpo9gCnw9zoyVgTAGw_0asan\n\nViele Grüße\nMykhaylo Pannasch",
+    "O-0007"
+   ]
+  ]
  },
  {
   "key": "fliesen",
@@ -940,7 +1051,15 @@
    },
    {
     "ok": true,
+    "msg": "17/2026: Kunden-Handy 491724455667 (erwartet 491724455667)"
+   },
+   {
+    "ok": true,
     "msg": "17/2026: Betrag 2248.0 (erwartet 2248.0)"
+   },
+   {
+    "ok": true,
+    "msg": "17/2026: Kundennummer ist nicht die eigene (491724455667)"
    },
    {
     "ok": true,
@@ -948,11 +1067,23 @@
    },
    {
     "ok": true,
+    "msg": "Tag 1 (Tue 27.10.): „In WhatsApp öffnen“ für 17/2026 leitet auf wa.me (302 https://wa.me/491724455667?text=Hallo%20)"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 1 (Tue 27.10.): wa.me-Text für 17/2026 unverändert"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 1 (Tue 27.10.): „Gesendet“ für 17/2026 (303)"
+   },
+   {
+    "ok": true,
     "msg": "Tag 5 (Sat 31.10.): nach bounce ist 17/2026 „bounced“ (erwartet „bounced“)"
    },
    {
     "ok": true,
-    "msg": "17/2026: Nachfass-Mail 1 nicht am Wochenende (Wed)"
+    "msg": "17/2026: Nachfass-Mail 1 nicht am Wochenende (Tue)"
    },
    {
     "ok": true,
@@ -964,11 +1095,31 @@
    },
    {
     "ok": true,
-    "msg": "Tag 2 (Wed 28.10.): Betreff ohne vorgetäuschtes „AW:“ (Ihr Angebot)"
+    "msg": "17/2026: per WhatsApp nachgefasst, keine Mail (0 Mails)"
    },
    {
     "ok": true,
-    "msg": "Tag 2 (Wed 28.10.): keine Weichspüler-/Drohformel in „Ihr Angebot“ ()"
+    "msg": "17/2026: mindestens eine WhatsApp-Nachricht als gesendet vermerkt (1)"
+   },
+   {
+    "ok": true,
+    "msg": "WhatsApp-Nachfassen genutzt (1 Taps)"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 1 (Tue 27.10.): wa.me an 491724455667 = Kunden-Handy von 17/2026 (491724455667), nicht die eigene Nummer"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 1 (Tue 27.10.): WhatsApp-Text für 17/2026 höchstens 400 Zeichen (280)"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 1 (Tue 27.10.): WhatsApp-Text für 17/2026 ohne Gedankenstrich"
+   },
+   {
+    "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
    },
    {
     "ok": true,
@@ -976,7 +1127,7 @@
    },
    {
     "ok": true,
-    "msg": "Nachfass-Mails im Gesendet-Ordner abgelegt (1 von 1)"
+    "msg": "Nachfass-Mails im Gesendet-Ordner abgelegt (0 von 0)"
    }
   ],
   "detected": [
@@ -996,22 +1147,15 @@
   ],
   "timeline": [
    "Tag 0: Postfach verbunden (GMX), Erst-Scan 1 Dokumente in 0 s",
-   "Tag 2 (Wed 28.10.): 1 Nachfass-Mails gesendet, 0 zur Freigabe, 0 wegen Tageslimit verschoben",
+   "Tag 1 (Tue 27.10.): Inhaber schickt die WhatsApp-Nachricht an 17/2026 mit einem Tipp und bestätigt „Gesendet“",
    "Tag 5 (Sat 31.10.): Posteingang: bounce von mailer-daemon@gmx.net („Mail delivery failed: returning message to sender“)"
   ],
-  "customer_mails": [
-   [
-    "Tag 2 (Wed 28.10.)",
-    "d.lange@arcor.de",
-    "Ihr Angebot",
-    "Guten Tag Dieter Lange,\r\n\r\nam 24.10.2026 habe ich Ihnen unser Angebot (Nr. 17/2026) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/HMhZ6aBGDl-SrfBqXEzT3J1I\r\n\r\nViele Grüße\r\nMarek Kowalski\r\nFliesen Kowalski\r\n0171 9988776\r\n"
-   ]
-  ],
+  "customer_mails": [],
   "notifications": [
    [
     "Tag 1 (Tue 27.10.)",
-    "Heute nachfassen: Dieter Lange",
-    "Hallo Marek Kowalski,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Dieter Lange: Angebot 17/2026 über 2.248,00 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/5i_XfECW70sR2NBM_CsTrvSgSfupEH5k/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Heute per WhatsApp nachfassen: Dieter Lange",
+    "Hallo Marek Kowalski,\r\n\r\nHeute ist bei diesem Kunden die nächste Nachfass-Nachricht per WhatsApp dran. Der Link öffnet deinen WhatsApp-Chat mit dem Kunden, der Text steht schon drin. Abschicken und kurz auf „Abgeschickt“ klicken.\r\n\r\n• Dieter Lange: Angebot 17/2026 über 2.248,00 € (Nachricht 1 von 3)\r\n  ---\r\n  Hallo Dieter Lange,\r\n\r\n  ich wollte kurz nachhören, ob unser Angebot 17/2026 gut bei Ihnen angekommen ist. Haben Sie noch Fragen dazu? Dann melden Sie sich gern, hier oder telefonisch.\r\n\r\n  Das Angebot als PDF: https://app.locadas.de/a/v2hQ2gkRjDNlHQfiPBPjDJPW\r\n\r\n  Viele Grüße\r\n  Marek Kowalski\r\n  ---\r\n  In WhatsApp öffnen:          https://app.locadas.de/t/5xGtVtgWlTJxILoH1CSrm5xkwrfqzC7g\r\n  Abgeschickt:                 https://app.locadas.de/w/5xGtVtgWlTJxILoH1CSrm5xkwrfqzC7g/sent\r\n  Kunde hat schon geantwortet: https://app.locadas.de/w/5xGtVtgWlTJxILoH1CSrm5xkwrfqzC7g/replied\r\n  Diesmal nicht:               https://app.locadas.de/w/5xGtVtgWlTJxILoH1CSrm5xkwrfqzC7g/skip\r\n\r\nAlles auf einer Seite, auch fürs Handy: https://app.locadas.de/dashboard#whatsapp\r\n\r\nPer Mail schicke ich diesen Kunden nichts, das machst du per WhatsApp.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 5 (Sat 31.10.)",
@@ -1019,7 +1163,15 @@
     "Hallo Marek Kowalski,\r\n\r\ndie Nachfass-Mail zu Angebot 17/2026 an d.lange@arcor.de ist zurückgekommen, die Adresse ist unzustellbar. Ich fasse dort nicht mehr nach.\r\n\r\nKorrigier die Adresse hier und schalte das Nachfassen wieder ein: https://app.locadas.de/dokument/1\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": [
+   [
+    "Tag 1 (Tue 27.10.)",
+    "491724455667",
+    "Hallo Dieter Lange,\n\nich wollte kurz nachhören, ob unser Angebot 17/2026 gut bei Ihnen angekommen ist. Haben Sie noch Fragen dazu? Dann melden Sie sich gern, hier oder telefonisch.\n\nDas Angebot als PDF: https://app.locadas.de/a/v2hQ2gkRjDNlHQfiPBPjDJPW\n\nViele Grüße\nMarek Kowalski",
+    "17/2026"
+   ]
+  ]
  },
  {
   "key": "maler",
@@ -1042,6 +1194,10 @@
    },
    {
     "ok": true,
+    "msg": "RE-1044: Kunden-Handy 4915122334455 (erwartet 4915122334455)"
+   },
+   {
+    "ok": true,
     "msg": "RE-1044: Betrag 954.38 (erwartet 954.38)"
    },
    {
@@ -1055,6 +1211,14 @@
    {
     "ok": true,
     "msg": "AN-1051: Betrag 4087.65 (erwartet 4087.65)"
+   },
+   {
+    "ok": true,
+    "msg": "RE-1044: Kundennummer ist nicht die eigene (4915122334455)"
+   },
+   {
+    "ok": true,
+    "msg": "AN-1051: Kundennummer ist nicht die eigene (–)"
    },
    {
     "ok": true,
@@ -1166,6 +1330,10 @@
    },
    {
     "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
+   },
+   {
+    "ok": true,
     "msg": "Höchstens 4 Mails von uns an den Betrieb pro Tag (max 1)"
    },
    {
@@ -1215,32 +1383,32 @@
     "Tag 1 (Tue 27.10.)",
     "leitung@kita-sonnenschein-ddorf.de",
     "Angebot AN-1051 Renovierung Gruppenräume",
-    "Guten Tag Kita Sonnenschein,\r\n\r\nam 23.10.2026 habe ich Ihnen unser Angebot (Nr. AN-1051 Renovierung Gruppenräume) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/YLY1ILZ2TpWkY8x2Wj5t2yCw\r\n\r\nViele Grüße\r\nEmre Yilmaz\r\nMalerbetrieb Yilmaz\r\n0211 5566778\r\n"
+    "Guten Tag Kita Sonnenschein,\r\n\r\nam 23.10.2026 habe ich Ihnen unser Angebot (Nr. AN-1051 Renovierung Gruppenräume) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/LeWRt_DX2Ncn1VXG0nOKrk1j\r\n\r\nViele Grüße\r\nEmre Yilmaz\r\nMalerbetrieb Yilmaz\r\n0211 5566778\r\n"
    ],
    [
     "Tag 9 (Wed 04.11.)",
     "leitung@kita-sonnenschein-ddorf.de",
     "Angebot AN-1051 Renovierung Gruppenräume",
-    "Guten Tag Kita Sonnenschein,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. AN-1051 Renovierung Gruppenräume). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/YLY1ILZ2TpWkY8x2Wj5t2yCw\r\n\r\nViele Grüße\r\nEmre Yilmaz\r\nMalerbetrieb Yilmaz\r\n0211 5566778\r\n"
+    "Guten Tag Kita Sonnenschein,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. AN-1051 Renovierung Gruppenräume). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/LeWRt_DX2Ncn1VXG0nOKrk1j\r\n\r\nViele Grüße\r\nEmre Yilmaz\r\nMalerbetrieb Yilmaz\r\n0211 5566778\r\n"
    ],
    [
     "Tag 15 (Tue 10.11.)",
     "leitung@kita-sonnenschein-ddorf.de",
     "Angebot AN-1051 Renovierung Gruppenräume",
-    "Guten Tag Kita Sonnenschein,\r\n\r\nfalls Sie noch Fragen zum Angebot (Nr. AN-1051 Renovierung Gruppenräume) haben, helfe ich Ihnen gern weiter.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0211 5566778.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/YLY1ILZ2TpWkY8x2Wj5t2yCw\r\n\r\nViele Grüße\r\nEmre Yilmaz\r\nMalerbetrieb Yilmaz\r\n0211 5566778\r\n"
+    "Guten Tag Kita Sonnenschein,\r\n\r\nfalls Sie noch Fragen zum Angebot (Nr. AN-1051 Renovierung Gruppenräume) haben, helfe ich Ihnen gern weiter.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0211 5566778.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/LeWRt_DX2Ncn1VXG0nOKrk1j\r\n\r\nViele Grüße\r\nEmre Yilmaz\r\nMalerbetrieb Yilmaz\r\n0211 5566778\r\n"
    ],
    [
     "Tag 21 (Ende)",
     "leitung@kita-sonnenschein-ddorf.de",
     "Renovierung Gruppenräume: abgeschlossen",
-    "Guten Tag Kita Sonnenschein,\r\n\r\nIhr Auftrag „Renovierung Gruppenräume“ ist abgeschlossen. Vielen Dank für Ihr Vertrauen!\r\n\r\nAngebot, Rechnung und den Stand Ihres Auftrags finden Sie jederzeit hier:\r\nhttps://app.locadas.de/k/E_8y-mm4OWLdkIsFgAd8Am20EDP8l0Pr\r\n\r\nWir würden uns sehr über Ihre ehrliche Bewertung bei Google freuen. Das dauert nur eine Minute und hilft anderen bei der Suche nach einem guten Betrieb:\r\nhttps://app.locadas.de/k/E_8y-mm4OWLdkIsFgAd8Am20EDP8l0Pr/bewerten\r\n\r\nWenn noch etwas ist, erreichen Sie uns jederzeit unter 0211 5566778.\r\n\r\nViele Grüße\r\nEmre Yilmaz\r\nMalerbetrieb Yilmaz\r\n0211 5566778\r\n"
+    "Guten Tag Kita Sonnenschein,\r\n\r\nIhr Auftrag „Renovierung Gruppenräume“ ist abgeschlossen. Vielen Dank für Ihr Vertrauen!\r\n\r\nAngebot, Rechnung und den Stand Ihres Auftrags finden Sie jederzeit hier:\r\nhttps://app.locadas.de/k/5-kfA5tm2jIy8ZkWLSQ5A0zq1EWQSfKw\r\n\r\nWir würden uns sehr über Ihre ehrliche Bewertung bei Google freuen. Das dauert nur eine Minute und hilft anderen bei der Suche nach einem guten Betrieb:\r\nhttps://app.locadas.de/k/5-kfA5tm2jIy8ZkWLSQ5A0zq1EWQSfKw/bewerten\r\n\r\nWenn noch etwas ist, erreichen Sie uns jederzeit unter 0211 5566778.\r\n\r\nViele Grüße\r\nEmre Yilmaz\r\nMalerbetrieb Yilmaz\r\n0211 5566778\r\n"
    ]
   ],
   "notifications": [
    [
     "Tag 0 (Mon 26.10.)",
     "Heute nachfassen: Kita Sonnenschein",
-    "Hallo Emre Yilmaz,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Kita Sonnenschein: Angebot AN-1051 über 4.087,65 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/hNGAe33WbVtPSTRwBaEVUTSmjpPSWmfY/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Emre Yilmaz,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Kita Sonnenschein: Angebot AN-1051 über 4.087,65 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/pi7UOXCPZst7f9ubkokr8Q1uYeuX0Clh/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 2 (Wed 28.10.)",
@@ -1255,15 +1423,16 @@
    [
     "Tag 8 (Tue 03.11.)",
     "Heute nachfassen: Kita Sonnenschein",
-    "Hallo Emre Yilmaz,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Kita Sonnenschein: Angebot AN-1051 über 4.087,65 € (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/_Apv8f823pxATZAJ3VXbFizkx2ZCjNOc/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Emre Yilmaz,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Kita Sonnenschein: Angebot AN-1051 über 4.087,65 € (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/mZ8ClOWHO7uoMbVnlWE0T-r68olBbwSO/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 14 (Mon 09.11.)",
     "Heute nachfassen: Kita Sonnenschein",
-    "Hallo Emre Yilmaz,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Kita Sonnenschein: Angebot AN-1051 über 4.087,65 € (Nachfass-Mail 3 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/lVQEEyqb2pK0rrpB1vnmJJpQoh3A3qUw/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Emre Yilmaz,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Kita Sonnenschein: Angebot AN-1051 über 4.087,65 € (Nachfass-Mail 3 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/1537T77mQL2vdCqfVOPS_ySDeMtwQJQ6/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": []
  },
  {
   "key": "elektro",
@@ -1286,7 +1455,19 @@
    },
    {
     "ok": true,
+    "msg": "ANG-26-3310: Kunden-Handy 4917699887766 (erwartet 4917699887766)"
+   },
+   {
+    "ok": true,
+    "msg": "ANG-26-3310: Kunden-Telefon 492238991122 (erwartet 492238991122)"
+   },
+   {
+    "ok": true,
     "msg": "ANG-26-3310: Betrag 4664.8 (erwartet 4664.8)"
+   },
+   {
+    "ok": true,
+    "msg": "ANG-26-3310: Kundennummer ist nicht die eigene (4917699887766)"
    },
    {
     "ok": true,
@@ -1386,6 +1567,10 @@
    },
    {
     "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
+   },
+   {
+    "ok": true,
     "msg": "Höchstens 4 Mails von uns an den Betrieb pro Tag (max 1)"
    },
    {
@@ -1421,32 +1606,32 @@
     "Tag 1 (Tue 27.10.)",
     "becker.pulheim@gmail.com",
     "Angebot Wallbox und Zählerschrank",
-    "Guten Tag Familie Becker,\r\n\r\nam 23.10.2026 habe ich Ihnen unser Angebot (Nr. ANG-26-3310 Wallbox und Zählerschrank) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/AxNQERc07Ukm5lgXkaNTzXfM\r\n\r\nViele Grüße\r\nStefan Brandes\r\nElektro Brandes GmbH\r\n02238 4040\r\n"
+    "Guten Tag Familie Becker,\r\n\r\nam 23.10.2026 habe ich Ihnen unser Angebot (Nr. ANG-26-3310 Wallbox und Zählerschrank) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/bsg1hqf8x5i8urrCVLxLqoC6\r\n\r\nViele Grüße\r\nStefan Brandes\r\nElektro Brandes GmbH\r\n02238 4040\r\n"
    ],
    [
     "Tag 9 (Wed 04.11.)",
     "becker.pulheim@gmail.com",
     "Angebot Wallbox und Zählerschrank",
-    "Guten Tag Familie Becker,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. ANG-26-3310 Wallbox und Zählerschrank). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/AxNQERc07Ukm5lgXkaNTzXfM\r\n\r\nViele Grüße\r\nStefan Brandes\r\nElektro Brandes GmbH\r\n02238 4040\r\n"
+    "Guten Tag Familie Becker,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. ANG-26-3310 Wallbox und Zählerschrank). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/bsg1hqf8x5i8urrCVLxLqoC6\r\n\r\nViele Grüße\r\nStefan Brandes\r\nElektro Brandes GmbH\r\n02238 4040\r\n"
    ],
    [
     "Tag 15 (Tue 10.11.)",
     "becker.pulheim@gmail.com",
     "Angebot Wallbox und Zählerschrank",
-    "Guten Tag Familie Becker,\r\n\r\nfalls Sie noch Fragen zum Angebot (Nr. ANG-26-3310 Wallbox und Zählerschrank) haben, helfe ich Ihnen gern weiter.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 02238 4040.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/AxNQERc07Ukm5lgXkaNTzXfM\r\n\r\nViele Grüße\r\nStefan Brandes\r\nElektro Brandes GmbH\r\n02238 4040\r\n"
+    "Guten Tag Familie Becker,\r\n\r\nfalls Sie noch Fragen zum Angebot (Nr. ANG-26-3310 Wallbox und Zählerschrank) haben, helfe ich Ihnen gern weiter.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 02238 4040.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/bsg1hqf8x5i8urrCVLxLqoC6\r\n\r\nViele Grüße\r\nStefan Brandes\r\nElektro Brandes GmbH\r\n02238 4040\r\n"
    ],
    [
     "Tag 21 (Ende)",
     "becker.pulheim@gmail.com",
     "Wallbox und Zählerschrank: abgeschlossen",
-    "Guten Tag Familie Becker,\r\n\r\nIhr Auftrag „Wallbox und Zählerschrank“ ist abgeschlossen. Vielen Dank für Ihr Vertrauen!\r\n\r\nAngebot, Rechnung und den Stand Ihres Auftrags finden Sie jederzeit hier:\r\nhttps://app.locadas.de/k/cRAJ2YS_8U5XyEJZjlnuDhaHlzudDFhu\r\n\r\nWir würden uns sehr über Ihre ehrliche Bewertung bei Google freuen. Das dauert nur eine Minute und hilft anderen bei der Suche nach einem guten Betrieb:\r\nhttps://app.locadas.de/k/cRAJ2YS_8U5XyEJZjlnuDhaHlzudDFhu/bewerten\r\n\r\nWenn noch etwas ist, erreichen Sie uns jederzeit unter 02238 4040.\r\n\r\nViele Grüße\r\nStefan Brandes\r\nElektro Brandes GmbH\r\n02238 4040\r\n"
+    "Guten Tag Familie Becker,\r\n\r\nIhr Auftrag „Wallbox und Zählerschrank“ ist abgeschlossen. Vielen Dank für Ihr Vertrauen!\r\n\r\nAngebot, Rechnung und den Stand Ihres Auftrags finden Sie jederzeit hier:\r\nhttps://app.locadas.de/k/XBiZ4OCUqtR5BO1lpDW3Pon9bxn_vsqL\r\n\r\nWir würden uns sehr über Ihre ehrliche Bewertung bei Google freuen. Das dauert nur eine Minute und hilft anderen bei der Suche nach einem guten Betrieb:\r\nhttps://app.locadas.de/k/XBiZ4OCUqtR5BO1lpDW3Pon9bxn_vsqL/bewerten\r\n\r\nWenn noch etwas ist, erreichen Sie uns jederzeit unter 02238 4040.\r\n\r\nViele Grüße\r\nStefan Brandes\r\nElektro Brandes GmbH\r\n02238 4040\r\n"
    ]
   ],
   "notifications": [
    [
     "Tag 0 (Mon 26.10.)",
     "Heute nachfassen: Familie Becker",
-    "Hallo Stefan Brandes,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Familie Becker: Angebot ANG-26-3310 über 4.664,80 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/llmqvuGImcwSEB386KFgvjK4FuZ5h9Uu/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Stefan Brandes,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Familie Becker: Angebot ANG-26-3310 über 4.664,80 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/x7G00yPu_QMFs7yOrdkzIZqO7muqikxr/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 2 (Wed 28.10.)",
@@ -1456,15 +1641,16 @@
    [
     "Tag 8 (Tue 03.11.)",
     "Heute nachfassen: Familie Becker",
-    "Hallo Stefan Brandes,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Familie Becker: Angebot ANG-26-3310 über 4.664,80 € (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/XH9cT8v5JzYJ6fto35NgShgRt6vCFH3T/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Stefan Brandes,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Familie Becker: Angebot ANG-26-3310 über 4.664,80 € (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/PmW03BCyO3no6BHGjqhmHUmix-weLtRW/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 14 (Mon 09.11.)",
     "Heute nachfassen: Familie Becker",
-    "Hallo Stefan Brandes,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Familie Becker: Angebot ANG-26-3310 über 4.664,80 € (Nachfass-Mail 3 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/6_PYh38eBbePyPNFC-_P03pUtP7DeY0O/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Stefan Brandes,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Familie Becker: Angebot ANG-26-3310 über 4.664,80 € (Nachfass-Mail 3 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/q5uaux1m1ztR2TA0fqGlOZl-m-YpOeNv/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": []
  },
  {
   "key": "dach",
@@ -1500,6 +1686,14 @@
    {
     "ok": true,
     "msg": "AN-2026-301: Betrag 3001.18 (erwartet 3001.18)"
+   },
+   {
+    "ok": true,
+    "msg": "AR-2026-118: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "AN-2026-301: Kundennummer ist nicht die eigene (–)"
    },
    {
     "ok": true,
@@ -1571,6 +1765,10 @@
    },
    {
     "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
+   },
+   {
+    "ok": true,
     "msg": "Höchstens 4 Mails von uns an den Betrieb pro Tag (max 1)"
    },
    {
@@ -1619,50 +1817,51 @@
     "Tag 3 (Thu 29.10.)",
     "uwe.fischer@t-online.de",
     "Angebot Dachrinne",
-    "Guten Tag Uwe Fischer,\r\n\r\nam 25.10.2026 habe ich Ihnen unser Angebot (Nr. AN-2026-301 Dachrinne) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/oWNphdkCYNGomxDj5MUhgOjc\r\n\r\nViele Grüße\r\nRalf Wegener\r\nDachtechnik Wegener GmbH & Co. KG\r\n0234 667788\r\n"
+    "Guten Tag Uwe Fischer,\r\n\r\nam 25.10.2026 habe ich Ihnen unser Angebot (Nr. AN-2026-301 Dachrinne) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/LL_dfZV5G0oOedYVAp2I6dxz\r\n\r\nViele Grüße\r\nRalf Wegener\r\nDachtechnik Wegener GmbH & Co. KG\r\n0234 667788\r\n"
    ],
    [
     "Tag 8 (Tue 03.11.)",
     "uwe.fischer@t-online.de",
     "Angebot Dachrinne",
-    "Guten Tag Uwe Fischer,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. AN-2026-301 Dachrinne). Falls Sie sich schon entschieden haben, freue ich mich über eine kurze Rückmeldung, auch wenn es nichts wird. Dann kann ich besser planen.\r\n\r\nFalls Sie noch überlegen: Gern besprechen wir Umfang oder Termin, damit es für Sie passt.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/oWNphdkCYNGomxDj5MUhgOjc\r\n\r\nViele Grüße\r\nRalf Wegener\r\nDachtechnik Wegener GmbH & Co. KG\r\n0234 667788\r\n"
+    "Guten Tag Uwe Fischer,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. AN-2026-301 Dachrinne). Falls Sie sich schon entschieden haben, freue ich mich über eine kurze Rückmeldung, auch wenn es nichts wird. Dann kann ich besser planen.\r\n\r\nFalls Sie noch überlegen: Gern besprechen wir Umfang oder Termin, damit es für Sie passt.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/LL_dfZV5G0oOedYVAp2I6dxz\r\n\r\nViele Grüße\r\nRalf Wegener\r\nDachtechnik Wegener GmbH & Co. KG\r\n0234 667788\r\n"
    ],
    [
     "Tag 15 (Tue 10.11.)",
     "uwe.fischer@t-online.de",
     "Angebot Dachrinne",
-    "Guten Tag Uwe Fischer,\r\n\r\nzu unserem Angebot (Nr. AN-2026-301 Dachrinne) habe ich bisher nichts von Ihnen gehört. Vielleicht passt es gerade nicht oder Sie haben sich anders entschieden, beides ist völlig in Ordnung.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0234 667788.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/oWNphdkCYNGomxDj5MUhgOjc\r\n\r\nViele Grüße\r\nRalf Wegener\r\nDachtechnik Wegener GmbH & Co. KG\r\n0234 667788\r\n"
+    "Guten Tag Uwe Fischer,\r\n\r\nzu unserem Angebot (Nr. AN-2026-301 Dachrinne) habe ich bisher nichts von Ihnen gehört. Vielleicht passt es gerade nicht oder Sie haben sich anders entschieden, beides ist völlig in Ordnung.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0234 667788.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/LL_dfZV5G0oOedYVAp2I6dxz\r\n\r\nViele Grüße\r\nRalf Wegener\r\nDachtechnik Wegener GmbH & Co. KG\r\n0234 667788\r\n"
    ],
    [
     "Tag 18 (Fri 13.11.)",
     "rechnungen@hv-ruhr.de",
     "Zahlungserinnerung: 1. Abschlagsrechnung AR-2026-118 Dachsanierung Königsallee 44",
-    "Guten Tag HV Ruhr Buchhaltung,\r\n\r\nunsere Abschlagsrechnung (Nr. AR-2026-118 Dachsanierung Königsallee) über 17.136,00 €, fällig am 09.11.2026, ist laut meinen Unterlagen noch offen.\r\n\r\nBitte überweisen Sie 17.136,00 € bis 20.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: AR-2026-118.\r\n\r\nFür Rückfragen zur Abschlagsrechnung stehe ich gern zur Verfügung.\r\n\r\nDie Abschlagsrechnung als PDF: https://app.locadas.de/a/CMG9YcFyIuN1MJt-0bZ6ycMf\r\n\r\nViele Grüße\r\nRalf Wegener\r\nDachtechnik Wegener GmbH & Co. KG\r\n0234 667788\r\n"
+    "Guten Tag HV Ruhr Buchhaltung,\r\n\r\nunsere Abschlagsrechnung (Nr. AR-2026-118 Dachsanierung Königsallee) über 17.136,00 €, fällig am 09.11.2026, ist laut meinen Unterlagen noch offen.\r\n\r\nBitte überweisen Sie 17.136,00 € bis 20.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: AR-2026-118.\r\n\r\nFür Rückfragen zur Abschlagsrechnung stehe ich gern zur Verfügung.\r\n\r\nDie Abschlagsrechnung als PDF: https://app.locadas.de/a/tqqzVwSbjtfAlXu_kGb-BNnd\r\n\r\nViele Grüße\r\nRalf Wegener\r\nDachtechnik Wegener GmbH & Co. KG\r\n0234 667788\r\n"
    ]
   ],
   "notifications": [
    [
     "Tag 2 (Wed 28.10.)",
     "Heute nachfassen: Uwe Fischer",
-    "Hallo Ralf Wegener,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Uwe Fischer: Angebot AN-2026-301 über 3.001,18 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/2OAWazNxWL1SRDHBPrJHSNAwsggN8QYI/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Ralf Wegener,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Uwe Fischer: Angebot AN-2026-301 über 3.001,18 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/mhonQsiTVFYan8p_qG0GqXa20xMW2oFY/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 7 (Mon 02.11.)",
     "Heute nachfassen: Uwe Fischer",
-    "Hallo Ralf Wegener,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Uwe Fischer: Angebot AN-2026-301 über 3.001,18 € (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/VDCYnlBHdkMDBs78b78fyiPVtrgKxqN2/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Ralf Wegener,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Uwe Fischer: Angebot AN-2026-301 über 3.001,18 € (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/ud2HaiShcmvmWndxOOBvqdKvxTTeWfG9/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 14 (Mon 09.11.)",
     "Heute nachfassen: Uwe Fischer",
-    "Hallo Ralf Wegener,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Uwe Fischer: Angebot AN-2026-301 über 3.001,18 € (Nachfass-Mail 3 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/qPku36IzD2xBdfHST639yIf0JCGwzSqJ/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Ralf Wegener,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Uwe Fischer: Angebot AN-2026-301 über 3.001,18 € (Nachfass-Mail 3 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/xeAEo7iFpWbhxibTFxT120oSGdF_FbyM/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 18 (Fri 13.11.)",
     "Noch offen? Abschlagsrechnung AR-2026-118 von HV Ruhr Buchhaltung",
-    "Hallo Ralf Wegener,\r\n\r\nAbschlagsrechnung AR-2026-118 an HV Ruhr Buchhaltung über 17.136,00 € ist seit 09.11.2026 fällig. Noch offen?\r\n\r\nNoch offen, Zahlungserinnerung schicken: https://app.locadas.de/f/ytmktuzNfVj6k_karlWeb4NCUCy3vRcU/send\r\nIst bezahlt, nicht erinnern:            https://app.locadas.de/f/ytmktuzNfVj6k_karlWeb4NCUCy3vRcU/done\r\n\r\nErst wenn du „Noch offen“ klickst, schicke ich die Zahlungserinnerung in deinem Namen. Ich sehe dein Konto nicht, deshalb frage ich vor jeder Erinnerung.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Ralf Wegener,\r\n\r\nAbschlagsrechnung AR-2026-118 an HV Ruhr Buchhaltung über 17.136,00 € ist seit 09.11.2026 fällig. Noch offen?\r\n\r\nNoch offen, Zahlungserinnerung schicken: https://app.locadas.de/f/GVD6mqAXaM_-AYFTJ02z2WN5dMOE4ZAK/send\r\nIst bezahlt, nicht erinnern:            https://app.locadas.de/f/GVD6mqAXaM_-AYFTJ02z2WN5dMOE4ZAK/done\r\n\r\nErst wenn du „Noch offen“ klickst, schicke ich die Zahlungserinnerung in deinem Namen. Ich sehe dein Konto nicht, deshalb frage ich vor jeder Erinnerung.\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": []
  },
  {
   "key": "hausmeister",
@@ -1722,6 +1921,22 @@
    {
     "ok": true,
     "msg": "2026-313: Betrag 140.0 (erwartet 140)"
+   },
+   {
+    "ok": true,
+    "msg": "2026-310: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "2026-311: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "2026-312: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "2026-313: Kundennummer ist nicht die eigene (–)"
    },
    {
     "ok": true,
@@ -1821,6 +2036,10 @@
    },
    {
     "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
+   },
+   {
+    "ok": true,
     "msg": "Höchstens 4 Mails von uns an den Betrieb pro Tag (max 1)"
    },
    {
@@ -1895,35 +2114,36 @@
     "Tag 14 (Mon 09.11.)",
     "verwaltung@immo-heinsberg.de",
     "Zahlungserinnerung: Rechnung 2026-310",
-    "Guten Tag,\r\n\r\nunsere Rechnung (Nr. 2026-310) über 380,00 €, fällig am 05.11.2026, ist laut meinen Unterlagen noch offen.\r\n\r\nBitte überweisen Sie 380,00 € bis 16.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: 2026-310.\r\n\r\nFür Rückfragen zur Rechnung stehe ich gern zur Verfügung.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/Wp0OewI2xujGgnOeoygScIGR\r\n\r\nViele Grüße\r\nBernd Krüger\r\nHausmeisterservice Krüger\r\n02452 9090\r\n"
+    "Guten Tag,\r\n\r\nunsere Rechnung (Nr. 2026-310) über 380,00 €, fällig am 05.11.2026, ist laut meinen Unterlagen noch offen.\r\n\r\nBitte überweisen Sie 380,00 € bis 16.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: 2026-310.\r\n\r\nFür Rückfragen zur Rechnung stehe ich gern zur Verfügung.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/7km43NBPz51GZ0lW3vum6p8-\r\n\r\nViele Grüße\r\nBernd Krüger\r\nHausmeisterservice Krüger\r\n02452 9090\r\n"
    ],
    [
     "Tag 14 (Mon 09.11.)",
     "erika.jansen@web.de",
     "Zahlungserinnerung: Rechnung 2026-311",
-    "Guten Tag Frau Erika Jansen,\r\n\r\nunsere Rechnung (Nr. 2026-311) über 95,00 € war am 05.11.2026 fällig. Laut meinen Unterlagen ist die Rechnung noch offen.\r\n\r\nBitte überweisen Sie 95,00 € bis 16.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: 2026-311.\r\n\r\nHaben Sie Fragen zur Rechnung, melden Sie sich gern bei mir.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/cR8pbkpVE3fTx1b5x6hq3q96\r\n\r\nViele Grüße\r\nBernd Krüger\r\nHausmeisterservice Krüger\r\n02452 9090\r\n"
+    "Guten Tag Frau Erika Jansen,\r\n\r\nunsere Rechnung (Nr. 2026-311) über 95,00 € war am 05.11.2026 fällig. Laut meinen Unterlagen ist die Rechnung noch offen.\r\n\r\nBitte überweisen Sie 95,00 € bis 16.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: 2026-311.\r\n\r\nHaben Sie Fragen zur Rechnung, melden Sie sich gern bei mir.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/qSL8eiiNeLlCurJCUKko1Xak\r\n\r\nViele Grüße\r\nBernd Krüger\r\nHausmeisterservice Krüger\r\n02452 9090\r\n"
    ],
    [
     "Tag 14 (Mon 09.11.)",
     "praxis@dr-klein-heinsberg.de",
     "Zahlungserinnerung: Rechnung 2026-312",
-    "Guten Tag,\r\n\r\nunsere Rechnung (Nr. 2026-312) über 210,00 €, fällig am 05.11.2026, ist laut meinen Unterlagen noch offen.\r\n\r\nBitte überweisen Sie 210,00 € bis 16.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: 2026-312.\r\n\r\nFür Rückfragen zur Rechnung stehe ich gern zur Verfügung.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/yu1z1Ps3f8IJKqN3Zd2q3U0f\r\n\r\nViele Grüße\r\nBernd Krüger\r\nHausmeisterservice Krüger\r\n02452 9090\r\n"
+    "Guten Tag,\r\n\r\nunsere Rechnung (Nr. 2026-312) über 210,00 €, fällig am 05.11.2026, ist laut meinen Unterlagen noch offen.\r\n\r\nBitte überweisen Sie 210,00 € bis 16.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: 2026-312.\r\n\r\nFür Rückfragen zur Rechnung stehe ich gern zur Verfügung.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/8FpFYm__H69tyCnur9Uae58f\r\n\r\nViele Grüße\r\nBernd Krüger\r\nHausmeisterservice Krüger\r\n02452 9090\r\n"
    ],
    [
     "Tag 14 (Mon 09.11.)",
     "o.brueck@online.de",
     "Zahlungserinnerung: Rechnung 2026-313",
-    "Guten Tag Herr Otto Brück,\r\n\r\nunsere Rechnung (Nr. 2026-313) über 140,00 € war am 05.11.2026 fällig. Laut meinen Unterlagen ist die Rechnung noch offen.\r\n\r\nBitte überweisen Sie 140,00 € bis 16.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: 2026-313.\r\n\r\nHaben Sie Fragen zur Rechnung, melden Sie sich gern bei mir.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/v7pxqJQMPywTVf3PVw7i-b7E\r\n\r\nViele Grüße\r\nBernd Krüger\r\nHausmeisterservice Krüger\r\n02452 9090\r\n"
+    "Guten Tag Herr Otto Brück,\r\n\r\nunsere Rechnung (Nr. 2026-313) über 140,00 € war am 05.11.2026 fällig. Laut meinen Unterlagen ist die Rechnung noch offen.\r\n\r\nBitte überweisen Sie 140,00 € bis 16.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: 2026-313.\r\n\r\nHaben Sie Fragen zur Rechnung, melden Sie sich gern bei mir.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/Bx97uWXANBPDweaA9sauOr1V\r\n\r\nViele Grüße\r\nBernd Krüger\r\nHausmeisterservice Krüger\r\n02452 9090\r\n"
    ]
   ],
   "notifications": [
    [
     "Tag 14 (Mon 09.11.)",
     "Kurz gefragt: 4 Rechnungen: noch offen?",
-    "Hallo Bernd Krüger,\r\n\r\nBevor ich Zahlungserinnerungen schicke, frage ich dich, ob die Rechnungen noch offen sind. Dein Konto sehe ich nicht.\r\n\r\n• Rechnung 2026-310 an WEG Bahnhofstr. 5 über 380,00 € ist seit 05.11.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/3DJmq68VzhC46uEeOAVNfUCW80dAPpf3/send\r\n  Bezahlt:              https://app.locadas.de/f/3DJmq68VzhC46uEeOAVNfUCW80dAPpf3/done\r\n\r\n• Rechnung 2026-311 an Frau Erika Jansen über 95,00 € ist seit 05.11.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/M7js7Hp1BitxvLob6Q4wqTxlig2YF3Qg/send\r\n  Bezahlt:              https://app.locadas.de/f/M7js7Hp1BitxvLob6Q4wqTxlig2YF3Qg/done\r\n\r\n• Rechnung 2026-312 an Praxis Dr. Klein über 210,00 € ist seit 05.11.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/AqjnbpKYywhu5CFU5YWfxkdYBeeYyIyl/send\r\n  Bezahlt:              https://app.locadas.de/f/AqjnbpKYywhu5CFU5YWfxkdYBeeYyIyl/done\r\n\r\n• Rechnung 2026-313 an Herr Otto Brück über 140,00 € ist seit 05.11.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/uXKbHFenzZgiGkqjr9onIRvn8IIruzwy/send\r\n  Bezahlt:              https://app.locadas.de/f/uXKbHFenzZgiGkqjr9onIRvn8IIruzwy/done\r\n\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Bernd Krüger,\r\n\r\nBevor ich Zahlungserinnerungen schicke, frage ich dich, ob die Rechnungen noch offen sind. Dein Konto sehe ich nicht.\r\n\r\n• Rechnung 2026-310 an WEG Bahnhofstr. 5 über 380,00 € ist seit 05.11.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/5ZIsRF9vPjO8AbKGSXlQvSFwAOlS_VLY/send\r\n  Bezahlt:              https://app.locadas.de/f/5ZIsRF9vPjO8AbKGSXlQvSFwAOlS_VLY/done\r\n\r\n• Rechnung 2026-311 an Frau Erika Jansen über 95,00 € ist seit 05.11.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/NxUjGNkiizWv63guPzY0-K61Anna-Hdj/send\r\n  Bezahlt:              https://app.locadas.de/f/NxUjGNkiizWv63guPzY0-K61Anna-Hdj/done\r\n\r\n• Rechnung 2026-312 an Praxis Dr. Klein über 210,00 € ist seit 05.11.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/eu7DaRFtYAyIzW1QXVWM79EfjPBURfne/send\r\n  Bezahlt:              https://app.locadas.de/f/eu7DaRFtYAyIzW1QXVWM79EfjPBURfne/done\r\n\r\n• Rechnung 2026-313 an Herr Otto Brück über 140,00 € ist seit 05.11.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/MYPPs49tG4bVQOStb2AZ9Kjo89X16tlT/send\r\n  Bezahlt:              https://app.locadas.de/f/MYPPs49tG4bVQOStb2AZ9Kjo89X16tlT/done\r\n\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": []
  },
  {
   "key": "trockenbau",
@@ -1947,6 +2167,10 @@
    {
     "ok": true,
     "msg": "R-26-077: Betrag 26030.0 (erwartet 26030.0)"
+   },
+   {
+    "ok": true,
+    "msg": "R-26-077: Kundennummer ist nicht die eigene (–)"
    },
    {
     "ok": true,
@@ -1975,6 +2199,10 @@
    {
     "ok": true,
     "msg": "Tag 18 (Fri 13.11.): keine Weichspüler-/Drohformel in „Zahlungserinnerung: Rechnung R-26-077 Trockenbau Centro Park“ ()"
+   },
+   {
+    "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
    },
    {
     "ok": true,
@@ -2011,17 +2239,18 @@
     "Tag 18 (Fri 13.11.)",
     "rechnungseingang.centro@gu-bauprojekt.de",
     "Zahlungserinnerung: Rechnung R-26-077 Trockenbau Centro Park",
-    "Guten Tag Bauleitung Centro Park,\r\n\r\nunsere Rechnung (Nr. R-26-077 Trockenbau Centro Park) über 26.030,00 €, fällig am 09.11.2026, ist laut meinen Unterlagen noch offen. Sie hatten den Eingang am 28.10.2026 bestätigt.\r\n\r\nBitte überweisen Sie 26.030,00 € bis 20.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: R-26-077.\r\n\r\nFür Rückfragen zur Rechnung stehe ich gern zur Verfügung.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/kQPAv6_9MI81VdonYwKa-nJb\r\n\r\nViele Grüße\r\nPiotr Nowak\r\nTB Nowak Trockenbau\r\n0208 112233\r\n"
+    "Guten Tag Bauleitung Centro Park,\r\n\r\nunsere Rechnung (Nr. R-26-077 Trockenbau Centro Park) über 26.030,00 €, fällig am 09.11.2026, ist laut meinen Unterlagen noch offen. Sie hatten den Eingang am 28.10.2026 bestätigt.\r\n\r\nBitte überweisen Sie 26.030,00 € bis 20.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: R-26-077.\r\n\r\nFür Rückfragen zur Rechnung stehe ich gern zur Verfügung.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/q6sxFoeIBbEeW3mBXvdan3rn\r\n\r\nViele Grüße\r\nPiotr Nowak\r\nTB Nowak Trockenbau\r\n0208 112233\r\n"
    ]
   ],
   "notifications": [
    [
     "Tag 18 (Fri 13.11.)",
     "Noch offen? Rechnung R-26-077 von Bauleitung Centro Park",
-    "Hallo Piotr Nowak,\r\n\r\nRechnung R-26-077 an Bauleitung Centro Park über 26.030,00 € ist seit 09.11.2026 fällig. Noch offen?\r\n\r\nNoch offen, Zahlungserinnerung schicken: https://app.locadas.de/f/407N_H-trgUtnY0wi--Vff5s4xurDKcu/send\r\nIst bezahlt, nicht erinnern:            https://app.locadas.de/f/407N_H-trgUtnY0wi--Vff5s4xurDKcu/done\r\n\r\nErst wenn du „Noch offen“ klickst, schicke ich die Zahlungserinnerung in deinem Namen. Ich sehe dein Konto nicht, deshalb frage ich vor jeder Erinnerung.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Piotr Nowak,\r\n\r\nRechnung R-26-077 an Bauleitung Centro Park über 26.030,00 € ist seit 09.11.2026 fällig. Noch offen?\r\n\r\nNoch offen, Zahlungserinnerung schicken: https://app.locadas.de/f/UrqRLm-B21N-jq1UihOc4ajSfzj4EaaC/send\r\nIst bezahlt, nicht erinnern:            https://app.locadas.de/f/UrqRLm-B21N-jq1UihOc4ajSfzj4EaaC/done\r\n\r\nErst wenn du „Noch offen“ klickst, schicke ich die Zahlungserinnerung in deinem Namen. Ich sehe dein Konto nicht, deshalb frage ich vor jeder Erinnerung.\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": []
  },
  {
   "key": "pv",
@@ -2045,6 +2274,10 @@
    {
     "ok": true,
     "msg": "HERO-A-1093: Betrag 22729.0 (erwartet 22729.0)"
+   },
+   {
+    "ok": true,
+    "msg": "HERO-A-1093: Kundennummer ist nicht die eigene (–)"
    },
    {
     "ok": true,
@@ -2100,6 +2333,10 @@
    },
    {
     "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
+   },
+   {
+    "ok": true,
     "msg": "Höchstens 4 Mails von uns an den Betrieb pro Tag (max 1)"
    },
    {
@@ -2137,26 +2374,26 @@
     "Tag 0 (Mon 26.10.)",
     "anna.vogel@posteo.de",
     "Ihr PV-Angebot",
-    "Guten Tag Anna Vogel,\r\n\r\nam 23.10.2026 habe ich Ihnen unser Angebot (Nr. HERO-A-1093 PV) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/IawEmH7zlMkVZcA8dDXwkAYu\r\n\r\nViele Grüße\r\nJan Schmitz\r\nElektro Schmitz\r\n0228 334455\r\n"
+    "Guten Tag Anna Vogel,\r\n\r\nam 23.10.2026 habe ich Ihnen unser Angebot (Nr. HERO-A-1093 PV) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/ynm4WAmFy8kv91p9oMVt-_yu\r\n\r\nViele Grüße\r\nJan Schmitz\r\nElektro Schmitz\r\n0228 334455\r\n"
    ],
    [
     "Tag 7 (Mon 02.11.)",
     "anna.vogel@posteo.de",
     "Ihr PV-Angebot",
-    "Guten Tag Anna Vogel,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. HERO-A-1093 PV). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/IawEmH7zlMkVZcA8dDXwkAYu\r\n\r\nViele Grüße\r\nJan Schmitz\r\nElektro Schmitz\r\n0228 334455\r\n"
+    "Guten Tag Anna Vogel,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. HERO-A-1093 PV). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/ynm4WAmFy8kv91p9oMVt-_yu\r\n\r\nViele Grüße\r\nJan Schmitz\r\nElektro Schmitz\r\n0228 334455\r\n"
    ],
    [
     "Tag 14 (Mon 09.11.)",
     "anna.vogel@posteo.de",
     "Ihr PV-Angebot",
-    "Guten Tag Anna Vogel,\r\n\r\nfalls Sie noch Fragen zum Angebot (Nr. HERO-A-1093 PV) haben, helfe ich Ihnen gern weiter. Das Angebot gilt bis 30.11.2026.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0228 334455.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/IawEmH7zlMkVZcA8dDXwkAYu\r\n\r\nViele Grüße\r\nJan Schmitz\r\nElektro Schmitz\r\n0228 334455\r\n"
+    "Guten Tag Anna Vogel,\r\n\r\nfalls Sie noch Fragen zum Angebot (Nr. HERO-A-1093 PV) haben, helfe ich Ihnen gern weiter. Das Angebot gilt bis 30.11.2026.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0228 334455.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/ynm4WAmFy8kv91p9oMVt-_yu\r\n\r\nViele Grüße\r\nJan Schmitz\r\nElektro Schmitz\r\n0228 334455\r\n"
    ]
   ],
   "notifications": [
    [
     "Tag 0 (Mon 26.10.)",
     "Nachfassen bei Anna Vogel? (Angebot HERO-A-1093)",
-    "Hallo Jan Schmitz,\r\n\r\nich würde jetzt bei Anna Vogel nachfassen (Angebot HERO-A-1093 über 22.729,00 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Ihr PV-Angebot\r\n---\r\nGuten Tag Anna Vogel,\r\n\r\nam 23.10.2026 habe ich Ihnen unser Angebot (Nr. HERO-A-1093 PV) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/IawEmH7zlMkVZcA8dDXwkAYu\r\n\r\nViele Grüße\r\nJan Schmitz\r\nElektro Schmitz\r\n0228 334455\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/QUj2weS4tN-0D34ujc7dw_5VpbN6lI4z/send\r\nDiesmal nicht: https://app.locadas.de/f/QUj2weS4tN-0D34ujc7dw_5VpbN6lI4z/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/QUj2weS4tN-0D34ujc7dw_5VpbN6lI4z/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Jan Schmitz,\r\n\r\nich würde jetzt bei Anna Vogel nachfassen (Angebot HERO-A-1093 über 22.729,00 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Ihr PV-Angebot\r\n---\r\nGuten Tag Anna Vogel,\r\n\r\nam 23.10.2026 habe ich Ihnen unser Angebot (Nr. HERO-A-1093 PV) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/ynm4WAmFy8kv91p9oMVt-_yu\r\n\r\nViele Grüße\r\nJan Schmitz\r\nElektro Schmitz\r\n0228 334455\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/7ohMXw0LMk3kflRALBQziUcM_wAGAALM/send\r\nDiesmal nicht: https://app.locadas.de/f/7ohMXw0LMk3kflRALBQziUcM_wAGAALM/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/7ohMXw0LMk3kflRALBQziUcM_wAGAALM/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 1 (Tue 27.10.)",
@@ -2166,15 +2403,16 @@
    [
     "Tag 7 (Mon 02.11.)",
     "Nachfassen bei Anna Vogel? (Angebot HERO-A-1093)",
-    "Hallo Jan Schmitz,\r\n\r\nich würde jetzt bei Anna Vogel nachfassen (Angebot HERO-A-1093 über 22.729,00 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Ihr PV-Angebot\r\n---\r\nGuten Tag Anna Vogel,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. HERO-A-1093 PV). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/IawEmH7zlMkVZcA8dDXwkAYu\r\n\r\nViele Grüße\r\nJan Schmitz\r\nElektro Schmitz\r\n0228 334455\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/XF550bePyQJ_oBdKlbw3uJyzJpoXgJgD/send\r\nDiesmal nicht: https://app.locadas.de/f/XF550bePyQJ_oBdKlbw3uJyzJpoXgJgD/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/XF550bePyQJ_oBdKlbw3uJyzJpoXgJgD/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Jan Schmitz,\r\n\r\nich würde jetzt bei Anna Vogel nachfassen (Angebot HERO-A-1093 über 22.729,00 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Ihr PV-Angebot\r\n---\r\nGuten Tag Anna Vogel,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. HERO-A-1093 PV). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/ynm4WAmFy8kv91p9oMVt-_yu\r\n\r\nViele Grüße\r\nJan Schmitz\r\nElektro Schmitz\r\n0228 334455\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/UYMf2OMAFm8V2PD-69VOMChDmd62OQvx/send\r\nDiesmal nicht: https://app.locadas.de/f/UYMf2OMAFm8V2PD-69VOMChDmd62OQvx/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/UYMf2OMAFm8V2PD-69VOMChDmd62OQvx/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 14 (Mon 09.11.)",
     "Nachfassen bei Anna Vogel? (Angebot HERO-A-1093)",
-    "Hallo Jan Schmitz,\r\n\r\nich würde jetzt bei Anna Vogel nachfassen (Angebot HERO-A-1093 über 22.729,00 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Ihr PV-Angebot\r\n---\r\nGuten Tag Anna Vogel,\r\n\r\nfalls Sie noch Fragen zum Angebot (Nr. HERO-A-1093 PV) haben, helfe ich Ihnen gern weiter. Das Angebot gilt bis 30.11.2026.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0228 334455.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/IawEmH7zlMkVZcA8dDXwkAYu\r\n\r\nViele Grüße\r\nJan Schmitz\r\nElektro Schmitz\r\n0228 334455\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/whTXEviFK_m7gNNhzOOiPVzmUEUNONS8/send\r\nDiesmal nicht: https://app.locadas.de/f/whTXEviFK_m7gNNhzOOiPVzmUEUNONS8/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/whTXEviFK_m7gNNhzOOiPVzmUEUNONS8/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Jan Schmitz,\r\n\r\nich würde jetzt bei Anna Vogel nachfassen (Angebot HERO-A-1093 über 22.729,00 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Ihr PV-Angebot\r\n---\r\nGuten Tag Anna Vogel,\r\n\r\nfalls Sie noch Fragen zum Angebot (Nr. HERO-A-1093 PV) haben, helfe ich Ihnen gern weiter. Das Angebot gilt bis 30.11.2026.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0228 334455.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/ynm4WAmFy8kv91p9oMVt-_yu\r\n\r\nViele Grüße\r\nJan Schmitz\r\nElektro Schmitz\r\n0228 334455\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/37gD_LcK2aFzoNtZsRODaUGjZQT5OoIk/send\r\nDiesmal nicht: https://app.locadas.de/f/37gD_LcK2aFzoNtZsRODaUGjZQT5OoIk/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/37gD_LcK2aFzoNtZsRODaUGjZQT5OoIk/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": []
  },
  {
   "key": "schreiner",
@@ -2194,6 +2432,10 @@
    {
     "ok": true,
     "msg": "Angebot Einbauschrank: Kunde familie.kurz@gmx.de (erwartet familie.kurz@gmx.de)"
+   },
+   {
+    "ok": true,
+    "msg": ": Kundennummer ist nicht die eigene (–)"
    },
    {
     "ok": true,
@@ -2241,6 +2483,10 @@
    },
    {
     "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
+   },
+   {
+    "ok": true,
     "msg": "Höchstens 4 Mails von uns an den Betrieb pro Tag (max 1)"
    },
    {
@@ -2264,7 +2510,7 @@
    }
   ],
   "timeline": [
-   "Tag 0: Postfach verbunden (eigene Domain (Server automatisch gesucht)), Erst-Scan 1 Dokumente in 0 s",
+   "Tag 0: Postfach verbunden (eigene Domain (Server automatisch gesucht)), Erst-Scan 1 Dokumente in 1 s",
    "Tag 0 (Mon 26.10.): 0 Nachfass-Mails gesendet, 1 zur Freigabe, 0 wegen Tageslimit verschoben",
    "Tag 0 (Mon 26.10.): Inhaber entscheidet send für Angebot Einbauschrank",
    "Tag 2 (Wed 28.10.): 1 Nachfass-Mails gesendet, 0 zur Freigabe, 0 wegen Tageslimit verschoben",
@@ -2276,44 +2522,45 @@
     "Tag 2 (Wed 28.10.)",
     "familie.kurz@gmx.de",
     "Angebot Einbauschrank",
-    "Guten Tag Familie Kurz,\r\n\r\nam 22.10.2026 habe ich Ihnen unser Angebot (Einbauschrank) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/mJ_WA3f8x7ouDfhpBcXh57kY\r\n\r\nViele Grüße\r\nHans Berger\r\nSchreinerei Holzwerk Berger\r\n02166 5050\r\n"
+    "Guten Tag Familie Kurz,\r\n\r\nam 22.10.2026 habe ich Ihnen unser Angebot (Einbauschrank) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/WVnASLJEjtXz8NCmbKaTMT3m\r\n\r\nViele Grüße\r\nHans Berger\r\nSchreinerei Holzwerk Berger\r\n02166 5050\r\n"
    ],
    [
     "Tag 8 (Tue 03.11.)",
     "familie.kurz@gmx.de",
     "Angebot Einbauschrank",
-    "Guten Tag Familie Kurz,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Einbauschrank). Falls Sie sich schon entschieden haben, freue ich mich über eine kurze Rückmeldung, auch wenn es nichts wird. Dann kann ich besser planen.\r\n\r\nFalls Sie noch überlegen: Gern besprechen wir Umfang oder Termin, damit es für Sie passt.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/mJ_WA3f8x7ouDfhpBcXh57kY\r\n\r\nViele Grüße\r\nHans Berger\r\nSchreinerei Holzwerk Berger\r\n02166 5050\r\n"
+    "Guten Tag Familie Kurz,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Einbauschrank). Falls Sie sich schon entschieden haben, freue ich mich über eine kurze Rückmeldung, auch wenn es nichts wird. Dann kann ich besser planen.\r\n\r\nFalls Sie noch überlegen: Gern besprechen wir Umfang oder Termin, damit es für Sie passt.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/WVnASLJEjtXz8NCmbKaTMT3m\r\n\r\nViele Grüße\r\nHans Berger\r\nSchreinerei Holzwerk Berger\r\n02166 5050\r\n"
    ],
    [
     "Tag 15 (Tue 10.11.)",
     "familie.kurz@gmx.de",
     "Angebot Einbauschrank",
-    "Guten Tag Familie Kurz,\r\n\r\nzu unserem Angebot (Einbauschrank) habe ich bisher nichts von Ihnen gehört. Vielleicht passt es gerade nicht oder Sie haben sich anders entschieden, beides ist völlig in Ordnung.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 02166 5050.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/mJ_WA3f8x7ouDfhpBcXh57kY\r\n\r\nViele Grüße\r\nHans Berger\r\nSchreinerei Holzwerk Berger\r\n02166 5050\r\n"
+    "Guten Tag Familie Kurz,\r\n\r\nzu unserem Angebot (Einbauschrank) habe ich bisher nichts von Ihnen gehört. Vielleicht passt es gerade nicht oder Sie haben sich anders entschieden, beides ist völlig in Ordnung.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 02166 5050.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/WVnASLJEjtXz8NCmbKaTMT3m\r\n\r\nViele Grüße\r\nHans Berger\r\nSchreinerei Holzwerk Berger\r\n02166 5050\r\n"
    ]
   ],
   "notifications": [
    [
     "Tag 0 (Mon 26.10.)",
     "Schon erledigt? Familie Kurz (Angebot Einbauschrank)",
-    "Hallo Hans Berger,\r\n\r\nDieses Angebot Einbauschrank hast du am 22.10.2026 an Familie Kurz verschickt, also vor deinem Start bei uns. Ist es schon erledigt?\r\n\r\nBitte nachfassen: https://app.locadas.de/f/9IiBCV7iMCCHFSUAF87dDilM7h6H7AW7/send\r\nErledigt, nicht nachfassen: https://app.locadas.de/f/9IiBCV7iMCCHFSUAF87dDilM7h6H7AW7/done\r\n\r\nErst wenn du „Bitte nachfassen“ klickst, plane ich eine Nachfass-Mail. Du siehst sie vorher noch.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Hans Berger,\r\n\r\nDieses Angebot Einbauschrank hast du am 22.10.2026 an Familie Kurz verschickt, also vor deinem Start bei uns. Ist es schon erledigt?\r\n\r\nBitte nachfassen: https://app.locadas.de/f/FJUr238MKSWu__JnaxAbkF7vMrdKo3fF/send\r\nErledigt, nicht nachfassen: https://app.locadas.de/f/FJUr238MKSWu__JnaxAbkF7vMrdKo3fF/done\r\n\r\nErst wenn du „Bitte nachfassen“ klickst, plane ich eine Nachfass-Mail. Du siehst sie vorher noch.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 1 (Tue 27.10.)",
     "Heute nachfassen: Familie Kurz",
-    "Hallo Hans Berger,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Familie Kurz: Angebot Einbauschrank (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/9IiBCV7iMCCHFSUAF87dDilM7h6H7AW7/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Hans Berger,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Familie Kurz: Angebot Einbauschrank (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/FJUr238MKSWu__JnaxAbkF7vMrdKo3fF/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 7 (Mon 02.11.)",
     "Heute nachfassen: Familie Kurz",
-    "Hallo Hans Berger,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Familie Kurz: Angebot Einbauschrank (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/y0_Ze9nJDdpQLm3UpXV05KEk-Zk13YJB/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Hans Berger,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Familie Kurz: Angebot Einbauschrank (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/nyLSLlXZF24CeuglnWg5MBIomUPTSri7/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 14 (Mon 09.11.)",
     "Heute nachfassen: Familie Kurz",
-    "Hallo Hans Berger,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Familie Kurz: Angebot Einbauschrank (Nachfass-Mail 3 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/wYfyu1p3Bow2RrDi2rUceoKqjvO89qn8/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Hans Berger,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Familie Kurz: Angebot Einbauschrank (Nachfass-Mail 3 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/eNxHb-ZfJhA9NjDuo5lHLsyR8QU-PHcv/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": []
  },
  {
   "key": "fenster",
@@ -2337,6 +2584,10 @@
    {
     "ok": true,
     "msg": "AN-26-0950: Betrag 10388.7 (erwartet 10388.7)"
+   },
+   {
+    "ok": true,
+    "msg": "AN-26-0950: Kundennummer ist nicht die eigene (–)"
    },
    {
     "ok": true,
@@ -2392,6 +2643,10 @@
    },
    {
     "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
+   },
+   {
+    "ok": true,
     "msg": "Höchstens 4 Mails von uns an den Betrieb pro Tag (max 1)"
    },
    {
@@ -2428,25 +2683,25 @@
     "Tag 7 (Mon 02.11.)",
     "martin.roth@gmail.com",
     "Angebot AN-26-0950 Fenster (überarbeitet)",
-    "Guten Tag Martin Roth,\r\n\r\nam 27.10.2026 habe ich Ihnen unser Angebot (Nr. AN-26-0950 Fenster) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/2QQYYB3xP7wnLJB5aA7FnH3h\r\n\r\nViele Grüße\r\nClaudia Lindner\r\nFensterbau Lindner GmbH\r\n02152 8080\r\n"
+    "Guten Tag Martin Roth,\r\n\r\nam 27.10.2026 habe ich Ihnen unser Angebot (Nr. AN-26-0950 Fenster) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/NICSmQglGh3fj9In3cT4BzCA\r\n\r\nViele Grüße\r\nClaudia Lindner\r\nFensterbau Lindner GmbH\r\n02152 8080\r\n"
    ],
    [
     "Tag 15 (Tue 10.11.)",
     "martin.roth@gmail.com",
     "Angebot AN-26-0950 Fenster (überarbeitet)",
-    "Guten Tag Martin Roth,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. AN-26-0950 Fenster). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/2QQYYB3xP7wnLJB5aA7FnH3h\r\n\r\nViele Grüße\r\nClaudia Lindner\r\nFensterbau Lindner GmbH\r\n02152 8080\r\n"
+    "Guten Tag Martin Roth,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. AN-26-0950 Fenster). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/NICSmQglGh3fj9In3cT4BzCA\r\n\r\nViele Grüße\r\nClaudia Lindner\r\nFensterbau Lindner GmbH\r\n02152 8080\r\n"
    ]
   ],
   "notifications": [
    [
     "Tag 0 (Mon 26.10.)",
     "Schon erledigt? Martin Roth (Angebot AN-26-0950)",
-    "Hallo Claudia Lindner,\r\n\r\nDieses Angebot AN-26-0950 über 10.388,70 € hast du am 16.10.2026 an Martin Roth verschickt, also vor deinem Start bei uns. Ist es schon erledigt?\r\n\r\nBitte nachfassen: https://app.locadas.de/f/zEMI-OPGAtTWVZvSHxHPalPBGHPnChCv/send\r\nErledigt, nicht nachfassen: https://app.locadas.de/f/zEMI-OPGAtTWVZvSHxHPalPBGHPnChCv/done\r\n\r\nErst wenn du „Bitte nachfassen“ klickst, plane ich eine Nachfass-Mail. Du siehst sie vorher noch.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Claudia Lindner,\r\n\r\nDieses Angebot AN-26-0950 über 10.388,70 € hast du am 16.10.2026 an Martin Roth verschickt, also vor deinem Start bei uns. Ist es schon erledigt?\r\n\r\nBitte nachfassen: https://app.locadas.de/f/EnGDz0G5UU5K2etpIcIgCy4Hi6hKX6nD/send\r\nErledigt, nicht nachfassen: https://app.locadas.de/f/EnGDz0G5UU5K2etpIcIgCy4Hi6hKX6nD/done\r\n\r\nErst wenn du „Bitte nachfassen“ klickst, plane ich eine Nachfass-Mail. Du siehst sie vorher noch.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 4 (Fri 30.10.)",
     "Heute nachfassen: Martin Roth",
-    "Hallo Claudia Lindner,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Martin Roth: Angebot AN-26-0950 über 9.960,30 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/zEMI-OPGAtTWVZvSHxHPalPBGHPnChCv/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Claudia Lindner,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Martin Roth: Angebot AN-26-0950 über 9.960,30 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/EnGDz0G5UU5K2etpIcIgCy4Hi6hKX6nD/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 8 (Tue 03.11.)",
@@ -2456,15 +2711,16 @@
    [
     "Tag 14 (Mon 09.11.)",
     "Heute nachfassen: Martin Roth",
-    "Hallo Claudia Lindner,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Martin Roth: Angebot AN-26-0950 über 9.960,30 € (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/Y_-zu3vNbaraG_3TTNrm7vc_gz-mvvHj/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Claudia Lindner,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Martin Roth: Angebot AN-26-0950 über 9.960,30 € (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/Kknaw1XPxf60XW7qMH2B9VGF_uiB2Aqv/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 21 (Mon 16.11.)",
     "Heute nachfassen: Martin Roth",
-    "Hallo Claudia Lindner,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Martin Roth: Angebot AN-26-0950 über 9.960,30 € (Nachfass-Mail 3 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/5aNb3uex4VlTw-bVQWv08OwipAeRj3JO/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Claudia Lindner,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Martin Roth: Angebot AN-26-0950 über 9.960,30 € (Nachfass-Mail 3 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/NSZNtTWCYvdAuTRJfVg8-Pu6kMzPViEp/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": []
  },
  {
   "key": "heizung",
@@ -2488,6 +2744,10 @@
    {
     "ok": true,
     "msg": "2026-0233: Betrag 19992.0 (erwartet 19992.0)"
+   },
+   {
+    "ok": true,
+    "msg": "2026-0233: Kundennummer ist nicht die eigene (–)"
    },
    {
     "ok": true,
@@ -2547,6 +2807,10 @@
    },
    {
     "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
+   },
+   {
+    "ok": true,
     "msg": "Höchstens 4 Mails von uns an den Betrieb pro Tag (max 1)"
    },
    {
@@ -2587,31 +2851,31 @@
     "Tag 7 (Mon 02.11.)",
     "gisela.hoppe@t-online.de",
     "Angebot Wärmepumpe 2026-0233",
-    "Guten Tag Gisela Hoppe,\r\n\r\nam 22.10.2026 habe ich Ihnen unser Angebot (Nr. 2026-0233 Wärmepumpe) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/haxzrd5lRgdWrdSHf4VNAIi5\r\n\r\nViele Grüße\r\nKemal Özdemir\r\nHeizung & Bad Özdemir\r\n0203 4455667\r\n"
+    "Guten Tag Gisela Hoppe,\r\n\r\nam 22.10.2026 habe ich Ihnen unser Angebot (Nr. 2026-0233 Wärmepumpe) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/EENRb3Sql5dM1Xse_5NOs3dh\r\n\r\nViele Grüße\r\nKemal Özdemir\r\nHeizung & Bad Özdemir\r\n0203 4455667\r\n"
    ],
    [
     "Tag 14 (Mon 09.11.)",
     "gisela.hoppe@t-online.de",
     "Angebot Wärmepumpe 2026-0233",
-    "Guten Tag Gisela Hoppe,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. 2026-0233 Wärmepumpe). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/haxzrd5lRgdWrdSHf4VNAIi5\r\n\r\nViele Grüße\r\nKemal Özdemir\r\nHeizung & Bad Özdemir\r\n0203 4455667\r\n"
+    "Guten Tag Gisela Hoppe,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. 2026-0233 Wärmepumpe). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/EENRb3Sql5dM1Xse_5NOs3dh\r\n\r\nViele Grüße\r\nKemal Özdemir\r\nHeizung & Bad Özdemir\r\n0203 4455667\r\n"
    ],
    [
     "Tag 18 (Fri 13.11.)",
     "gisela.hoppe@t-online.de",
     "Angebot Wärmepumpe 2026-0233",
-    "Guten Tag Gisela Hoppe,\r\n\r\nfalls Sie noch Fragen zum Angebot (Nr. 2026-0233 Wärmepumpe) haben, helfe ich Ihnen gern weiter.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0203 4455667.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/haxzrd5lRgdWrdSHf4VNAIi5\r\n\r\nViele Grüße\r\nKemal Özdemir\r\nHeizung & Bad Özdemir\r\n0203 4455667\r\n"
+    "Guten Tag Gisela Hoppe,\r\n\r\nfalls Sie noch Fragen zum Angebot (Nr. 2026-0233 Wärmepumpe) haben, helfe ich Ihnen gern weiter.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0203 4455667.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/EENRb3Sql5dM1Xse_5NOs3dh\r\n\r\nViele Grüße\r\nKemal Özdemir\r\nHeizung & Bad Özdemir\r\n0203 4455667\r\n"
    ]
   ],
   "notifications": [
    [
     "Tag 0 (Mon 26.10.)",
     "Schon erledigt? Gisela Hoppe (Angebot 2026-0233)",
-    "Hallo Kemal Özdemir,\r\n\r\nDieses Angebot 2026-0233 über 19.992,00 € hast du am 22.10.2026 an Gisela Hoppe verschickt, also vor deinem Start bei uns. Ist es schon erledigt?\r\n\r\nBitte nachfassen: https://app.locadas.de/f/ny4eUVSeG_OHl2fIXetiqIYwWBdXt28q/send\r\nErledigt, nicht nachfassen: https://app.locadas.de/f/ny4eUVSeG_OHl2fIXetiqIYwWBdXt28q/done\r\n\r\nErst wenn du „Bitte nachfassen“ klickst, plane ich eine Nachfass-Mail. Du siehst sie vorher noch.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Kemal Özdemir,\r\n\r\nDieses Angebot 2026-0233 über 19.992,00 € hast du am 22.10.2026 an Gisela Hoppe verschickt, also vor deinem Start bei uns. Ist es schon erledigt?\r\n\r\nBitte nachfassen: https://app.locadas.de/f/tFqj5aLkKcRRQLzb2gK1SR5nIPTWn8V-/send\r\nErledigt, nicht nachfassen: https://app.locadas.de/f/tFqj5aLkKcRRQLzb2gK1SR5nIPTWn8V-/done\r\n\r\nErst wenn du „Bitte nachfassen“ klickst, plane ich eine Nachfass-Mail. Du siehst sie vorher noch.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 7 (Mon 02.11.)",
     "Nachfassen bei Gisela Hoppe? (Angebot 2026-0233)",
-    "Hallo Kemal Özdemir,\r\n\r\nich würde jetzt bei Gisela Hoppe nachfassen (Angebot 2026-0233 über 19.992,00 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Angebot Wärmepumpe 2026-0233\r\n---\r\nGuten Tag Gisela Hoppe,\r\n\r\nam 22.10.2026 habe ich Ihnen unser Angebot (Nr. 2026-0233 Wärmepumpe) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/haxzrd5lRgdWrdSHf4VNAIi5\r\n\r\nViele Grüße\r\nKemal Özdemir\r\nHeizung & Bad Özdemir\r\n0203 4455667\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/ny4eUVSeG_OHl2fIXetiqIYwWBdXt28q/send\r\nDiesmal nicht: https://app.locadas.de/f/ny4eUVSeG_OHl2fIXetiqIYwWBdXt28q/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/ny4eUVSeG_OHl2fIXetiqIYwWBdXt28q/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Kemal Özdemir,\r\n\r\nich würde jetzt bei Gisela Hoppe nachfassen (Angebot 2026-0233 über 19.992,00 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Angebot Wärmepumpe 2026-0233\r\n---\r\nGuten Tag Gisela Hoppe,\r\n\r\nam 22.10.2026 habe ich Ihnen unser Angebot (Nr. 2026-0233 Wärmepumpe) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/EENRb3Sql5dM1Xse_5NOs3dh\r\n\r\nViele Grüße\r\nKemal Özdemir\r\nHeizung & Bad Özdemir\r\n0203 4455667\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/tFqj5aLkKcRRQLzb2gK1SR5nIPTWn8V-/send\r\nDiesmal nicht: https://app.locadas.de/f/tFqj5aLkKcRRQLzb2gK1SR5nIPTWn8V-/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/tFqj5aLkKcRRQLzb2gK1SR5nIPTWn8V-/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 8 (Tue 03.11.)",
@@ -2621,15 +2885,16 @@
    [
     "Tag 14 (Mon 09.11.)",
     "Nachfassen bei Gisela Hoppe? (Angebot 2026-0233)",
-    "Hallo Kemal Özdemir,\r\n\r\nich würde jetzt bei Gisela Hoppe nachfassen (Angebot 2026-0233 über 19.992,00 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Angebot Wärmepumpe 2026-0233\r\n---\r\nGuten Tag Gisela Hoppe,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. 2026-0233 Wärmepumpe). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/haxzrd5lRgdWrdSHf4VNAIi5\r\n\r\nViele Grüße\r\nKemal Özdemir\r\nHeizung & Bad Özdemir\r\n0203 4455667\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/74-YxAgYhkNEC-qc3RYFOhEpzhYIuPCg/send\r\nDiesmal nicht: https://app.locadas.de/f/74-YxAgYhkNEC-qc3RYFOhEpzhYIuPCg/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/74-YxAgYhkNEC-qc3RYFOhEpzhYIuPCg/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Kemal Özdemir,\r\n\r\nich würde jetzt bei Gisela Hoppe nachfassen (Angebot 2026-0233 über 19.992,00 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Angebot Wärmepumpe 2026-0233\r\n---\r\nGuten Tag Gisela Hoppe,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. 2026-0233 Wärmepumpe). Falls Sie noch Fragen zum Angebot haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\r\n\r\nLassen Sie sich ruhig die Zeit, die Sie brauchen.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/EENRb3Sql5dM1Xse_5NOs3dh\r\n\r\nViele Grüße\r\nKemal Özdemir\r\nHeizung & Bad Özdemir\r\n0203 4455667\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/yi_G2VJs5vyoB-wyEcT4g4rjJZ_vkQLv/send\r\nDiesmal nicht: https://app.locadas.de/f/yi_G2VJs5vyoB-wyEcT4g4rjJZ_vkQLv/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/yi_G2VJs5vyoB-wyEcT4g4rjJZ_vkQLv/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 18 (Fri 13.11.)",
     "Nachfassen bei Gisela Hoppe? (Angebot 2026-0233)",
-    "Hallo Kemal Özdemir,\r\n\r\nich würde jetzt bei Gisela Hoppe nachfassen (Angebot 2026-0233 über 19.992,00 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Angebot Wärmepumpe 2026-0233\r\n---\r\nGuten Tag Gisela Hoppe,\r\n\r\nfalls Sie noch Fragen zum Angebot (Nr. 2026-0233 Wärmepumpe) haben, helfe ich Ihnen gern weiter.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0203 4455667.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/haxzrd5lRgdWrdSHf4VNAIi5\r\n\r\nViele Grüße\r\nKemal Özdemir\r\nHeizung & Bad Özdemir\r\n0203 4455667\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/P4sx80QMLBT62yQczehjWOLxFrkEo1fN/send\r\nDiesmal nicht: https://app.locadas.de/f/P4sx80QMLBT62yQczehjWOLxFrkEo1fN/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/P4sx80QMLBT62yQczehjWOLxFrkEo1fN/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Kemal Özdemir,\r\n\r\nich würde jetzt bei Gisela Hoppe nachfassen (Angebot 2026-0233 über 19.992,00 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Angebot Wärmepumpe 2026-0233\r\n---\r\nGuten Tag Gisela Hoppe,\r\n\r\nfalls Sie noch Fragen zum Angebot (Nr. 2026-0233 Wärmepumpe) haben, helfe ich Ihnen gern weiter.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0203 4455667.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/EENRb3Sql5dM1Xse_5NOs3dh\r\n\r\nViele Grüße\r\nKemal Özdemir\r\nHeizung & Bad Özdemir\r\n0203 4455667\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/GIQqLfhvu5It8WH4rEADDYh2S8M5GijS/send\r\nDiesmal nicht: https://app.locadas.de/f/GIQqLfhvu5It8WH4rEADDYh2S8M5GijS/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/GIQqLfhvu5It8WH4rEADDYh2S8M5GijS/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": []
  },
  {
   "key": "reinigung",
@@ -2785,6 +3050,54 @@
    {
     "ok": true,
     "msg": "GR-2610-012: Betrag 2052.75 (erwartet 2052.75)"
+   },
+   {
+    "ok": true,
+    "msg": "GR-2610-001: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "GR-2610-002: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "GR-2610-003: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "GR-2610-004: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "GR-2610-005: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "GR-2610-006: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "GR-2610-007: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "GR-2610-008: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "GR-2610-009: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "GR-2610-010: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "GR-2610-011: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
+    "msg": "GR-2610-012: Kundennummer ist nicht die eigene (–)"
    },
    {
     "ok": true,
@@ -3024,6 +3337,10 @@
    },
    {
     "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
+   },
+   {
+    "ok": true,
     "msg": "Höchstens 4 Mails von uns an den Betrieb pro Tag (max 3)"
    },
    {
@@ -3217,44 +3534,44 @@
     "Tag 0 (Mon 26.10.)",
     "buchhaltung@kunde10-ge.de",
     "Zahlungserinnerung: Rechnung GR-2610-010 Unterhaltsreinigung September",
-    "Guten Tag Buchhaltung Kunde 10,\r\n\r\nunsere Rechnung (Nr. GR-2610-010 Unterhaltsreinigung September) über 1.874,25 €, fällig am 15.10.2026, ist laut meinen Unterlagen noch offen.\r\n\r\nBitte überweisen Sie 1.874,25 € bis 02.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: GR-2610-010.\r\n\r\nFür Rückfragen zur Rechnung stehe ich gern zur Verfügung.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/sbMvfMJUPIZ_-wfMyBeodODB\r\n\r\nViele Grüße\r\nSandra Kolb\r\nClean Pro Gebäudeservice GmbH\r\n0209 900800\r\n"
+    "Guten Tag Buchhaltung Kunde 10,\r\n\r\nunsere Rechnung (Nr. GR-2610-010 Unterhaltsreinigung September) über 1.874,25 €, fällig am 15.10.2026, ist laut meinen Unterlagen noch offen.\r\n\r\nBitte überweisen Sie 1.874,25 € bis 02.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: GR-2610-010.\r\n\r\nFür Rückfragen zur Rechnung stehe ich gern zur Verfügung.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/LE-T6d6_udSRFM2XFGvHbnDT\r\n\r\nViele Grüße\r\nSandra Kolb\r\nClean Pro Gebäudeservice GmbH\r\n0209 900800\r\n"
    ],
    [
     "Tag 0 (Mon 26.10.)",
     "buchhaltung@kunde11-ge.de",
     "Zahlungserinnerung: Rechnung GR-2610-011 Unterhaltsreinigung September",
-    "Guten Tag Buchhaltung Kunde 11,\r\n\r\nunsere Rechnung (Nr. GR-2610-011 Unterhaltsreinigung September) über 1.963,50 €, fällig am 15.10.2026, ist laut meinen Unterlagen noch offen.\r\n\r\nBitte überweisen Sie 1.963,50 € bis 02.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: GR-2610-011.\r\n\r\nFür Rückfragen zur Rechnung stehe ich gern zur Verfügung.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/4PmbJ308EeEei0jCQRGPKm6X\r\n\r\nViele Grüße\r\nSandra Kolb\r\nClean Pro Gebäudeservice GmbH\r\n0209 900800\r\n"
+    "Guten Tag Buchhaltung Kunde 11,\r\n\r\nunsere Rechnung (Nr. GR-2610-011 Unterhaltsreinigung September) über 1.963,50 €, fällig am 15.10.2026, ist laut meinen Unterlagen noch offen.\r\n\r\nBitte überweisen Sie 1.963,50 € bis 02.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: GR-2610-011.\r\n\r\nFür Rückfragen zur Rechnung stehe ich gern zur Verfügung.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/5hHaJZtkJVxI4fO8bLPRX27u\r\n\r\nViele Grüße\r\nSandra Kolb\r\nClean Pro Gebäudeservice GmbH\r\n0209 900800\r\n"
    ],
    [
     "Tag 0 (Mon 26.10.)",
     "buchhaltung@kunde12-ge.de",
     "Zahlungserinnerung: Rechnung GR-2610-012 Unterhaltsreinigung September",
-    "Guten Tag Buchhaltung Kunde 12,\r\n\r\nunsere Rechnung (Nr. GR-2610-012 Unterhaltsreinigung September) über 2.052,75 €, fällig am 15.10.2026, ist laut meinen Unterlagen noch offen.\r\n\r\nBitte überweisen Sie 2.052,75 € bis 02.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: GR-2610-012.\r\n\r\nFür Rückfragen zur Rechnung stehe ich gern zur Verfügung.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/AXmdNjWIeGejj3NMCP-PWp55\r\n\r\nViele Grüße\r\nSandra Kolb\r\nClean Pro Gebäudeservice GmbH\r\n0209 900800\r\n"
+    "Guten Tag Buchhaltung Kunde 12,\r\n\r\nunsere Rechnung (Nr. GR-2610-012 Unterhaltsreinigung September) über 2.052,75 €, fällig am 15.10.2026, ist laut meinen Unterlagen noch offen.\r\n\r\nBitte überweisen Sie 2.052,75 € bis 02.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: GR-2610-012.\r\n\r\nFür Rückfragen zur Rechnung stehe ich gern zur Verfügung.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/qx7V_k1uwhbUCARPUe6kML-C\r\n\r\nViele Grüße\r\nSandra Kolb\r\nClean Pro Gebäudeservice GmbH\r\n0209 900800\r\n"
    ],
    [
     "Tag 10 (Thu 05.11.)",
     "buchhaltung@kunde10-ge.de",
     "Zahlungserinnerung: Rechnung GR-2610-010 Unterhaltsreinigung September",
-    "Guten Tag Buchhaltung Kunde 10,\r\n\r\nunsere Rechnung (Nr. GR-2610-010 Unterhaltsreinigung September) über 1.874,25 €, fällig seit dem 15.10.2026, ist laut meinen Unterlagen trotz unserer Erinnerung noch offen.\r\n\r\nBitte überweisen Sie 1.874,25 € bis 12.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: GR-2610-010.\r\n\r\nSollte die Rechnung bei Ihnen noch in Prüfung sein oder etwas fehlen, geben Sie mir bitte kurz Bescheid.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/sbMvfMJUPIZ_-wfMyBeodODB\r\n\r\nViele Grüße\r\nSandra Kolb\r\nClean Pro Gebäudeservice GmbH\r\n0209 900800\r\n"
+    "Guten Tag Buchhaltung Kunde 10,\r\n\r\nunsere Rechnung (Nr. GR-2610-010 Unterhaltsreinigung September) über 1.874,25 €, fällig seit dem 15.10.2026, ist laut meinen Unterlagen trotz unserer Erinnerung noch offen.\r\n\r\nBitte überweisen Sie 1.874,25 € bis 12.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: GR-2610-010.\r\n\r\nSollte die Rechnung bei Ihnen noch in Prüfung sein oder etwas fehlen, geben Sie mir bitte kurz Bescheid.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/LE-T6d6_udSRFM2XFGvHbnDT\r\n\r\nViele Grüße\r\nSandra Kolb\r\nClean Pro Gebäudeservice GmbH\r\n0209 900800\r\n"
    ],
    [
     "Tag 10 (Thu 05.11.)",
     "buchhaltung@kunde11-ge.de",
     "Zahlungserinnerung: Rechnung GR-2610-011 Unterhaltsreinigung September",
-    "Guten Tag Buchhaltung Kunde 11,\r\n\r\nunsere Rechnung (Nr. GR-2610-011 Unterhaltsreinigung September) über 1.963,50 €, fällig seit dem 15.10.2026, ist laut meinen Unterlagen trotz unserer Erinnerung noch offen.\r\n\r\nBitte überweisen Sie 1.963,50 € bis 12.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: GR-2610-011.\r\n\r\nSollte die Rechnung bei Ihnen noch in Prüfung sein oder etwas fehlen, geben Sie mir bitte kurz Bescheid.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/4PmbJ308EeEei0jCQRGPKm6X\r\n\r\nViele Grüße\r\nSandra Kolb\r\nClean Pro Gebäudeservice GmbH\r\n0209 900800\r\n"
+    "Guten Tag Buchhaltung Kunde 11,\r\n\r\nunsere Rechnung (Nr. GR-2610-011 Unterhaltsreinigung September) über 1.963,50 €, fällig seit dem 15.10.2026, ist laut meinen Unterlagen trotz unserer Erinnerung noch offen.\r\n\r\nBitte überweisen Sie 1.963,50 € bis 12.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: GR-2610-011.\r\n\r\nSollte die Rechnung bei Ihnen noch in Prüfung sein oder etwas fehlen, geben Sie mir bitte kurz Bescheid.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/5hHaJZtkJVxI4fO8bLPRX27u\r\n\r\nViele Grüße\r\nSandra Kolb\r\nClean Pro Gebäudeservice GmbH\r\n0209 900800\r\n"
    ],
    [
     "Tag 10 (Thu 05.11.)",
     "buchhaltung@kunde12-ge.de",
     "Zahlungserinnerung: Rechnung GR-2610-012 Unterhaltsreinigung September",
-    "Guten Tag Buchhaltung Kunde 12,\r\n\r\nunsere Rechnung (Nr. GR-2610-012 Unterhaltsreinigung September) über 2.052,75 €, fällig seit dem 15.10.2026, ist laut meinen Unterlagen trotz unserer Erinnerung noch offen.\r\n\r\nBitte überweisen Sie 2.052,75 € bis 12.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: GR-2610-012.\r\n\r\nSollte die Rechnung bei Ihnen noch in Prüfung sein oder etwas fehlen, geben Sie mir bitte kurz Bescheid.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/AXmdNjWIeGejj3NMCP-PWp55\r\n\r\nViele Grüße\r\nSandra Kolb\r\nClean Pro Gebäudeservice GmbH\r\n0209 900800\r\n"
+    "Guten Tag Buchhaltung Kunde 12,\r\n\r\nunsere Rechnung (Nr. GR-2610-012 Unterhaltsreinigung September) über 2.052,75 €, fällig seit dem 15.10.2026, ist laut meinen Unterlagen trotz unserer Erinnerung noch offen.\r\n\r\nBitte überweisen Sie 2.052,75 € bis 12.11.2026 auf IBAN DE89 3704 0044 0532 0130 00 (BIC COBADEFFXXX), Verwendungszweck: GR-2610-012.\r\n\r\nSollte die Rechnung bei Ihnen noch in Prüfung sein oder etwas fehlen, geben Sie mir bitte kurz Bescheid.\r\n\r\nDie Rechnung als PDF: https://app.locadas.de/a/qx7V_k1uwhbUCARPUe6kML-C\r\n\r\nViele Grüße\r\nSandra Kolb\r\nClean Pro Gebäudeservice GmbH\r\n0209 900800\r\n"
    ]
   ],
   "notifications": [
    [
     "Tag 0 (Mon 26.10.)",
     "Kurz gefragt: 12 Rechnungen: noch offen?",
-    "Hallo Sandra Kolb,\r\n\r\nBevor ich Zahlungserinnerungen schicke, frage ich dich, ob die Rechnungen noch offen sind. Dein Konto sehe ich nicht.\r\n\r\n• Rechnung GR-2610-001 an Buchhaltung Kunde 1 über 1.071,00 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/_Def5nS3w0Hm6s74DQoP5kTYZ63gYFd1/send\r\n  Bezahlt:              https://app.locadas.de/f/_Def5nS3w0Hm6s74DQoP5kTYZ63gYFd1/done\r\n\r\n• Rechnung GR-2610-002 an Buchhaltung Kunde 2 über 1.160,25 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/1P55P1wWmjY0EUPUglxsxywGluhAZnzl/send\r\n  Bezahlt:              https://app.locadas.de/f/1P55P1wWmjY0EUPUglxsxywGluhAZnzl/done\r\n\r\n• Rechnung GR-2610-003 an Buchhaltung Kunde 3 über 1.249,50 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/V2RfPXDG87Wtolm_7jOuwwoFFgpMhFvI/send\r\n  Bezahlt:              https://app.locadas.de/f/V2RfPXDG87Wtolm_7jOuwwoFFgpMhFvI/done\r\n\r\n• Rechnung GR-2610-004 an Buchhaltung Kunde 4 über 1.338,75 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/2YNW5hJGKvXo1VU8MKfITl7mQJKaajBQ/send\r\n  Bezahlt:              https://app.locadas.de/f/2YNW5hJGKvXo1VU8MKfITl7mQJKaajBQ/done\r\n\r\n• Rechnung GR-2610-005 an Buchhaltung Kunde 5 über 1.428,00 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/g45lX6mifiAM6tBOgSW_8fAePGvIkp2b/send\r\n  Bezahlt:              https://app.locadas.de/f/g45lX6mifiAM6tBOgSW_8fAePGvIkp2b/done\r\n\r\n• Rechnung GR-2610-006 an Buchhaltung Kunde 6 über 1.517,25 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/GaIv1isRqY2hTRrGd6Yb07N8xTSiXGwt/send\r\n  Bezahlt:              https://app.locadas.de/f/GaIv1isRqY2hTRrGd6Yb07N8xTSiXGwt/done\r\n\r\n• Rechnung GR-2610-007 an Buchhaltung Kunde 7 über 1.606,50 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/oFeBC6AvG5F1u59rAYguyFEtyJ7MllfP/send\r\n  Bezahlt:              https://app.locadas.de/f/oFeBC6AvG5F1u59rAYguyFEtyJ7MllfP/done\r\n\r\n• Rechnung GR-2610-008 an Buchhaltung Kunde 8 über 1.695,75 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/1ZhLdSFcOz0RRXB3McwZZvr3Uq-J6hIv/send\r\n  Bezahlt:              https://app.locadas.de/f/1ZhLdSFcOz0RRXB3McwZZvr3Uq-J6hIv/done\r\n\r\n• Rechnung GR-2610-009 an Buchhaltung Kunde 9 über 1.785,00 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/gOtRKMFPA-F0kIo5p53R8xaR3hIdW-wz/send\r\n  Bezahlt:              https://app.locadas.de/f/gOtRKMFPA-F0kIo5p53R8xaR3hIdW-wz/done\r\n\r\n• Rechnung GR-2610-010 an Buchhaltung Kunde 10 über 1.874,25 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/DJot-mvcatjP96e8WMFnLP1-pYMljcEf/send\r\n  Bezahlt:              https://app.locadas.de/f/DJot-mvcatjP96e8WMFnLP1-pYMljcEf/done\r\n\r\n• Rechnung GR-2610-011 an Buchhaltung Kunde 11 über 1.963,50 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/-iL3kt546vCaCLo60BTfb_iAKKdzSlyd/send\r\n  Bezahlt:              https://app.locadas.de/f/-iL3kt546vCaCLo60BTfb_iAKKdzSlyd/done\r\n\r\n• Rechnung GR-2610-012 an Buchhaltung Kunde 12 über 2.052,75 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/MwpoM3h7d-WU0HzLuVCRGkpjp3musfnp/send\r\n  Bezahlt:              https://app.locadas.de/f/MwpoM3h7d-WU0HzLuVCRGkpjp3musfnp/done\r\n\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Sandra Kolb,\r\n\r\nBevor ich Zahlungserinnerungen schicke, frage ich dich, ob die Rechnungen noch offen sind. Dein Konto sehe ich nicht.\r\n\r\n• Rechnung GR-2610-001 an Buchhaltung Kunde 1 über 1.071,00 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/q_MTg4Ay9tL6oy-riOyZIAfcBULkc8wB/send\r\n  Bezahlt:              https://app.locadas.de/f/q_MTg4Ay9tL6oy-riOyZIAfcBULkc8wB/done\r\n\r\n• Rechnung GR-2610-002 an Buchhaltung Kunde 2 über 1.160,25 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/ffhzz_e42jntrUmaKLG1dOg7J7qMv6XI/send\r\n  Bezahlt:              https://app.locadas.de/f/ffhzz_e42jntrUmaKLG1dOg7J7qMv6XI/done\r\n\r\n• Rechnung GR-2610-003 an Buchhaltung Kunde 3 über 1.249,50 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/DlsjBQfKD26DCmico2b8tCFrv6SdPfuH/send\r\n  Bezahlt:              https://app.locadas.de/f/DlsjBQfKD26DCmico2b8tCFrv6SdPfuH/done\r\n\r\n• Rechnung GR-2610-004 an Buchhaltung Kunde 4 über 1.338,75 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/SlLCzGazLwc659odiTyDeeZkmTPWxWam/send\r\n  Bezahlt:              https://app.locadas.de/f/SlLCzGazLwc659odiTyDeeZkmTPWxWam/done\r\n\r\n• Rechnung GR-2610-005 an Buchhaltung Kunde 5 über 1.428,00 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/AbTXR_nPzNj5NndUIDx3AUW_eP11wTcy/send\r\n  Bezahlt:              https://app.locadas.de/f/AbTXR_nPzNj5NndUIDx3AUW_eP11wTcy/done\r\n\r\n• Rechnung GR-2610-006 an Buchhaltung Kunde 6 über 1.517,25 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/gUAtNQeUVDn05cTsKn0G_iLy2TZZt69I/send\r\n  Bezahlt:              https://app.locadas.de/f/gUAtNQeUVDn05cTsKn0G_iLy2TZZt69I/done\r\n\r\n• Rechnung GR-2610-007 an Buchhaltung Kunde 7 über 1.606,50 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/DVBvg3yJpYvfAv9wt38TuejQ5YpoYFfY/send\r\n  Bezahlt:              https://app.locadas.de/f/DVBvg3yJpYvfAv9wt38TuejQ5YpoYFfY/done\r\n\r\n• Rechnung GR-2610-008 an Buchhaltung Kunde 8 über 1.695,75 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/XwlMlAE0-arrDSQ1MI14Qpoz4lrENsw8/send\r\n  Bezahlt:              https://app.locadas.de/f/XwlMlAE0-arrDSQ1MI14Qpoz4lrENsw8/done\r\n\r\n• Rechnung GR-2610-009 an Buchhaltung Kunde 9 über 1.785,00 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/u4_Mfzp2pPuda0kcU7WssbISdYgZI5Z_/send\r\n  Bezahlt:              https://app.locadas.de/f/u4_Mfzp2pPuda0kcU7WssbISdYgZI5Z_/done\r\n\r\n• Rechnung GR-2610-010 an Buchhaltung Kunde 10 über 1.874,25 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/rUuKmkDTkoH0Z34rhiuYwPHB8c_ibJQH/send\r\n  Bezahlt:              https://app.locadas.de/f/rUuKmkDTkoH0Z34rhiuYwPHB8c_ibJQH/done\r\n\r\n• Rechnung GR-2610-011 an Buchhaltung Kunde 11 über 1.963,50 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/BLkxNk6xAo-NsjoWiwu6rPqBbVVDMD_S/send\r\n  Bezahlt:              https://app.locadas.de/f/BLkxNk6xAo-NsjoWiwu6rPqBbVVDMD_S/done\r\n\r\n• Rechnung GR-2610-012 an Buchhaltung Kunde 12 über 2.052,75 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/-8I2D86cuXOC6b2LoTn_nv9Va3jVaq8y/send\r\n  Bezahlt:              https://app.locadas.de/f/-8I2D86cuXOC6b2LoTn_nv9Va3jVaq8y/done\r\n\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 1 (Tue 27.10.)",
@@ -3274,10 +3591,11 @@
    [
     "Tag 10 (Thu 05.11.)",
     "Kurz gefragt: 3 Rechnungen: noch offen?",
-    "Hallo Sandra Kolb,\r\n\r\nBevor ich Zahlungserinnerungen schicke, frage ich dich, ob die Rechnungen noch offen sind. Dein Konto sehe ich nicht.\r\n\r\n• Rechnung GR-2610-010 an Buchhaltung Kunde 10 über 1.874,25 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/a0u_2vcz7oqeN_o7Ig0BuXQqUcerYs13/send\r\n  Bezahlt:              https://app.locadas.de/f/a0u_2vcz7oqeN_o7Ig0BuXQqUcerYs13/done\r\n\r\n• Rechnung GR-2610-011 an Buchhaltung Kunde 11 über 1.963,50 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/sQoCd5dKNXtII_wv8t5BBpwiXMz5T5eV/send\r\n  Bezahlt:              https://app.locadas.de/f/sQoCd5dKNXtII_wv8t5BBpwiXMz5T5eV/done\r\n\r\n• Rechnung GR-2610-012 an Buchhaltung Kunde 12 über 2.052,75 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/a-Mdwth_cWTVpDR3LMiHpy6Da_3O6JO1/send\r\n  Bezahlt:              https://app.locadas.de/f/a-Mdwth_cWTVpDR3LMiHpy6Da_3O6JO1/done\r\n\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Sandra Kolb,\r\n\r\nBevor ich Zahlungserinnerungen schicke, frage ich dich, ob die Rechnungen noch offen sind. Dein Konto sehe ich nicht.\r\n\r\n• Rechnung GR-2610-010 an Buchhaltung Kunde 10 über 1.874,25 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/qGjlOLgZkePSIFFOUx9g6XqT1PA4nsv4/send\r\n  Bezahlt:              https://app.locadas.de/f/qGjlOLgZkePSIFFOUx9g6XqT1PA4nsv4/done\r\n\r\n• Rechnung GR-2610-011 an Buchhaltung Kunde 11 über 1.963,50 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/y63g-FOnmOv2YxeVyHHt7l0Os4YL13yo/send\r\n  Bezahlt:              https://app.locadas.de/f/y63g-FOnmOv2YxeVyHHt7l0Os4YL13yo/done\r\n\r\n• Rechnung GR-2610-012 an Buchhaltung Kunde 12 über 2.052,75 € ist seit 15.10.2026 fällig. Noch offen?\r\n  Noch offen, erinnern: https://app.locadas.de/f/lf_yWh-QBYuAb9P7qkxIm2XQ44iAhWoB/send\r\n  Bezahlt:              https://app.locadas.de/f/lf_yWh-QBYuAb9P7qkxIm2XQ44iAhWoB/done\r\n\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": []
  },
  {
   "key": "umzug",
@@ -3301,6 +3619,10 @@
    {
     "ok": true,
     "msg": "KV-26-088: Betrag 2189.6 (erwartet 2189.6)"
+   },
+   {
+    "ok": true,
+    "msg": "KV-26-088: Kundennummer ist nicht die eigene (–)"
    },
    {
     "ok": true,
@@ -3329,6 +3651,10 @@
    {
     "ok": true,
     "msg": "Tag 2 (Wed 28.10.): keine Weichspüler-/Drohformel in „Kostenvoranschlag Umzug KV-26-088“ ()"
+   },
+   {
+    "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
    },
    {
     "ok": true,
@@ -3364,14 +3690,14 @@
     "Tag 2 (Wed 28.10.)",
     "jonas.neumann@gmail.com",
     "Kostenvoranschlag Umzug KV-26-088",
-    "Guten Tag Jonas Neumann,\r\n\r\nam 24.10.2026 habe ich Ihnen unseren Kostenvoranschlag (Nr. KV-26-088 Umzug) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDer Kostenvoranschlag als PDF: https://app.locadas.de/a/DByt_V-Dbp0RV1r4XUiEgLOJ\r\n\r\nViele Grüße\r\nDragan Petrovic\r\nUmzüge Petrovic\r\n0211 445566\r\n"
+    "Guten Tag Jonas Neumann,\r\n\r\nam 24.10.2026 habe ich Ihnen unseren Kostenvoranschlag (Nr. KV-26-088 Umzug) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDer Kostenvoranschlag als PDF: https://app.locadas.de/a/2wXdzhX5XAgnSJQPcJHSmCXb\r\n\r\nViele Grüße\r\nDragan Petrovic\r\nUmzüge Petrovic\r\n0211 445566\r\n"
    ]
   ],
   "notifications": [
    [
     "Tag 1 (Tue 27.10.)",
     "Heute nachfassen: Jonas Neumann",
-    "Hallo Dragan Petrovic,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Jonas Neumann: Kostenvoranschlag KV-26-088 über 2.189,60 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/7Bu9y7caAoOWcZ97r7UKyOILLCzQuLKx/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Dragan Petrovic,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Jonas Neumann: Kostenvoranschlag KV-26-088 über 2.189,60 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/SAITAVQ67aRDeRAlKPKyyVucO0nTWyUA/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 3 (Thu 29.10.)",
@@ -3379,7 +3705,8 @@
     "Hallo Dragan Petrovic,\r\n\r\nJonas Neumann hat auf Angebot KV-26-088 geantwortet (Betreff: AW: Kostenvoranschlag Umzug KV-26-088).\r\n\r\nDie Mail kam von lisa.neumann@web.de, nicht von jonas.neumann@gmail.com. Ich habe sie anhand des Inhalts zugeordnet.\r\n\r\nIch fasse dort nicht mehr nach.\r\n\r\nWenn das nicht stimmt oder du doch weiter nachfassen willst, kannst du das hier ändern: https://app.locadas.de/dokument/1\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": []
  },
  {
   "key": "boden",
@@ -3403,6 +3730,10 @@
    {
     "ok": true,
     "msg": "AB-2026-19: Betrag 3354.0 (erwartet 3354)"
+   },
+   {
+    "ok": true,
+    "msg": "AB-2026-19: Kundennummer ist nicht die eigene (–)"
    },
    {
     "ok": true,
@@ -3450,6 +3781,10 @@
    },
    {
     "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
+   },
+   {
+    "ok": true,
     "msg": "Höchstens 4 Mails von uns an den Betrieb pro Tag (max 1)"
    },
    {
@@ -3483,39 +3818,40 @@
     "Tag 3 (Thu 29.10.)",
     "auftraege@hv-bergmann.de",
     "Angebot AB-2026-19 Wohnung Wagner",
-    "Guten Tag HV Bergmann,\r\n\r\nam 25.10.2026 habe ich Ihnen unser Angebot (Nr. AB-2026-19 Wohnung Wagner) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/A9vav15p7isSrbJUf5-CaGrv\r\n\r\nViele Grüße\r\nMurat Arslan\r\nBöden Arslan\r\n0202 778899\r\n"
+    "Guten Tag HV Bergmann,\r\n\r\nam 25.10.2026 habe ich Ihnen unser Angebot (Nr. AB-2026-19 Wohnung Wagner) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/WCUhmBlzZ8exrKI8rt1bSiZi\r\n\r\nViele Grüße\r\nMurat Arslan\r\nBöden Arslan\r\n0202 778899\r\n"
    ],
    [
     "Tag 8 (Tue 03.11.)",
     "auftraege@hv-bergmann.de",
     "Angebot AB-2026-19 Wohnung Wagner",
-    "Guten Tag HV Bergmann,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. AB-2026-19 Wohnung Wagner). Falls Sie sich schon entschieden haben, freue ich mich über eine kurze Rückmeldung, auch wenn es nichts wird. Dann kann ich besser planen.\r\n\r\nFalls Sie noch überlegen: Gern besprechen wir Umfang oder Termin, damit es für Sie passt.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/A9vav15p7isSrbJUf5-CaGrv\r\n\r\nViele Grüße\r\nMurat Arslan\r\nBöden Arslan\r\n0202 778899\r\n"
+    "Guten Tag HV Bergmann,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. AB-2026-19 Wohnung Wagner). Falls Sie sich schon entschieden haben, freue ich mich über eine kurze Rückmeldung, auch wenn es nichts wird. Dann kann ich besser planen.\r\n\r\nFalls Sie noch überlegen: Gern besprechen wir Umfang oder Termin, damit es für Sie passt.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/WCUhmBlzZ8exrKI8rt1bSiZi\r\n\r\nViele Grüße\r\nMurat Arslan\r\nBöden Arslan\r\n0202 778899\r\n"
    ],
    [
     "Tag 15 (Tue 10.11.)",
     "auftraege@hv-bergmann.de",
     "Angebot AB-2026-19 Wohnung Wagner",
-    "Guten Tag HV Bergmann,\r\n\r\nzu unserem Angebot (Nr. AB-2026-19 Wohnung Wagner) habe ich bisher nichts von Ihnen gehört. Vielleicht passt es gerade nicht oder Sie haben sich anders entschieden, beides ist völlig in Ordnung.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0202 778899.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/A9vav15p7isSrbJUf5-CaGrv\r\n\r\nViele Grüße\r\nMurat Arslan\r\nBöden Arslan\r\n0202 778899\r\n"
+    "Guten Tag HV Bergmann,\r\n\r\nzu unserem Angebot (Nr. AB-2026-19 Wohnung Wagner) habe ich bisher nichts von Ihnen gehört. Vielleicht passt es gerade nicht oder Sie haben sich anders entschieden, beides ist völlig in Ordnung.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0202 778899.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/WCUhmBlzZ8exrKI8rt1bSiZi\r\n\r\nViele Grüße\r\nMurat Arslan\r\nBöden Arslan\r\n0202 778899\r\n"
    ]
   ],
   "notifications": [
    [
     "Tag 2 (Wed 28.10.)",
     "Heute nachfassen: HV Bergmann",
-    "Hallo Murat Arslan,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• HV Bergmann: Angebot AB-2026-19 über 3.354,00 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/-kPpoWvoAja8jkfSCHghTgVS2nnduwVQ/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Murat Arslan,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• HV Bergmann: Angebot AB-2026-19 über 3.354,00 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/fh7im7tA7_BcMFC1hnefyb6rVXZ5n95Y/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 7 (Mon 02.11.)",
     "Heute nachfassen: HV Bergmann",
-    "Hallo Murat Arslan,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• HV Bergmann: Angebot AB-2026-19 über 3.354,00 € (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/5sb5t2W6eXqrc-pWMw6-HhzaRHAKPAqd/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Murat Arslan,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• HV Bergmann: Angebot AB-2026-19 über 3.354,00 € (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/oXr7u4bGshQ-Df6PRK6oF4XCnbm8KN-x/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 14 (Mon 09.11.)",
     "Heute nachfassen: HV Bergmann",
-    "Hallo Murat Arslan,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• HV Bergmann: Angebot AB-2026-19 über 3.354,00 € (Nachfass-Mail 3 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/hP2WYMgnnVtikY8VcAWr8e15-ytsYhN_/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Murat Arslan,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• HV Bergmann: Angebot AB-2026-19 über 3.354,00 € (Nachfass-Mail 3 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/-okvtpLjNqIHmAO2edMSGYceqwgLJpBr/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": []
  },
  {
   "key": "notdienst",
@@ -3542,11 +3878,19 @@
    },
    {
     "ok": true,
+    "msg": "NB-55102: Kundennummer ist nicht die eigene (–)"
+   },
+   {
+    "ok": true,
     "msg": "NB-55102: Kunde ist kein Kollege (sven.krueger@gmx.net)"
    },
    {
     "ok": true,
     "msg": "NB-55102: höchstens 3 Nachfass-Mails (0)"
+   },
+   {
+    "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
    },
    {
     "ok": true,
@@ -3577,7 +3921,8 @@
   ],
   "customer_mails": [],
   "notifications": [],
-  "critique": null
+  "critique": null,
+  "whatsapp": []
  },
  {
   "key": "volt",
@@ -3601,6 +3946,10 @@
    {
     "ok": true,
     "msg": "VT-2026-412: Betrag 17028.9 (erwartet 17028.9)"
+   },
+   {
+    "ok": true,
+    "msg": "VT-2026-412: Kundennummer ist nicht die eigene (–)"
    },
    {
     "ok": true,
@@ -3633,6 +3982,10 @@
    {
     "ok": true,
     "msg": "Tag 18 (Fri 13.11.): keine Weichspüler-/Drohformel in „Angebot VT-2026-412 LED Lagerhalle“ ()"
+   },
+   {
+    "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
    },
    {
     "ok": true,
@@ -3672,7 +4025,7 @@
     "Tag 18 (Fri 13.11.)",
     "lars.eriksson@nordicfoods.com",
     "Angebot VT-2026-412 LED Lagerhalle",
-    "Guten Tag Lars Eriksson,\r\n\r\nam 22.10.2026 habe ich Ihnen unser Angebot (Nr. VT-2026-412 LED Lagerhalle) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/-B-btq-fikXNymyIjEzR-gqh\r\n\r\nViele Grüße\r\nMarkus Hennes\r\nVolt Technik Hennes\r\n02150 7070\r\n"
+    "Guten Tag Lars Eriksson,\r\n\r\nam 22.10.2026 habe ich Ihnen unser Angebot (Nr. VT-2026-412 LED Lagerhalle) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/-spPMSDIf2-nZ95xXXW82jlN\r\n\r\nViele Grüße\r\nMarkus Hennes\r\nVolt Technik Hennes\r\n02150 7070\r\n"
    ]
   ],
   "notifications": [
@@ -3684,12 +4037,12 @@
    [
     "Tag 17 (Thu 12.11.)",
     "Schon erledigt? Lars Eriksson (Angebot VT-2026-412)",
-    "Hallo Markus Hennes,\r\n\r\nDieses Angebot VT-2026-412 über 17.028,90 € hast du am 22.10.2026 an Lars Eriksson verschickt, also vor deinem Start bei uns. Ist es schon erledigt?\r\n\r\nBitte nachfassen: https://app.locadas.de/f/LjNgIeMYBSustrmPeBCyyAQJHWqynG10/send\r\nErledigt, nicht nachfassen: https://app.locadas.de/f/LjNgIeMYBSustrmPeBCyyAQJHWqynG10/done\r\n\r\nErst wenn du „Bitte nachfassen“ klickst, plane ich eine Nachfass-Mail. Du siehst sie vorher noch.\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Markus Hennes,\r\n\r\nDieses Angebot VT-2026-412 über 17.028,90 € hast du am 22.10.2026 an Lars Eriksson verschickt, also vor deinem Start bei uns. Ist es schon erledigt?\r\n\r\nBitte nachfassen: https://app.locadas.de/f/vYOWJwRlcUo1fvrMyP533zU-ua8Hy8h2/send\r\nErledigt, nicht nachfassen: https://app.locadas.de/f/vYOWJwRlcUo1fvrMyP533zU-ua8Hy8h2/done\r\n\r\nErst wenn du „Bitte nachfassen“ klickst, plane ich eine Nachfass-Mail. Du siehst sie vorher noch.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 18 (Fri 13.11.)",
     "Nachfassen bei Lars Eriksson? (Angebot VT-2026-412)",
-    "Hallo Markus Hennes,\r\n\r\nich würde jetzt bei Lars Eriksson nachfassen (Angebot VT-2026-412 über 17.028,90 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Angebot VT-2026-412 LED Lagerhalle\r\n---\r\nGuten Tag Lars Eriksson,\r\n\r\nam 22.10.2026 habe ich Ihnen unser Angebot (Nr. VT-2026-412 LED Lagerhalle) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/-B-btq-fikXNymyIjEzR-gqh\r\n\r\nViele Grüße\r\nMarkus Hennes\r\nVolt Technik Hennes\r\n02150 7070\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/LjNgIeMYBSustrmPeBCyyAQJHWqynG10/send\r\nDiesmal nicht: https://app.locadas.de/f/LjNgIeMYBSustrmPeBCyyAQJHWqynG10/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/LjNgIeMYBSustrmPeBCyyAQJHWqynG10/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
+    "Hallo Markus Hennes,\r\n\r\nich würde jetzt bei Lars Eriksson nachfassen (Angebot VT-2026-412 über 17.028,90 €).\r\n\r\nDas würde ich in deinem Namen schicken:\r\n\r\nBetreff: Angebot VT-2026-412 LED Lagerhalle\r\n---\r\nGuten Tag Lars Eriksson,\r\n\r\nam 22.10.2026 habe ich Ihnen unser Angebot (Nr. VT-2026-412 LED Lagerhalle) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/-spPMSDIf2-nZ95xXXW82jlN\r\n\r\nViele Grüße\r\nMarkus Hennes\r\nVolt Technik Hennes\r\n02150 7070\r\n---\r\n\r\nSenden:        https://app.locadas.de/f/vYOWJwRlcUo1fvrMyP533zU-ua8Hy8h2/send\r\nDiesmal nicht: https://app.locadas.de/f/vYOWJwRlcUo1fvrMyP533zU-ua8Hy8h2/skip\r\nKunde hat sich schon gemeldet, nicht mehr nachfassen: https://app.locadas.de/f/vYOWJwRlcUo1fvrMyP533zU-ua8Hy8h2/stop\r\n\r\nBei Angeboten über 10.000,00 € frage ich vorher (änderbar in den Einstellungen).\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 19 (Sat 14.11.)",
@@ -3697,7 +4050,8 @@
     "Hallo Markus Hennes,\r\n\r\nLars Eriksson hat gerade Angebot VT-2026-412 geöffnet. Guter Moment für einen kurzen Anruf.\r\n\r\nhttps://app.locadas.de/dokument/1\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": []
  },
  {
   "key": "gruen",
@@ -3720,7 +4074,15 @@
    },
    {
     "ok": true,
+    "msg": "3/26: Kunden-Handy 491605544332 (erwartet 491605544332)"
+   },
+   {
+    "ok": true,
     "msg": "3/26: Betrag 340.0 (erwartet 340)"
+   },
+   {
+    "ok": true,
+    "msg": "3/26: Kundennummer ist nicht die eigene (491605544332)"
    },
    {
     "ok": true,
@@ -3728,15 +4090,51 @@
    },
    {
     "ok": true,
-    "msg": "3/26: Nachfass-Mail 1 nicht am Wochenende (Wed)"
+    "msg": "Tag 1 (Tue 27.10.): „In WhatsApp öffnen“ für 3/26 leitet auf wa.me (302 https://wa.me/491605544332?text=Hallo%20)"
    },
    {
     "ok": true,
-    "msg": "3/26: Nachfass-Mail 2 nicht am Wochenende (Tue)"
+    "msg": "Tag 1 (Tue 27.10.): wa.me-Text für 3/26 unverändert"
    },
    {
     "ok": true,
-    "msg": "3/26: Nachfass-Mail 3 nicht am Wochenende (Tue)"
+    "msg": "Tag 1 (Tue 27.10.): „Gesendet“ für 3/26 (303)"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 7 (Mon 02.11.): „In WhatsApp öffnen“ für 3/26 leitet auf wa.me (302 https://wa.me/491605544332?text=Hallo%20)"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 7 (Mon 02.11.): wa.me-Text für 3/26 unverändert"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 7 (Mon 02.11.): „Gesendet“ für 3/26 (303)"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 14 (Mon 09.11.): „In WhatsApp öffnen“ für 3/26 leitet auf wa.me (302 https://wa.me/491605544332?text=Hallo%20)"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 14 (Mon 09.11.): wa.me-Text für 3/26 unverändert"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 14 (Mon 09.11.): „Gesendet“ für 3/26 (303)"
+   },
+   {
+    "ok": true,
+    "msg": "3/26: Nachfass-Mail 1 nicht am Wochenende (Tue)"
+   },
+   {
+    "ok": true,
+    "msg": "3/26: Nachfass-Mail 2 nicht am Wochenende (Mon)"
+   },
+   {
+    "ok": true,
+    "msg": "3/26: Nachfass-Mail 3 nicht am Wochenende (Mon)"
    },
    {
     "ok": true,
@@ -3744,27 +4142,55 @@
    },
    {
     "ok": true,
-    "msg": "Tag 2 (Wed 28.10.): Betreff ohne vorgetäuschtes „AW:“ (Angebot Heckenschnitt)"
+    "msg": "3/26: per WhatsApp nachgefasst, keine Mail (0 Mails)"
    },
    {
     "ok": true,
-    "msg": "Tag 2 (Wed 28.10.): keine Weichspüler-/Drohformel in „Angebot Heckenschnitt“ ()"
+    "msg": "3/26: mindestens eine WhatsApp-Nachricht als gesendet vermerkt (3)"
    },
    {
     "ok": true,
-    "msg": "Tag 8 (Tue 03.11.): Betreff ohne vorgetäuschtes „AW:“ (Angebot Heckenschnitt)"
+    "msg": "WhatsApp-Nachfassen genutzt (3 Taps)"
    },
    {
     "ok": true,
-    "msg": "Tag 8 (Tue 03.11.): keine Weichspüler-/Drohformel in „Angebot Heckenschnitt“ ()"
+    "msg": "Tag 1 (Tue 27.10.): wa.me an 491605544332 = Kunden-Handy von 3/26 (491605544332), nicht die eigene Nummer"
    },
    {
     "ok": true,
-    "msg": "Tag 15 (Tue 10.11.): Betreff ohne vorgetäuschtes „AW:“ (Angebot Heckenschnitt)"
+    "msg": "Tag 1 (Tue 27.10.): WhatsApp-Text für 3/26 höchstens 400 Zeichen (291)"
    },
    {
     "ok": true,
-    "msg": "Tag 15 (Tue 10.11.): keine Weichspüler-/Drohformel in „Angebot Heckenschnitt“ ()"
+    "msg": "Tag 1 (Tue 27.10.): WhatsApp-Text für 3/26 ohne Gedankenstrich"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 7 (Mon 02.11.): wa.me an 491605544332 = Kunden-Handy von 3/26 (491605544332), nicht die eigene Nummer"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 7 (Mon 02.11.): WhatsApp-Text für 3/26 höchstens 400 Zeichen (296)"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 7 (Mon 02.11.): WhatsApp-Text für 3/26 ohne Gedankenstrich"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 14 (Mon 09.11.): wa.me an 491605544332 = Kunden-Handy von 3/26 (491605544332), nicht die eigene Nummer"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 14 (Mon 09.11.): WhatsApp-Text für 3/26 höchstens 400 Zeichen (328)"
+   },
+   {
+    "ok": true,
+    "msg": "Tag 14 (Mon 09.11.): WhatsApp-Text für 3/26 ohne Gedankenstrich"
+   },
+   {
+    "ok": true,
+    "msg": "Keine Mail an Kunden, die per WhatsApp nachgefasst werden ([])"
    },
    {
     "ok": true,
@@ -3772,7 +4198,7 @@
    },
    {
     "ok": true,
-    "msg": "Nachfass-Mails im Gesendet-Ordner abgelegt (3 von 3)"
+    "msg": "Nachfass-Mails im Gesendet-Ordner abgelegt (0 von 0)"
    }
   ],
   "detected": [
@@ -3792,47 +4218,48 @@
   ],
   "timeline": [
    "Tag 0: Postfach verbunden (iCloud (App-Passwort nötig)), Erst-Scan 1 Dokumente in 0 s",
-   "Tag 2 (Wed 28.10.): 1 Nachfass-Mails gesendet, 0 zur Freigabe, 0 wegen Tageslimit verschoben",
-   "Tag 8 (Tue 03.11.): 1 Nachfass-Mails gesendet, 0 zur Freigabe, 0 wegen Tageslimit verschoben",
-   "Tag 15 (Tue 10.11.): 1 Nachfass-Mails gesendet, 0 zur Freigabe, 0 wegen Tageslimit verschoben"
+   "Tag 1 (Tue 27.10.): Inhaber schickt die WhatsApp-Nachricht an 3/26 mit einem Tipp und bestätigt „Gesendet“",
+   "Tag 7 (Mon 02.11.): Inhaber schickt die WhatsApp-Nachricht an 3/26 mit einem Tipp und bestätigt „Gesendet“",
+   "Tag 14 (Mon 09.11.): Inhaber schickt die WhatsApp-Nachricht an 3/26 mit einem Tipp und bestätigt „Gesendet“"
   ],
-  "customer_mails": [
-   [
-    "Tag 2 (Wed 28.10.)",
-    "ilse.martens@t-online.de",
-    "Angebot Heckenschnitt",
-    "Guten Tag Ilse Martens,\r\n\r\nam 24.10.2026 habe ich Ihnen unser Angebot (Nr. 3/26 Heckenschnitt) geschickt. Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\r\n\r\nWenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/ulG-qskdkKRmMwGsCke_0q5A\r\n\r\nViele Grüße\r\nLukas Ahrens\r\nGrünpflege Ahrens\r\n0157 3344556\r\n"
-   ],
-   [
-    "Tag 8 (Tue 03.11.)",
-    "ilse.martens@t-online.de",
-    "Angebot Heckenschnitt",
-    "Guten Tag Ilse Martens,\r\n\r\nich melde mich noch einmal zu unserem Angebot (Nr. 3/26 Heckenschnitt). Falls Sie sich schon entschieden haben, freue ich mich über eine kurze Rückmeldung, auch wenn es nichts wird. Dann kann ich besser planen.\r\n\r\nFalls Sie noch überlegen: Gern besprechen wir Umfang oder Termin, damit es für Sie passt.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/ulG-qskdkKRmMwGsCke_0q5A\r\n\r\nViele Grüße\r\nLukas Ahrens\r\nGrünpflege Ahrens\r\n0157 3344556\r\n"
-   ],
-   [
-    "Tag 15 (Tue 10.11.)",
-    "ilse.martens@t-online.de",
-    "Angebot Heckenschnitt",
-    "Guten Tag Ilse Martens,\r\n\r\nzu unserem Angebot (Nr. 3/26 Heckenschnitt) habe ich bisher nichts von Ihnen gehört. Vielleicht passt es gerade nicht oder Sie haben sich anders entschieden, beides ist völlig in Ordnung.\r\n\r\nIch melde mich nicht weiter, Sie erreichen mich aber jederzeit unter 0157 3344556.\r\n\r\nDas Angebot als PDF: https://app.locadas.de/a/ulG-qskdkKRmMwGsCke_0q5A\r\n\r\nViele Grüße\r\nLukas Ahrens\r\nGrünpflege Ahrens\r\n0157 3344556\r\n"
-   ]
-  ],
+  "customer_mails": [],
   "notifications": [
    [
     "Tag 1 (Tue 27.10.)",
-    "Heute nachfassen: Ilse Martens",
-    "Hallo Lukas Ahrens,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Ilse Martens: Angebot 3/26 über 340,00 € (Nachfass-Mail 1 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/Rv8QX-K7qsGZqCFjjgr48Bnc5ps93RHP/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Heute per WhatsApp nachfassen: Ilse Martens",
+    "Hallo Lukas Ahrens,\r\n\r\nHeute ist bei diesem Kunden die nächste Nachfass-Nachricht per WhatsApp dran. Der Link öffnet deinen WhatsApp-Chat mit dem Kunden, der Text steht schon drin. Abschicken und kurz auf „Abgeschickt“ klicken.\r\n\r\n• Ilse Martens: Angebot 3/26 über 340,00 € (Nachricht 1 von 3)\r\n  ---\r\n  Hallo Ilse Martens,\r\n\r\n  ich wollte kurz nachhören, ob unser Angebot 3/26 (Heckenschnitt) gut bei Ihnen angekommen ist. Haben Sie noch Fragen dazu? Dann melden Sie sich gern, hier oder telefonisch.\r\n\r\n  Das Angebot als PDF: https://app.locadas.de/a/VA46QKSNps7ribuDLCy-rx1h\r\n\r\n  Viele Grüße\r\n  Lukas Ahrens\r\n  ---\r\n  In WhatsApp öffnen:          https://app.locadas.de/t/xkJSZrpDwAeTWtjKZwhtYggYaEbjLOuf\r\n  Abgeschickt:                 https://app.locadas.de/w/xkJSZrpDwAeTWtjKZwhtYggYaEbjLOuf/sent\r\n  Kunde hat schon geantwortet: https://app.locadas.de/w/xkJSZrpDwAeTWtjKZwhtYggYaEbjLOuf/replied\r\n  Diesmal nicht:               https://app.locadas.de/w/xkJSZrpDwAeTWtjKZwhtYggYaEbjLOuf/skip\r\n\r\nAlles auf einer Seite, auch fürs Handy: https://app.locadas.de/dashboard#whatsapp\r\n\r\nPer Mail schicke ich diesen Kunden nichts, das machst du per WhatsApp.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 7 (Mon 02.11.)",
-    "Heute nachfassen: Ilse Martens",
-    "Hallo Lukas Ahrens,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Ilse Martens: Angebot 3/26 über 340,00 € (Nachfass-Mail 2 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/xhh_powGorBuZSqF6zDynZVJ098jCVDg/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Heute per WhatsApp nachfassen: Ilse Martens",
+    "Hallo Lukas Ahrens,\r\n\r\nHeute ist bei diesem Kunden die nächste Nachfass-Nachricht per WhatsApp dran. Der Link öffnet deinen WhatsApp-Chat mit dem Kunden, der Text steht schon drin. Abschicken und kurz auf „Abgeschickt“ klicken.\r\n\r\n• Ilse Martens: Angebot 3/26 über 340,00 € (Nachricht 2 von 3)\r\n  Die letzte Nachricht ging am 27.10. per WhatsApp raus. Hat Ilse Martens dort geantwortet? Dann unten auf „Kunde hat schon geantwortet“.\r\n  ---\r\n  Hallo Ilse Martens,\r\n\r\n  ich melde mich noch einmal zu unserem Angebot 3/26 (Heckenschnitt). Haben Sie sich schon entschieden? Eine kurze Rückmeldung hilft mir bei der Planung, auch wenn es nichts wird.\r\n\r\n  Das Angebot als PDF: https://app.locadas.de/a/VA46QKSNps7ribuDLCy-rx1h\r\n\r\n  Viele Grüße\r\n  Lukas Ahrens\r\n  ---\r\n  In WhatsApp öffnen:          https://app.locadas.de/t/caRW2vDJaLXBozH9PVkMmM2jSRNXXVY3\r\n  Abgeschickt:                 https://app.locadas.de/w/caRW2vDJaLXBozH9PVkMmM2jSRNXXVY3/sent\r\n  Kunde hat schon geantwortet: https://app.locadas.de/w/caRW2vDJaLXBozH9PVkMmM2jSRNXXVY3/replied\r\n  Diesmal nicht:               https://app.locadas.de/w/caRW2vDJaLXBozH9PVkMmM2jSRNXXVY3/skip\r\n\r\nAlles auf einer Seite, auch fürs Handy: https://app.locadas.de/dashboard#whatsapp\r\n\r\nPer Mail schicke ich diesen Kunden nichts, das machst du per WhatsApp.\r\n\r\nLocadas Nachfasser\r\n"
    ],
    [
     "Tag 14 (Mon 09.11.)",
-    "Heute nachfassen: Ilse Martens",
-    "Hallo Lukas Ahrens,\r\n\r\nHeute ab 12:30 Uhr fasse ich bei diesem Kunden nach.\r\nHat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.\r\n\r\n• Ilse Martens: Angebot 3/26 über 340,00 € (Nachfass-Mail 3 von 3)\r\n  Stopp, hat sich gemeldet: https://app.locadas.de/f/SuYk9PDtAaPEHCc56vKo5Ppy7KXXLnuD/stop\r\n\r\nDu musst sonst nichts tun.\r\n\r\nLocadas Nachfasser\r\n"
+    "Heute per WhatsApp nachfassen: Ilse Martens",
+    "Hallo Lukas Ahrens,\r\n\r\nHeute ist bei diesem Kunden die nächste Nachfass-Nachricht per WhatsApp dran. Der Link öffnet deinen WhatsApp-Chat mit dem Kunden, der Text steht schon drin. Abschicken und kurz auf „Abgeschickt“ klicken.\r\n\r\n• Ilse Martens: Angebot 3/26 über 340,00 € (Nachricht 3 von 3)\r\n  Die letzte Nachricht ging am 02.11. per WhatsApp raus. Hat Ilse Martens dort geantwortet? Dann unten auf „Kunde hat schon geantwortet“.\r\n  ---\r\n  Hallo Ilse Martens,\r\n\r\n  zu unserem Angebot 3/26 (Heckenschnitt) habe ich noch nichts von Ihnen gehört. Das ist völlig in Ordnung, falls es gerade nicht passt. Ich melde mich nicht weiter, Sie können mir aber jederzeit hier schreiben.\r\n\r\n  Das Angebot als PDF: https://app.locadas.de/a/VA46QKSNps7ribuDLCy-rx1h\r\n\r\n  Viele Grüße\r\n  Lukas Ahrens\r\n  ---\r\n  In WhatsApp öffnen:          https://app.locadas.de/t/RKmbmhRfjMxW57gt7EV1txhKz6A3zz7F\r\n  Abgeschickt:                 https://app.locadas.de/w/RKmbmhRfjMxW57gt7EV1txhKz6A3zz7F/sent\r\n  Kunde hat schon geantwortet: https://app.locadas.de/w/RKmbmhRfjMxW57gt7EV1txhKz6A3zz7F/replied\r\n  Diesmal nicht:               https://app.locadas.de/w/RKmbmhRfjMxW57gt7EV1txhKz6A3zz7F/skip\r\n\r\nAlles auf einer Seite, auch fürs Handy: https://app.locadas.de/dashboard#whatsapp\r\n\r\nPer Mail schicke ich diesen Kunden nichts, das machst du per WhatsApp.\r\n\r\nLocadas Nachfasser\r\n"
    ]
   ],
-  "critique": null
+  "critique": null,
+  "whatsapp": [
+   [
+    "Tag 1 (Tue 27.10.)",
+    "491605544332",
+    "Hallo Ilse Martens,\n\nich wollte kurz nachhören, ob unser Angebot 3/26 (Heckenschnitt) gut bei Ihnen angekommen ist. Haben Sie noch Fragen dazu? Dann melden Sie sich gern, hier oder telefonisch.\n\nDas Angebot als PDF: https://app.locadas.de/a/VA46QKSNps7ribuDLCy-rx1h\n\nViele Grüße\nLukas Ahrens",
+    "3/26"
+   ],
+   [
+    "Tag 7 (Mon 02.11.)",
+    "491605544332",
+    "Hallo Ilse Martens,\n\nich melde mich noch einmal zu unserem Angebot 3/26 (Heckenschnitt). Haben Sie sich schon entschieden? Eine kurze Rückmeldung hilft mir bei der Planung, auch wenn es nichts wird.\n\nDas Angebot als PDF: https://app.locadas.de/a/VA46QKSNps7ribuDLCy-rx1h\n\nViele Grüße\nLukas Ahrens",
+    "3/26"
+   ],
+   [
+    "Tag 14 (Mon 09.11.)",
+    "491605544332",
+    "Hallo Ilse Martens,\n\nzu unserem Angebot 3/26 (Heckenschnitt) habe ich noch nichts von Ihnen gehört. Das ist völlig in Ordnung, falls es gerade nicht passt. Ich melde mich nicht weiter, Sie können mir aber jederzeit hier schreiben.\n\nDas Angebot als PDF: https://app.locadas.de/a/VA46QKSNps7ribuDLCy-rx1h\n\nViele Grüße\nLukas Ahrens",
+    "3/26"
+   ]
+  ]
  }
 ]

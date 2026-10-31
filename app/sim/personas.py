@@ -53,14 +53,21 @@ class Persona:
     # Wie er Freigaben entscheidet: Nummer -> "send" | "stop" | "skip"; Default send (bei needs_review-Rechnungen "stop")
     decisions: dict[str, str] = field(default_factory=dict)
     note: str = ""
+    channel: str = "mail"  # Nachfass-Kanal des Betriebs: mail | whatsapp_tap | both
 
 
 def _hdr(name, street, city, phone):
     return [name, street, city, f"Tel. {phone}"]
 
 
-def _exp(kind, d: Doc, customer, amount=None):
-    return {"kind": kind, "number": d.number, "amount": round(amount if amount is not None else d.payable, 2), "customer": customer}
+def _exp(kind, d: Doc, customer, amount=None, mobile=None, phone=None):
+    """mobile/phone: erwartete Kundennummer (E.164 ohne „+“), "" = keine. None = nicht prüfen."""
+    e = {"kind": kind, "number": d.number, "amount": round(amount if amount is not None else d.payable, 2), "customer": customer}
+    if mobile is not None:
+        e["mobile"] = mobile
+    if phone is not None:
+        e["phone"] = phone
+    return e
 
 
 def build() -> list[Persona]:
@@ -68,7 +75,7 @@ def build() -> list[Persona]:
 
     # 1 SHK, 10 Leute, Büro mit Lexware, eigene Domain bei IONOS
     h = _hdr("Selbmann Haustechnik GmbH", "Industriestr. 4", "41063 Mönchengladbach", "02161 4455")
-    a1 = Doc("Angebot", "AN-2026-0412", "27.10.2026", h, ["Familie Brandt", "Lindenweg 3", "41065 Mönchengladbach"],
+    a1 = Doc("Angebot", "AN-2026-0412", "27.10.2026", h, ["Familie Brandt", "Lindenweg 3", "41065 Mönchengladbach", "Tel. 02161 998877"],
              [("Gas-Brennwerttherme inkl. Montage", 1, "St", 4890), ("Abgasanlage", 1, "Psch", 980), ("Demontage/Entsorgung Altgerät", 1, "Psch", 340)],
              "lexware", ["Dieses Angebot ist gültig bis 30.11.2026."])
     r1 = Doc("Rechnung", "RE-2026-0877", "06.10.2026", h, ["Herr Klaus Peters", "Ahornstr. 11", "41061 Mönchengladbach"],
@@ -81,7 +88,7 @@ def build() -> list[Persona]:
         "Skeptisch, will auf keinen Fall Verantwortung abgeben, sagt erst mal 'alles gut'.",
         sent_folder="Gesendete Objekte", sent_flag=False,
         sent=[
-            Sent(3, [("Familie Brandt", "brandt.familie@t-online.de")], "Ihr Angebot AN-2026-0412 Heizungstausch", docs=[a1], expect=_exp("offer", a1, "brandt.familie@t-online.de")),
+            Sent(3, [("Familie Brandt", "brandt.familie@t-online.de")], "Ihr Angebot AN-2026-0412 Heizungstausch", docs=[a1], expect=_exp("offer", a1, "brandt.familie@t-online.de", mobile="", phone="492161998877")),
             Sent(24, [("Klaus Peters", "k.peters@gmx.de")], "Rechnung RE-2026-0877", docs=[r1], expect=_exp("invoice", r1, "k.peters@gmx.de")),
             Sent(1, [("Hausverwaltung Kraus", "technik@hv-kraus.de")], "Rechnung RE-2026-0901 WEG Gartenstraße 12", docs=[r2], expect=_exp("invoice", r2, "technik@hv-kraus.de")),
             Sent(2, [("Kanzlei Dr. Hoff", "belege@stb-hoff.de")], "WG: Rechnung Großhandel Oktober", docs=[Doc("Rechnung", "GH-55120", "28.10.2026", ["Richter+Frenzel"], ["Selbmann Haustechnik"], [("Material", 1, "Psch", 2400)])], expect=None),
@@ -136,34 +143,36 @@ def build() -> list[Persona]:
 
     # 4 Frisch selbstständig, Schweiz, alleine, GMX, CHF
     h = _hdr("Pannasch Renovationen", "Bahnhofstrasse 14", "8400 Winterthur", "+41 78 123 45 67")
-    a6 = Doc("Offerte", "O-0007", "26.10.2026", h, ["Frau Lea Brunner", "Rosenweg 5", "8400 Winterthur"],
+    a6 = Doc("Offerte", "O-0007", "26.10.2026", h, ["Frau Lea Brunner", "Rosenweg 5", "8400 Winterthur", "Natel 079 555 12 34"],
              [("Badezimmer Plattenarbeiten", 18, "m²", 95), ("Silikonfugen erneuern", 1, "Pauschal", 280)], "swiss", ["Gültig 30 Tage."], extra={"footer": "IBAN CH93 0076 2011 6238 5295 7 · MWST CHE-123.456.789"})
     a6.kind = "Offerte"
     P.append(Persona(
         "solo_ch", "Pannasch Renovationen", "Mykhaylo Pannasch", "Renovation/Plattenleger", "allein, frisch selbstständig", "m.pannasch@gmx.ch", "+41 78 123 45 67",
         "Ganz frisch, 4–7 Aufträge bisher, schreibt Offerten mit einer Vorlage, schickt alles vom Handy über GMX.",
         "Motiviert, aber unsicher, will wie ein richtiger Betrieb wirken. Jeder Auftrag zählt.",
-        sent=[Sent(4, [("Lea Brunner", "lea.brunner@bluewin.ch")], "Offerte Badezimmer", docs=[a6], expect=_exp("offer", a6, "lea.brunner@bluewin.ch"))],
-        note="Schweizer Zahlenformat und CHF, Wort 'Offerte' statt Angebot.",
+        sent=[Sent(4, [("Lea Brunner", "lea.brunner@bluewin.ch")], "Offerte Badezimmer", docs=[a6], expect=_exp("offer", a6, "lea.brunner@bluewin.ch", mobile="41795551234"))],
+        note="Schweizer Zahlenformat und CHF, Wort 'Offerte' statt Angebot. Kundin ist per WhatsApp erreichbar, Nachfassen per WhatsApp mit einem Tipp.",
+        channel="whatsapp_tap",
     ))
 
     # 5 Solo-Fliesenleger, Word, GMX
     h = _hdr("Fliesen Kowalski", "Hauptstr. 9", "45127 Essen", "0171 9988776")
-    a7 = Doc("Angebot", "17/2026", "28.10.2026", h, ["Herrn Dieter Lange", "Rüttenscheider Str. 50", "45130 Essen"],
+    a7 = Doc("Angebot", "17/2026", "28.10.2026", h, ["Herrn Dieter Lange", "Rüttenscheider Str. 50", "45130 Essen", "Mobil: 0172 4455667"],
              [("Bodenfliesen 60x60 verlegen", 24, "m²", 52), ("Fliesen entfernen und entsorgen", 24, "m²", 18), ("Sockelleisten", 22, "lfm", 9.5)],
              "word", [], extra={"ort": "Essen"})
     P.append(Persona(
         "fliesen", "Fliesen Kowalski", "Marek Kowalski", "Fliesenleger", "allein", "fliesen.kowalski@gmx.de", "0171 9988776",
         "Word-Vorlage, PDF gespeichert, abends am Laptop per GMX-Webmail verschickt. Kein Büro, keine Software.",
         "Ehrlich, direkt, misstrauisch bei 'Passwort eingeben'. Will, dass Kunden ihn nicht für aufdringlich halten.",
-        sent=[Sent(2, [("Dieter Lange", "d.lange@arcor.de")], "Ihr Angebot", docs=[a7], filenames=["Lange Boden.pdf"], expect=_exp("offer", a7, "d.lange@arcor.de"))],
+        sent=[Sent(2, [("Dieter Lange", "d.lange@arcor.de")], "Ihr Angebot", docs=[a7], filenames=["Lange Boden.pdf"], expect=_exp("offer", a7, "d.lange@arcor.de", mobile="491724455667"))],
+        channel="whatsapp_tap",
         events=[Event(5, "bounce", "17/2026", "mailer-daemon@gmx.net", "Mail delivery failed: returning message to sender", "This message was created automatically by mail delivery software.\n\nA message that you sent could not be delivered to one or more of its recipients.\n\n  d.lange@arcor.de\n    mailbox unavailable", expect_status="bounced")],
         note="Kundenadresse existiert nicht mehr (arcor abgeschaltet).",
     ))
 
     # 6 Maler, 3 Leute, sevDesk, WEB.DE
     h = _hdr("Malerbetrieb Yilmaz", "Kölner Str. 120", "40227 Düsseldorf", "0211 5566778")
-    r3 = Doc("Rechnung", "RE-1044", "20.10.2026", h, ["Frau Petra Schulz", "Brunnenstr. 7", "40223 Düsseldorf"],
+    r3 = Doc("Rechnung", "RE-1044", "20.10.2026", h, ["Frau Petra Schulz", "Brunnenstr. 7", "40223 Düsseldorf", "Handy 0151 22334455"],
              [("Wohnzimmer streichen, 2x deckend", 62, "m²", 11), ("Abdeck- und Schutzarbeiten", 1, "Psch", 120)], "sevdesk", ["Bitte überweisen Sie den Betrag bis zum 03.11.2026."])
     a8 = Doc("Angebot", "AN-1051", "28.10.2026", h, ["Kita Sonnenschein e.V.", "Parkstr. 2", "40225 Düsseldorf"],
              [("Gruppenräume streichen", 3, "Raum", 890), ("Lackierarbeiten Türen", 9, "St", 85)], "sevdesk", ["Angebot gültig 4 Wochen."])
@@ -172,7 +181,7 @@ def build() -> list[Persona]:
         "sevDesk, lädt PDF runter und schickt es über WEB.DE, weil Kunden auf sevDesk-Mails nicht reagieren.",
         "Zahlenmensch, ärgert sich über offene Rechnungen, will Geld schneller sehen.",
         sent=[
-            Sent(11, [("Petra Schulz", "petra.schulz@gmx.de")], "Rechnung RE-1044", docs=[r3], expect=_exp("invoice", r3, "petra.schulz@gmx.de")),
+            Sent(11, [("Petra Schulz", "petra.schulz@gmx.de")], "Rechnung RE-1044", docs=[r3], expect=_exp("invoice", r3, "petra.schulz@gmx.de", mobile="4915122334455")),
             Sent(3, [("Kita Sonnenschein", "leitung@kita-sonnenschein-ddorf.de")], "Angebot AN-1051 Renovierung Gruppenräume", docs=[a8], expect=_exp("offer", a8, "leitung@kita-sonnenschein-ddorf.de")),
         ],
         events=[Event(7, "reply", "RE-1044", "petra.schulz@gmx.de", "AW: Rechnung RE-1044", "Habe heute überwiesen, sorry für die Verspätung!", expect_status="replied")],
@@ -181,7 +190,7 @@ def build() -> list[Persona]:
 
     # 7 Elektriker, 6 Leute, Microsoft 365
     h = _hdr("Elektro Brandes GmbH", "Gewerbering 12", "50259 Pulheim", "02238 4040")
-    a9 = Doc("Angebot", "ANG-26-3310", "27.10.2026", h, ["Herr und Frau Becker", "Venloer Str. 400", "50259 Pulheim"],
+    a9 = Doc("Angebot", "ANG-26-3310", "27.10.2026", h, ["Herr und Frau Becker", "Venloer Str. 400", "50259 Pulheim", "Tel. 02238 991122 · Mobil 0176 99887766"],
              [("Wallbox 11 kW inkl. Installation", 1, "St", 1490), ("Zählerschrank erneuern", 1, "St", 2280), ("Anmeldung Netzbetreiber", 1, "Psch", 150)],
              "lexware", ["Dieses Angebot ist 6 Wochen gültig."])
     P.append(Persona(
@@ -189,7 +198,7 @@ def build() -> list[Persona]:
         "Büro mit Microsoft 365 / Outlook, Angebote aus Großhändler-Software als PDF.",
         "Technikaffin, aber Datenschutz-kritisch, fragt nach AVV.",
         sent_folder="Gesendete Elemente", sent_flag=True,
-        sent=[Sent(3, [("Familie Becker", "becker.pulheim@gmail.com")], "Angebot Wallbox und Zählerschrank", docs=[a9], expect=_exp("offer", a9, "becker.pulheim@gmail.com"))],
+        sent=[Sent(3, [("Familie Becker", "becker.pulheim@gmail.com")], "Angebot Wallbox und Zählerschrank", docs=[a9], expect=_exp("offer", a9, "becker.pulheim@gmail.com", mobile="4917699887766", phone="492238991122"))],
         note="Microsoft 365: Passwort-Login geht nicht, nur OAuth. Im Test simuliert per Passwort.",
     ))
 
@@ -362,14 +371,15 @@ def build() -> list[Persona]:
 
     # 20 Gartenpflege solo, iCloud, schickt meist per WhatsApp
     h = _hdr("Grünpflege Ahrens", "Feldweg 3", "41352 Korschenbroich", "0157 3344556")
-    a18 = Doc("Angebot", "3/26", "29.10.2026", h, ["Frau Ilse Martens", "Am Bach 1", "41352 Korschenbroich"], [("Heckenschnitt", 40, "lfm", 7), ("Grünschnitt entsorgen", 1, "Psch", 60)], "kleinunternehmer", [])
+    a18 = Doc("Angebot", "3/26", "29.10.2026", h, ["Frau Ilse Martens", "Am Bach 1", "41352 Korschenbroich", "Mobil 0160 5544332"], [("Heckenschnitt", 40, "lfm", 7), ("Grünschnitt entsorgen", 1, "Psch", 60)], "kleinunternehmer", [])
     P.append(Persona(
         "gruen", "Grünpflege Ahrens", "Lukas Ahrens", "Gartenpflege", "allein", "lukas.ahrens@icloud.com", "0157 3344556",
         "Schickt Preise meist per WhatsApp, nur ältere Kunden bekommen ein PDF per Mail.",
         "Handy-only, ungeduldig, findet Mail altmodisch.",
         sent_folder="Sent Messages",
-        sent=[Sent(2, [("Ilse Martens", "ilse.martens@t-online.de")], "Angebot Heckenschnitt", docs=[a18], expect=_exp("offer", a18, "ilse.martens@t-online.de"))],
-        note="Der größte Teil seiner Angebote geht über WhatsApp und ist für den Nachfasser unsichtbar.",
+        sent=[Sent(2, [("Ilse Martens", "ilse.martens@t-online.de")], "Angebot Heckenschnitt", docs=[a18], expect=_exp("offer", a18, "ilse.martens@t-online.de", mobile="491605544332"))],
+        note="Der größte Teil seiner Angebote geht über WhatsApp und ist für den Nachfasser unsichtbar. Er fasst per WhatsApp mit einem Tipp nach, seine eigene Nummer ist auch ein Handy.",
+        channel="whatsapp_tap",
     ))
     return P
 

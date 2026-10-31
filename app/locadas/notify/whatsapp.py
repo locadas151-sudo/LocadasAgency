@@ -94,6 +94,18 @@ def send_buttons(to: str, text: str, buttons: list[tuple[str, str]], footer: str
     return _send({"to": to, "type": "interactive", "interactive": interactive})
 
 
+def send_cta(to: str, text: str, label: str, url: str, footer: str = "") -> str:
+    """Interaktive Nachricht mit einem URL-Knopf (type cta_url, nur im 24h-Fenster). Antwort-Knöpfe gehen hier nicht."""
+    interactive: dict = {
+        "type": "cta_url",
+        "body": {"text": _clip(text, BODY_MAX)},
+        "action": {"name": "cta_url", "parameters": {"display_text": label[:BUTTON_TITLE_MAX], "url": url}},
+    }
+    if footer:
+        interactive["footer"] = {"text": _clip(footer, 60)}
+    return _send({"to": to, "type": "interactive", "interactive": interactive})
+
+
 def template_param(text: str) -> str:
     """Meta lehnt Parameter mit Zeilenumbrüchen, Tabs oder mehr als 4 Leerzeichen am Stück ab."""
     flat = re.sub(r"\s*\n\s*", " · ", (text or "").strip())
@@ -101,12 +113,18 @@ def template_param(text: str) -> str:
     return _clip(flat, PARAM_MAX) or "-"
 
 
-def send_template(to: str, name: str, params: list[str], button_payloads: list[str]) -> str:
+def send_template(to: str, name: str, params: list[str], button_payloads: list[str], url_param: str | None = None) -> str:
+    """Vorlage mit Schnellantwort-Knöpfen. Mit url_param hat die Vorlage vorne (Index 0) einen URL-Knopf mit
+    dynamischem Ende (z. B. https://app.locadas.de/t/{{1}}), die Schnellantworten folgen ab Index 1."""
     components: list[dict] = []
     if params:
         components.append({"type": "body", "parameters": [{"type": "text", "text": template_param(p)} for p in params]})
+    offset = 0
+    if url_param is not None:
+        components.append({"type": "button", "sub_type": "url", "index": "0", "parameters": [{"type": "text", "text": url_param}]})
+        offset = 1
     for i, p in enumerate(button_payloads[:MAX_BUTTONS]):
-        components.append({"type": "button", "sub_type": "quick_reply", "index": str(i), "parameters": [{"type": "payload", "payload": p}]})
+        components.append({"type": "button", "sub_type": "quick_reply", "index": str(i + offset), "parameters": [{"type": "payload", "payload": p}]})
     return _send({
         "to": to,
         "type": "template",

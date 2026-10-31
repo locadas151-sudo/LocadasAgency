@@ -47,6 +47,12 @@
 </select></div>
 </div>
 <p class="small muted" style="margin:-6px 0 14px">Firmenkunden bekommen immer mindestens sachliche Erinnerungen. Jede Erinnerung nennt ein Zahlungsdatum und deine Bankverbindung aus der Rechnung.</p>
+<div class="field"><label>Nachfassen per</label><select name="followup_channel">
+<option value="mail" {% if (business.followup_channel or 'mail') == 'mail' %}selected{% endif %}>Mail (Standard)</option>
+<option value="whatsapp_tap" {% if business.followup_channel == 'whatsapp_tap' %}selected{% endif %}>WhatsApp mit einem Tipp, wenn ich die Handynummer kenne</option>
+<option value="both" {% if business.followup_channel == 'both' %}selected{% endif %}>Mail automatisch und dazu ein WhatsApp-Vorschlag</option>
+</select></div>
+<p class="small muted" style="margin:-6px 0 14px">Bei WhatsApp schreibe ich dir die fertige Nachricht. Ein Tipp öffnet deinen Chat mit dem Kunden und du drückst nur noch auf Senden, von deiner eigenen Nummer. Die Handynummer lese ich aus dem Angebot oder der Mail-Signatur des Kunden. Ohne Handynummer fasse ich per Mail nach. Je Kunde umstellbar auf der Seite des Dokuments.</p>
 <label class="toggle"><input type="checkbox" name="personalize" value="1" {% if business.personalize %}checked{% endif %}><div><b>Nachfass-Mails in deinem Stil schreiben</b><span>Wir lernen Anrede, Ton und Grußformel aus deinen gesendeten Mails. Jeder Text wird geprüft, sonst gilt die feste Vorlage.</span></div></label>
 <label class="toggle"><input type="checkbox" name="notify_opened" value="1" {% if business.notify_opened %}checked{% endif %}><div><b>Bescheid geben, wenn ein Kunde öffnet oder antwortet</b><span>Kurze Nachricht per WhatsApp oder Mail, wenn der Kunde den Link zum ersten Mal öffnet oder antwortet.</span></div></label>
 <label class="toggle"><input type="checkbox" name="paused" value="1" {% if business.paused %}checked{% endif %}><div><b>Alles pausieren</b><span>Urlaub oder Baustelle: Wir lesen weiter mit, schicken aber nichts.</span></div></label>

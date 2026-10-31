@@ -119,6 +119,49 @@ def approval(b: Business, fu: FollowUp, index: int, total: int, subject: str, bo
     )
 
 
+def tap(b: Business, fu: FollowUp, reminder: bool = False) -> Notification:
+    """WhatsApp mit einem Tipp: „In WhatsApp öffnen“ (URL-Knopf), danach Gesendet / Hat geantwortet / Diesmal nicht.
+
+    Keine Mail-Fassung hier: die Taps eines Tages kommen gebündelt in einer Mail (engine/taps.bundle_mail)."""
+    from ..engine import taps
+
+    d = fu.document
+    both = fu.status.value != "awaiting_tap"
+    head = f"{ref(d)}{dmoney(d)}, Nachricht {fu.step} von 3"
+    if both:
+        intro = f"{head}. Die Mail ist schon raus. Willst du zusätzlich per WhatsApp nachhaken? Tipp auf „In WhatsApp öffnen“, der Text steht schon drin."
+    else:
+        intro = f"{head}. Tipp auf „In WhatsApp öffnen“, dann ist dein Chat mit {who(d)} offen und der Text steht schon drin. Nur noch abschicken."
+    prev = taps._prev_wa(fu)
+    if prev is not None and prev.sent_at:
+        intro += f"\nDie letzte Nachricht ging am {prev.sent_at.strftime('%d.%m.')} per WhatsApp raus. Hat {who(d)} dort geantwortet? Dann tipp unten auf „Hat geantwortet“."
+    third = button("Ist bezahlt", "tpaid", fu.id) if d.kind == DocKind.INVOICE else button("Hat geantwortet", "treplied", fu.id)
+    return Notification(
+        business=b, kind="tap",
+        title=f"{'Noch offen: ' if reminder else ''}{who(d)} per WhatsApp nachfassen",
+        text=f"{intro}\n\n{fu.wa_text}",
+        buttons=[button("Gesendet", "tsent", fu.id), third, button("Diesmal nicht", "tskip", fu.id)],
+        buttons_text=f"Hast du die Nachricht an {who(d)} abgeschickt?",
+        cta=("In WhatsApp öffnen", taps.tap_url(fu)),
+        doc_ids=[d.id], footer="Erinnerung" if reminder else "",
+        template="tap", template_params=[hello(b), who(d), f"{ref(d)}{dmoney(d)}", fu.wa_text or ""],
+        template_url=fu.tap_token,
+        template_buttons=[payload("tsent", fu.id), payload("treplied", fu.id), payload("tskip", fu.id)],
+    )
+
+
+def tap_overflow(b: Business, fus: list[FollowUp]) -> Notification:
+    """Mehr als 5 an einem Tag: der Rest steht im Dashboard (eine Nachricht je Kunde wäre zu viel)."""
+    from ..config import settings
+
+    names = ", ".join(who(f.document) for f in fus[:4]) + (f" und {len(fus) - 4} weitere" if len(fus) > 4 else "")
+    text = f"Heute sind noch {len(fus)} weitere WhatsApp-Nachrichten dran: {names}. Du findest sie mit je einem Knopf im Dashboard:\n{settings.base_url}/dashboard#whatsapp"
+    return Notification(
+        business=b, kind="tap", title="Noch mehr per WhatsApp", text=text, buttons=[button("Alles klar", "ok")],
+        doc_ids=[f.document.id for f in fus], template="event", template_params=[hello(b), text],
+    )
+
+
 def opened(d: Document, subject: str, body: str) -> Notification:
     b = d.business
     return Notification(

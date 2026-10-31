@@ -16,7 +16,7 @@ from . import whatsapp as wa
 
 log = logging.getLogger(__name__)
 
-KINDS = {"preview", "opened", "replied", "bounced", "outcome", "approval", "login", "info", "completion"}
+KINDS = {"preview", "opened", "replied", "bounced", "outcome", "approval", "login", "info", "completion", "tap"}
 
 
 @dataclass
@@ -35,6 +35,10 @@ class Notification:
     template: str | None = None
     template_params: list[str] = field(default_factory=list)
     template_buttons: list[str] | None = None   # Payloads der Vorlagen-Knöpfe, Standard: die von buttons
+    # „In WhatsApp öffnen“: Nachricht mit URL-Knopf (cta_url), danach die Antwort-Knöpfe als eigene Nachricht
+    cta: tuple[str, str] | None = None          # (Beschriftung ≤20, URL)
+    buttons_text: str = ""                      # Text über den Antwort-Knöpfen, wenn cta gesetzt ist
+    template_url: str | None = None             # Vorlage mit URL-Knopf: dynamischer Teil der URL (Index 0)
     context: dict | None = None     # wird bei Zustellung per WhatsApp am Betrieb gemerkt (z. B. Liste für „Stopp 3“)
     channel: str | None = None      # nach send(): "whatsapp", "email" oder None
 
@@ -74,6 +78,11 @@ def _deliver_whatsapp(b: Business, n: Notification, now: datetime) -> bool:
     to = b.whatsapp_number
     if wa.in_window(b, now):
         text = f"*{n.title}*\n\n{n.text}" if n.title else n.text
+        if n.cta:
+            wa.send_cta(to, text, n.cta[0], n.cta[1], n.footer)
+            if n.buttons:
+                wa.send_buttons(to, n.buttons_text or "Erledigt?", n.buttons)
+            return True
         if len(text) > wa.BODY_MAX and n.buttons:
             # Knopf-Nachrichten sind auf 1024 Zeichen begrenzt: vollständigen Text vorweg, dann kurz die Knöpfe
             wa.send_text(to, text)
@@ -87,7 +96,7 @@ def _deliver_whatsapp(b: Business, n: Notification, now: datetime) -> bool:
     if not name:
         return False
     payloads = n.template_buttons if n.template_buttons is not None else [p for _, p in n.buttons]
-    wa.send_template(to, name, n.template_params, payloads)
+    wa.send_template(to, name, n.template_params, payloads, url_param=n.template_url)
     return True
 
 
