@@ -195,6 +195,9 @@ class Document(Base):
     # Kundenantwort, von Claude eingeordnet (Mailtext selbst wird nicht gespeichert)
     reply_intent: Mapped[str] = mapped_column(String(20), default="", server_default="")
     reply_summary: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    # Abschlussfrage an den Betrieb („Auftrag bekommen?“ / „Bezahlt?“)
+    outcome_token: Mapped[str] = mapped_column(String(64), default=lambda: __import__("secrets").token_urlsafe(18), index=True)
+    outcome_asked_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     # Beim ersten Scan gefundene ältere Dokumente: Nachfassen nur mit Freigabe (könnte schon erledigt sein)
     needs_review: Mapped[bool] = mapped_column(Boolean, default=False)
     # Lese-Tracking über den Link in den Nachfass-Mails
@@ -238,6 +241,7 @@ class FollowUp(Base):
     sent_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     message_id: Mapped[str] = mapped_column(String(500), default="")
     error: Mapped[str] = mapped_column(Text, default="")
+    announced_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)  # in der Morgen-Vorschau angekündigt
 
     document: Mapped[Document] = relationship(back_populates="followups")
 

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import email
 import email.policy
+import re
 import json
 import os
 import sys
@@ -47,6 +48,8 @@ from sim.personas import Event, Persona, Sent, build, pdf_attachments  # noqa: E
 from tests.fakemail import FakeImapServer, FakeSmtpServer  # noqa: E402
 
 BERLIN = ZoneInfo("Europe/Berlin")
+# Bei diesen Betrieben klicken die Kunden den Link in der Nachfass-Mail
+CLICKERS = {k: True for k in ("shk", "glas", "solo_ch", "maler", "elektro", "pv", "fenster", "heizung", "reinigung", "volt")}
 PASSWORD = "sim-pass"
 
 
@@ -187,10 +190,26 @@ def run_persona(p: Persona, days: int = 22) -> dict:
                     approvals_mails += 1
             else:
                 customer_mails.append((day_label, ", ".join(rcpts), str(m["Subject"]), body))
+                tok = re.search(r"/a/([A-Za-z0-9_-]+)", body)
+                if tok and clicker and tok.group(1) not in opened_tokens:
+                    to_click.setdefault(int(day_label.split()[1]) + 1, []).append(tok.group(1))
         sent_before = len(smtp.messages)
+
+    from fastapi.testclient import TestClient
+    import locadas.main as appmain
+    web = TestClient(appmain.app)
+    clicker = CLICKERS.get(p.key, False)
+    to_click: dict[int, list[str]] = {}
+    opened_tokens: set[str] = set()
 
     for i, day in enumerate(_sim_days(t0, days)):
         clock.now = day
+        for token in to_click.pop(i, []):
+            if token in opened_tokens:
+                continue
+            r = web.get(f"/a/{token}")
+            opened_tokens.add(token)
+            timeline.append(f"Tag {i}: Kunde klickt den Link in der Nachfass-Mail (HTTP {r.status_code})")
         label = f"Tag {i} ({day.astimezone(BERLIN).strftime('%a %d.%m.')})"
         for ev in events_by_day.get(i, []):
             if ev.kind == "sent" and ev.sent is not None:
@@ -205,6 +224,11 @@ def run_persona(p: Persona, days: int = 22) -> dict:
                 raw, _ = _mail(p.email, p.owner, to, ev.subject, ev.body, day - timedelta(hours=1), in_reply_to=mids.get(ev.doc, ""))
                 imap.store.append(p.sent_folder, raw)
                 timeline.append(f"{label}: Inhaber fasst selbst nach („{ev.subject}“)")
+            elif ev.kind == "loose":
+                # Kunde schreibt ohne Thread-Bezug von einer anderen Adresse
+                raw, _ = _mail(ev.from_addr, "", [("", p.email)], ev.subject, ev.body, day - timedelta(hours=2))
+                imap.store.append("INBOX", raw)
+                timeline.append(f"{label}: Posteingang: Mail ohne Bezug von {ev.from_addr} („{ev.subject}“)")
             else:
                 hdr = {}
                 if ev.kind == "autoreply":
@@ -240,7 +264,8 @@ def run_persona(p: Persona, days: int = 22) -> dict:
             if ev.expect_status:
                 with new_session() as s:
                     d = s.scalar(select(Document).where(Document.business_id == bid, Document.document_number == ev.doc))
-                    check(d is not None and d.status.value == ev.expect_status, f"{label}: nach {ev.kind} ist {ev.doc} „{d.status.value if d else 'fehlt'}“ (erwartet „{ev.expect_status}“)")
+                    ok_states = {"replied", "won", "lost", "paid"} if ev.expect_status == "replied" else {ev.expect_status}
+                    check(d is not None and d.status.value in ok_states, f"{label}: nach {ev.kind} ist {ev.doc} „{d.status.value if d else 'fehlt'}“ (erwartet „{ev.expect_status}“)")
             if ev.kind == "manual":
                 with new_session() as s:
                     d = s.scalar(select(Document).where(Document.business_id == bid, Document.document_number == ev.doc))
@@ -267,6 +292,11 @@ def run_persona(p: Persona, days: int = 22) -> dict:
                 d = next((x for x in docs if x.document_number == nd.number), None)
                 check(d is not None and d.amount_gross is not None and abs(d.amount_gross - nd.payable) < 0.02, f"Überarbeitung {nd.number}: Betrag aktualisiert auf {d.amount_gross if d else None} (erwartet {nd.payable})")
                 check(len([x for x in docs if x.document_number == nd.number]) == 1, f"Überarbeitung {nd.number}: kein Duplikat")
+    if clicker:
+        with new_session() as s:
+            opened = s.scalars(select(Document).where(Document.business_id == bid, Document.first_opened_at.is_not(None))).all()
+        check(len(opened) >= len(opened_tokens) > 0 if opened_tokens else True, f"Geöffnet-Status sichtbar ({len(opened)} Dokumente geöffnet, {len(opened_tokens)} Klicks)")
+        check(any("geöffnet" in subj for _, subj, _ in notifications) if opened_tokens else True, "Betrieb bekommt Mail „… hat geöffnet“")
     per_day: dict[str, int] = {}
     for day_label, *_ in notifications:
         per_day[day_label] = per_day.get(day_label, 0) + 1
@@ -344,7 +374,7 @@ def critique(r: dict, model: str) -> dict | None:
     for _ in range(3):
         try:
             resp = client.messages.create(model=model, max_tokens=1200, messages=[{"role": "user", "content": prompt}])
-            raw = resp.content[0].text
+            raw = "".join(getattr(b, "text", "") for b in resp.content)
             return json.loads(raw[raw.index("{"): raw.rindex("}") + 1])
         except Exception as exc:  # noqa: BLE001
             err = exc

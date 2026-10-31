@@ -28,7 +28,8 @@ def test_view_link_tracks_open(fresh_db, imap, smtp):
         offer = s.scalars(select(Document).where(Document.document_number == "A-2026-118")).one()
         offer.followups[0].due_at = WEEKDAY_10 - timedelta(hours=1)
         s.commit()
-        assert fu.process_due(s, now=WEEKDAY_10)["sent"] == 1
+        assert fu.process_due(s, now=WEEKDAY_10)["announced"] == 1
+        assert fu.process_due(s, now=WEEKDAY_10 + timedelta(hours=3))["sent"] == 1
         token = offer.view_token
         doc_id = offer.id
 

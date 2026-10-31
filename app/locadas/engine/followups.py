@@ -275,6 +275,7 @@ def process_due(session: Session, now: datetime | None = None) -> dict[str, int]
         select(FollowUp).where(FollowUp.status == FollowUpStatus.SCHEDULED, FollowUp.due_at <= now).order_by(FollowUp.due_at)
     ).all()
     approvals: dict[int, list[FollowUp]] = {}
+    previews: dict[int, list[FollowUp]] = {}
     sent_count: dict[int, int] = {}
     for fu in due:
         doc = fu.document
@@ -296,6 +297,12 @@ def process_due(session: Session, now: datetime | None = None) -> dict[str, int]
         if _needs_approval(business, doc):
             approvals.setdefault(business.id, []).append(fu)
             continue
+        if settings.preview_hours > 0:
+            if fu.announced_at is None:
+                previews.setdefault(business.id, []).append(fu)
+                continue
+            if fu.announced_at > now - timedelta(hours=settings.preview_hours):
+                continue
         if business.id not in sent_count:
             sent_count[business.id] = _sent_today(session, business.id, now)
         if sent_count[business.id] >= settings.max_sends_per_day:
@@ -309,7 +316,40 @@ def process_due(session: Session, now: datetime | None = None) -> dict[str, int]
         request_approvals(session, fus[0].document.business, fus)
         stats["approval"] += len(fus)
         session.commit()
+    for business_id, fus in previews.items():
+        send_preview(session, fus[0].document.business, fus, now)
+        stats["announced"] = stats.get("announced", 0) + len(fus)
+        session.commit()
     return stats
+
+
+def send_preview(session: Session, business: Business, fus: list[FollowUp], now: datetime) -> None:
+    """Morgen-Vorschau: wer heute eine Nachfass-Mail bekommt, mit Stopp-Link pro Kunde (für Anrufe, die wir nicht sehen)."""
+    base = settings.base_url
+    send_time = (now + timedelta(hours=settings.preview_hours)).astimezone(ZoneInfo(settings.timezone)).strftime("%H:%M")
+    lines = [
+        f"Hallo {business.owner_name or business.name},",
+        "",
+        f"heute ab {send_time} Uhr fasse ich bei {'diesem Kunden' if len(fus) == 1 else f'diesen {len(fus)} Kunden'} nach.",
+        "Hat sich jemand schon gemeldet, zum Beispiel am Telefon? Dann einfach auf Stopp klicken.",
+        "",
+    ]
+    for fu in fus:
+        d = fu.document
+        lines += [
+            f"• {d.customer_name or d.customer_email}: {d.kind_label} {d.document_number or d.title}{_money(d.amount_gross)} (Nachfass-Mail {fu.step} von 3)",
+            f"  Stopp, hat sich gemeldet: {base}/f/{fu.approval_token}/stop",
+            "",
+        ]
+    lines += ["Du musst sonst nichts tun.", "", "Locadas Nachfasser"]
+    names = ", ".join((f.document.customer_name or f.document.customer_email).split(" <")[0] for f in fus[:3]) + (" …" if len(fus) > 3 else "")
+    if notify_business(session, business, f"Heute nachfassen: {names}", "\n".join(lines)):
+        for fu in fus:
+            fu.announced_at = now
+    else:
+        # Ohne Vorschau keine Sendung: lieber einen Tag später als ungefragt
+        for fu in fus:
+            fu.announced_at = None
 
 
 # --- Freigabe per Link ---------------------------------------------------------
@@ -348,17 +388,48 @@ def skip(session: Session, fu: FollowUp) -> None:
 
 # --- Aufräumen ---------------------------------------------------------------
 
-def finish_exhausted(session: Session, now: datetime | None = None, grace_days: int = 14) -> int:
-    """Dokumente, bei denen alle Schritte raus sind und seit X Tagen nichts kam, auf 'Abgeschlossen' setzen."""
+def finish_exhausted(session: Session, now: datetime | None = None, grace_days: int | None = None) -> int:
+    """Alle Stufen raus, eine Woche nichts gekommen: Vorgang abschließen und den Betrieb einmal fragen, wie es ausging."""
     now = now or utcnow()
-    n = 0
+    grace = settings.outcome_after_days if grace_days is None else grace_days
+    asks: dict[int, list[Document]] = {}
     docs = session.scalars(select(Document).where(Document.status == DocStatus.OPEN, Document.next_followup_at.is_(None))).all()
     for doc in docs:
         sent = [f.sent_at for f in doc.followups if f.status == FollowUpStatus.SENT and f.sent_at]
         pending = any(f.status in (FollowUpStatus.SCHEDULED, FollowUpStatus.AWAITING_APPROVAL) for f in doc.followups)
         if pending or not sent:
             continue
-        if max(sent) + timedelta(days=grace_days) <= now:
-            close_document(session, doc, DocStatus.DONE, "Alle Nachfass-Schritte durch, keine Antwort")
-            n += 1
-    return n
+        if max(sent) + timedelta(days=grace) <= now:
+            close_document(session, doc, DocStatus.DONE, "Alle Nachfass-Schritte durch, keine Antwort per Mail")
+            if doc.outcome_asked_at is None:
+                asks.setdefault(doc.business_id, []).append(doc)
+    for docs_ in asks.values():
+        ask_outcome(session, docs_[0].business, docs_, now)
+    return sum(len(v) for v in asks.values())
+
+
+def ask_outcome(session: Session, business: Business, docs: list[Document], now: datetime) -> None:
+    base = settings.base_url
+    lines = [f"Hallo {business.owner_name or business.name},", "", "bei diesen Vorgängen habe ich alles nachgefasst und per Mail kam keine Antwort. Wie ist es ausgegangen? Ein Klick reicht.", ""]
+    for d in docs:
+        head = f"• {d.customer_name or d.customer_email}: {d.kind_label} {d.document_number or d.title}{_money(d.amount_gross)}"
+        if d.kind == DocKind.OFFER:
+            lines += [head, f"  Auftrag bekommen: {base}/o/{d.outcome_token}/won", f"  Nicht bekommen:   {base}/o/{d.outcome_token}/lost", ""]
+        else:
+            lines += [head, f"  Ist bezahlt:              {base}/o/{d.outcome_token}/paid", f"  Nicht bezahlt, ich kümmere mich: {base}/o/{d.outcome_token}/unpaid", ""]
+    lines += ["Damit siehst du im Dashboard, wie viele deiner Angebote zum Auftrag werden.", "", "Locadas Nachfasser"]
+    subject = f"Wie ist es ausgegangen? {len(docs)} {'Vorgang' if len(docs) == 1 else 'Vorgänge'}"
+    if notify_business(session, business, subject, "\n".join(lines)):
+        for d in docs:
+            d.outcome_asked_at = now
+            log_event(session, d.business_id, "outcome_asked", f"Abschlussfrage zu {d.kind_label} {d.document_number or d.title} gestellt.", d.id)
+
+
+def set_outcome(session: Session, doc: Document, outcome: str) -> str:
+    mapping = {"won": (DocStatus.WON, "Auftrag bekommen"), "lost": (DocStatus.LOST, "Nicht bekommen"), "paid": (DocStatus.PAID, "Bezahlt"), "unpaid": (DocStatus.DONE, "Nicht bezahlt, Betrieb kümmert sich")}
+    status, label = mapping[outcome]
+    doc.status = status
+    doc.closed_at = doc.closed_at or utcnow()
+    doc.close_reason = label
+    log_event(session, doc.business_id, "outcome", f"{doc.kind_label} {doc.document_number or doc.title}: {label}.", doc.id)
+    return label

@@ -153,9 +153,14 @@ def test_full_flow(fresh_db, imap, smtp):
         inv.followups[0].due_at = WEEKDAY_10 - timedelta(hours=1)
         s.commit()
         stats = fu.process_due(s, now=WEEKDAY_10)
+        assert stats["sent"] == 0 and stats["announced"] == 1
+        preview = email.message_from_bytes(smtp.messages[-1][2], policy=email.policy.default)
+        assert smtp.messages[-1][1] == [USER] and preview["Subject"].startswith("Heute nachfassen")
+        assert "/stop" in preview.get_content()
+        stats = fu.process_due(s, now=WEEKDAY_10 + timedelta(hours=3))
         assert stats["sent"] == 1
-        m = email.message_from_bytes(smtp.messages[3][2], policy=email.policy.default)
-        assert smtp.messages[3][1] == ["p.weber@web.de"]
+        m = email.message_from_bytes(smtp.messages[-1][2], policy=email.policy.default)
+        assert smtp.messages[-1][1] == ["p.weber@web.de"]
         assert "224,91" in m.get_content() and "03.11.2026" in m.get_content()
         # Unbekannte Antwort ohne Thread-Bezug, aber vom Kunden → trotzdem erkannt
         imap.store.append("INBOX", make_mail("p.weber@web.de", USER, "Zahlung", "Ist überwiesen."))

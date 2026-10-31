@@ -110,6 +110,7 @@ def build() -> list[Persona]:
         events=[
             Event(1, "autoreply", "A-26-1203", "einkauf@rheinlogistik.de", "Abwesenheitsnotiz: Angebot Pflegevertrag 2027", "Ich bin bis 15.11. nicht im Haus.", expect_status="open"),
             Event(12, "reply", "A-26-1203", "einkauf@rheinlogistik.de", "AW: Angebot Pflegevertrag 2027", "Wir besprechen das intern und melden uns Mitte Dezember.", expect_status="replied"),
+            Event(13, "loose", "A-26-1187", "dr.wolff@praxis-wolff.de", "Garten", "Hallo Herr Albers, was ist denn jetzt mit unserem Garten? Wir wollten im Frühjahr draußen sitzen. Gruß S. Wolff", expect_status="replied"),
         ],
         decisions={"A-26-1187": "send"},
     ))

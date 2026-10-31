@@ -421,6 +421,18 @@ def customer_pdf(token: str, session: Session = Depends(get_db)):
     return FileResponse(doc.pdf_path, media_type="application/pdf", filename=doc.pdf_filename or "dokument.pdf", content_disposition_type="inline")
 
 
+@app.get("/o/{token}/{outcome}", response_class=HTMLResponse)
+def outcome_link(request: Request, token: str, outcome: str, session: Session = Depends(get_db)):
+    if outcome not in ("won", "lost", "paid", "unpaid"):
+        raise HTTPException(404)
+    doc = session.scalar(select(Document).where(Document.outcome_token == token)) if token else None
+    if doc is None:
+        raise HTTPException(404)
+    label = fu_engine.set_outcome(session, doc, outcome)
+    session.commit()
+    return render(request, "approval.html", title="Danke, ist notiert", text=f"{doc.customer_name or doc.customer_email}: {label}.", doc=doc, fu=None)
+
+
 # --- Freigabe per Link (ohne Login) ------------------------------------------------
 
 @app.get("/f/{token}/{action}", response_class=HTMLResponse)

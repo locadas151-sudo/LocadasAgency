@@ -52,6 +52,10 @@ class Settings:
     default_invoice_due_days: int = field(default_factory=lambda: _env_int("DEFAULT_INVOICE_DUE_DAYS", 14))
     # Wie viele Nachfass-Mails der Betrieb anfangs freigeben muss, bevor es automatisch läuft
     approvals_before_auto: int = field(default_factory=lambda: _env_int("APPROVALS_BEFORE_AUTO", 5))
+    # Morgen-Vorschau: so viele Stunden vor dem Versand bekommt der Betrieb die Liste mit Stopp-Links (0 = aus)
+    preview_hours: int = field(default_factory=lambda: _env_int("PREVIEW_HOURS", 2))
+    # Nach der letzten Stufe so viele Tage warten, dann „Auftrag bekommen? / Bezahlt?“ fragen
+    outcome_after_days: int = field(default_factory=lambda: _env_int("OUTCOME_AFTER_DAYS", 7))
     # Höchstens so viele Nachfass-Mails pro Betrieb und Tag (schützt vor Spam-Einstufung beim Mailanbieter)
     max_sends_per_day: int = field(default_factory=lambda: _env_int("MAX_SENDS_PER_DAY", 15))
     # Nur Mails, die jünger sind als X Tage, werden beim ersten Scan berücksichtigt
