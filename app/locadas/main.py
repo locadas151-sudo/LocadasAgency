@@ -1,6 +1,7 @@
 """FastAPI-App: Landing, Postfach verbinden, Dashboard, Freigabe-Links, Angebots-Check."""
 from __future__ import annotations
 
+import json
 import logging
 import threading
 from datetime import datetime, timedelta, timezone
@@ -28,6 +29,12 @@ from .mail import oauth
 from .mail.connect import ConnectFailed, ConnectionConfig, connect_mailbox
 from .mail.imap import ImapClient, MailAuthError, MailConnectError
 from .mail.providers import PROVIDERS, detect_provider
+from . import notify
+from .notify import inbound as wa_inbound
+from .notify import messages as wa_msgs
+from .notify import tokens as wa_tokens
+from .notify import whatsapp as wa
+from .notify.phone import normalize_phone
 from .web import auth
 
 log = logging.getLogger(__name__)
@@ -246,11 +253,39 @@ def _background_scan(account_id: int) -> None:
 
 
 @app.get("/start", response_class=HTMLResponse)
-def start(request: Request, business: Business = Depends(require_business), session: Session = Depends(get_db)):
+def start(request: Request, business: Business = Depends(require_business), session: Session = Depends(get_db), whatsapp: str = ""):
     docs = session.scalars(select(Document).where(Document.business_id == business.id).order_by(Document.sent_at.desc())).all()
     account = business.accounts[-1] if business.accounts else None
     scanning = account is not None and account.last_scan_at is None
-    return render(request, "start.html", business=business, docs=docs, account=account, scanning=scanning)
+    return render(request, "start.html", business=business, docs=docs, account=account, scanning=scanning, wa_msg=whatsapp)
+
+
+def _save_whatsapp(session: Session, b: Business, number: str, opt_in: bool) -> str:
+    """Nummer und Opt-in speichern; bei neuer Anmeldung Begrüßung schicken. Gibt den Status für die Seite zurück."""
+    normalized = normalize_phone(number)
+    if normalized is None:
+        return "wa_ungueltig"
+    was_active = notify.whatsapp_ready(b)
+    changed = normalized != b.whatsapp_number
+    b.whatsapp_number = normalized
+    b.whatsapp_opt_in = bool(opt_in and normalized)
+    if changed:
+        b.whatsapp_last_inbound_at = None  # neues Handy, neues 24h-Fenster
+        b.whatsapp_context = ""
+    if b.whatsapp_opt_in and (changed or not was_active):
+        log_event(session, b.id, "whatsapp", f"WhatsApp-Sekretär an +{normalized} eingeschaltet.")
+        if settings.whatsapp_enabled:
+            return "wa_ok" if notify.send(session, wa_msgs.welcome(b)) else "wa_fehler"
+        return "wa_bald"
+    return "gespeichert"
+
+
+@app.post("/whatsapp")
+def whatsapp_signup(business: Business = Depends(require_business), session: Session = Depends(get_db), whatsapp_number: str = Form(""), whatsapp_opt_in: str = Form("")):
+    b = session.get(Business, business.id)
+    result = _save_whatsapp(session, b, whatsapp_number, bool(whatsapp_opt_in))
+    session.commit()
+    return RedirectResponse(f"/start?whatsapp={result}", status_code=303)
 
 
 # --- Dashboard -------------------------------------------------------------------
@@ -402,13 +437,14 @@ def customer_view(request: Request, token: str, session: Session = Depends(get_d
             log_event(session, doc.business_id, "opened", f"{doc.customer_name or doc.customer_email} hat {doc.kind_label} {doc.document_number or doc.title} geöffnet.", doc.id)
         session.commit()
         if first and doc.business.notify_opened:
-            fu_engine.notify_business(
-                session, doc.business,
+            # Höchstens einmal pro Dokument (nur beim ersten Öffnen)
+            notify.send(session, wa_msgs.opened(
+                doc,
                 f"{doc.customer_name or doc.customer_email} hat dein {doc.kind_label} geöffnet",
                 f"Hallo {doc.business.owner_name or doc.business.name},\n\n"
                 f"{doc.customer_name or doc.customer_email} hat gerade {doc.kind_label} {doc.document_number or doc.title} geöffnet. "
                 f"Guter Moment für einen kurzen Anruf.\n\n{settings.base_url}/dokument/{doc.id}\n\nLocadas Nachfasser",
-            )
+            ))
             session.commit()
     return render(request, "customer_view.html", doc=doc, token=token)
 
@@ -459,6 +495,42 @@ def approval_link(request: Request, token: str, action: str, session: Session = 
         raise HTTPException(404)
     session.commit()
     return render(request, "approval.html", title=title, text=text, doc=doc, fu=fu)
+
+
+# --- WhatsApp-Sekretär -----------------------------------------------------------
+
+@app.get("/webhook/whatsapp")
+def whatsapp_verify(request: Request):
+    """Einmalige Prüfung durch Meta beim Eintragen der Webhook-URL."""
+    q = request.query_params
+    token = settings.whatsapp_verify_token
+    if q.get("hub.mode") == "subscribe" and token and q.get("hub.verify_token") == token:
+        return Response(q.get("hub.challenge", ""), media_type="text/plain")
+    raise HTTPException(403)
+
+
+@app.post("/webhook/whatsapp")
+async def whatsapp_webhook(request: Request, session: Session = Depends(get_db)):
+    body = await request.body()
+    if not wa.valid_signature(body, request.headers.get("x-hub-signature-256")):
+        return JSONResponse({"ok": False}, status_code=403)
+    try:
+        data = json.loads(body.decode("utf-8") or "{}")
+    except ValueError:
+        return JSONResponse({"ok": False}, status_code=400)
+    handled = wa_inbound.process_webhook(session, data)
+    session.commit()
+    return {"ok": True, "handled": handled}
+
+
+@app.get("/wa/d/{token}")
+def whatsapp_doc(token: str, session: Session = Depends(get_db)):
+    """PDF für den Betrieb aus dem WhatsApp-Chat, ohne Login und ohne als Kunden-Öffnen zu zählen."""
+    doc_id = wa_tokens.doc_id_from_link(token)
+    doc = session.get(Document, doc_id) if doc_id else None
+    if doc is None or not doc.pdf_path or not Path(doc.pdf_path).exists():
+        raise HTTPException(404)
+    return FileResponse(doc.pdf_path, media_type="application/pdf", filename=doc.pdf_filename or "dokument.pdf", content_disposition_type="inline")
 
 
 # --- OAuth (Gmail, Outlook) -----------------------------------------------------
@@ -548,6 +620,7 @@ def settings_save(
     name: str = Form(""), owner_name: str = Form(""), phone: str = Form(""), signature: str = Form(""),
     followup_offers: str = Form(""), followup_invoices: str = Form(""), paused: str = Form(""), auto_mode: str = Form(""), notify_opened: str = Form(""),
     include_view_link: str = Form(""), personalize: str = Form(""),
+    whatsapp_number: str | None = Form(None), whatsapp_opt_in: str = Form(""),
 ):
     b = session.get(Business, business.id)
     b.name = name.strip() or b.name
@@ -567,8 +640,11 @@ def settings_save(
                 f.subject, f.body = "", ""
     for a in b.accounts:
         a.display_name = b.name
+    msg = "gespeichert"
+    if whatsapp_number is not None:  # Feld war im Formular
+        msg = _save_whatsapp(session, b, whatsapp_number, bool(whatsapp_opt_in))
     session.commit()
-    return RedirectResponse("/einstellungen?msg=gespeichert", status_code=303)
+    return RedirectResponse(f"/einstellungen?msg={msg}", status_code=303)
 
 
 @app.post("/einstellungen/trennen")
@@ -602,14 +678,15 @@ def login_submit(request: Request, session: Session = Depends(get_db), email: st
     if business is None:
         return render(request, "login.html", next=next, sent="", error="Zu dieser Adresse ist kein Postfach verbunden.")
     link = f"{settings.base_url}/login/{auth.login_link_token(business.id)}"
-    ok = fu_engine.notify_business(
-        session, business, "Dein Login-Link für den Locadas Nachfasser",
+    n = wa_msgs.login(
+        business, link, "Dein Login-Link für den Locadas Nachfasser",
         f"Hallo {business.owner_name or business.name},\n\nhier ist dein Link zum Einloggen (2 Stunden gültig):\n{link}\n\nLocadas Nachfasser",
     )
+    ok = notify.send(session, n)
     session.commit()
     if not ok:
         return render(request, "login.html", next=next, sent="", error="Wir konnten keine Mail über dein Postfach schicken. Verbinde das Postfach bitte neu.")
-    return render(request, "login.html", next=next, sent=email, error=None)
+    return render(request, "login.html", next=next, sent=email, channel=n.channel, error=None)
 
 
 @app.get("/login/{token}")

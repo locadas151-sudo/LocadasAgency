@@ -6,6 +6,10 @@
 <div class="wrap wrap--narrow">
 <div class="app-head"><div><h1 class="h2">Einstellungen</h1><p class="app-sub">Wie und wann nachgefasst wird.</p></div></div>
 {% if msg == 'gespeichert' %}<div class="note" style="margin-bottom:16px">Gespeichert.</div>{% endif %}
+{% if msg == 'wa_ok' %}<div class="note" style="margin-bottom:16px">Gespeichert. Dein Locadas-Sekretär hat dir gerade auf WhatsApp geschrieben.</div>{% endif %}
+{% if msg == 'wa_bald' %}<div class="note" style="margin-bottom:16px">Gespeichert. WhatsApp schalten wir in Kürze frei, bis dahin kommt alles per Mail.</div>{% endif %}
+{% if msg == 'wa_fehler' %}<div class="note warn" style="margin-bottom:16px">Gespeichert, aber die WhatsApp-Nachricht ging nicht raus. Stimmt die Nummer? Bis dahin kommt alles per Mail.</div>{% endif %}
+{% if msg == 'wa_ungueltig' %}<div class="note warn" style="margin-bottom:16px">Die WhatsApp-Nummer konnten wir nicht lesen. Bitte als Handynummer eingeben, zum Beispiel 0171 2345678.</div>{% endif %}
 {% if msg == 'bestaetigen' %}<div class="note warn" style="margin-bottom:16px">Zum Trennen bitte „ja“ ins Feld schreiben.</div>{% endif %}
 <div class="grid2">
 <form class="form-card" method="post" action="/einstellungen" style="max-width:none">
@@ -14,6 +18,7 @@
 <div class="field"><label>Dein Name</label><input name="owner_name" value="{{ business.owner_name }}"></div>
 </div>
 <div class="field"><label>Telefon</label><input name="phone" value="{{ business.phone }}"></div>
+{% include "_whatsapp_fields.html" %}
 <div class="field"><label>Grußformel und Signatur <small>(leer = „Viele Grüße“, Name, Betrieb, Telefon)</small></label><textarea name="signature" placeholder="Viele Grüße&#10;Thomas Müller&#10;Müller Haustechnik GmbH&#10;0171 2345678">{{ business.signature }}</textarea></div>
 <div>
 <label class="toggle"><input type="checkbox" name="followup_offers" value="1" {% if business.followup_offers %}checked{% endif %}><div><b>Angebote nachfassen</b><span>{{ settings.offer_followup_days|join(', ') }} Tage nach Versand, bis der Kunde antwortet.</span></div></label>
@@ -21,7 +26,7 @@
 <label class="toggle"><input type="checkbox" name="auto_mode" value="1" {% if business.auto_mode or business.approvals_done >= settings.approvals_before_auto %}checked{% endif %}><div><b>Automatisch senden, ohne Freigabe</b><span>Aus = du bekommst jede Nachfass-Mail vorher per Mail zur Freigabe. {{ business.approvals_done }} von {{ settings.approvals_before_auto }} Freigaben erteilt.</span></div></label>
 <label class="toggle"><input type="checkbox" name="include_view_link" value="1" {% if business.include_view_link %}checked{% endif %}><div><b>Link zum Dokument in Nachfass-Mails</b><span>Der Kunde kann Angebot oder Rechnung per Link öffnen. Du siehst, ob und wann er es geöffnet hat.</span></div></label>
 <label class="toggle"><input type="checkbox" name="personalize" value="1" {% if business.personalize %}checked{% endif %}><div><b>Nachfass-Mails in deinem Stil schreiben</b><span>Wir lernen Anrede, Ton und Grußformel aus deinen gesendeten Mails. Jeder Text wird geprüft, sonst gilt die feste Vorlage.</span></div></label>
-<label class="toggle"><input type="checkbox" name="notify_opened" value="1" {% if business.notify_opened %}checked{% endif %}><div><b>Bescheid geben, wenn ein Kunde öffnet oder antwortet</b><span>Kurze Mail in dein Postfach, wenn der Kunde den Link zum ersten Mal öffnet oder antwortet.</span></div></label>
+<label class="toggle"><input type="checkbox" name="notify_opened" value="1" {% if business.notify_opened %}checked{% endif %}><div><b>Bescheid geben, wenn ein Kunde öffnet oder antwortet</b><span>Kurze Nachricht per WhatsApp oder Mail, wenn der Kunde den Link zum ersten Mal öffnet oder antwortet.</span></div></label>
 <label class="toggle"><input type="checkbox" name="paused" value="1" {% if business.paused %}checked{% endif %}><div><b>Alles pausieren</b><span>Urlaub oder Baustelle: Wir lesen weiter mit, schicken aber nichts.</span></div></label>
 </div>
 <button class="btn" type="submit">Speichern</button>

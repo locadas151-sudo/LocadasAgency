@@ -28,7 +28,9 @@ from ..extract.pdftext import pdf_to_text
 from ..mail.imap import Attachment, ImapClient, MailAuthError, MailConnectError, ParsedMail, since_days
 from . import accounts as acc
 from . import matcher, style
-from .followups import close_document, notify_business, schedule_followups
+from ..notify import messages as wa_msgs
+from ..notify import send as notify
+from .followups import close_document, schedule_followups
 from .matcher import MatchResult
 
 log = logging.getLogger(__name__)
@@ -300,13 +302,14 @@ def _handle_bounce(session: Session, account: MailAccount, mail: ParsedMail, cli
         return False
     close_document(session, doc, DocStatus.BOUNCED, f"Adresse {doc.customer_email} unzustellbar")
     session.commit()
-    notify_business(
-        session, doc.business,
+    notify(session, wa_msgs.bounced(
+        doc,
         f"Mail an {doc.customer_name or doc.customer_email} kam nicht an",
         f"Hallo {doc.business.owner_name or doc.business.name},\n\n"
         f"die Nachfass-Mail zu {doc.kind_label} {doc.document_number or doc.title} an {doc.customer_email} ist zurückgekommen, die Adresse ist unzustellbar. "
         f"Ich fasse dort nicht mehr nach.\n\nKorrigier die Adresse hier und schalte das Nachfassen wieder ein: {settings.base_url}/dokument/{doc.id}\n\nLocadas Nachfasser",
-    )
+    ))
+    session.commit()
     return True
 
 
@@ -389,10 +392,12 @@ def _notify_reply(session: Session, doc: Document, mail: ParsedMail, status: Doc
         lines += ["", f"» {doc.reply_summary}"]
     if doc.customer_email and mail.from_addr != doc.customer_email:
         lines += ["", f"Die Mail kam von {mail.from_addr}, nicht von {doc.customer_email}. Ich habe sie anhand des Inhalts zugeordnet."]
-    lines += ["", _STATUS_NOTE.get(status, "Ich fasse dort nicht mehr nach."), ""]
+    note = _STATUS_NOTE.get(status, "Ich fasse dort nicht mehr nach.")
+    lines += ["", note, ""]
     lines.append(f"Wenn das nicht stimmt oder du doch weiter nachfassen willst, kannst du das hier ändern: {settings.base_url}/dokument/{doc.id}")
     lines += ["", "Locadas Nachfasser"]
-    notify_business(session, doc.business, f"{who} {_STATUS_SUBJECT.get(status, 'hat geantwortet')} ({ref})", "\n".join(lines))
+    notify(session, wa_msgs.replied(doc, note, f"{who} {_STATUS_SUBJECT.get(status, 'hat geantwortet')} ({ref})", "\n".join(lines)))
+    session.commit()
 
 
 def scan_inbox(session: Session, account: MailAccount, client: ImapClient) -> int:

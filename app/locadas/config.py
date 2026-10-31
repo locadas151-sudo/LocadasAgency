@@ -25,6 +25,28 @@ def _env_bool(name: str, default: bool) -> bool:
     return value.lower() in {"1", "true", "yes", "on"}
 
 
+WHATSAPP_TEMPLATE_DEFAULTS = {
+    "welcome": "locadas_welcome",
+    "preview": "locadas_preview",
+    "opened": "locadas_opened",
+    "replied": "locadas_reply",
+    "approval": "locadas_approval",
+    "outcome_offer": "locadas_outcome_offer",
+    "outcome_invoice": "locadas_outcome_invoice",
+    "event": "locadas_event",
+}
+
+
+def _templates(raw: str) -> dict[str, str]:
+    out = dict(WHATSAPP_TEMPLATE_DEFAULTS)
+    for part in raw.split(","):
+        if "=" in part:
+            k, v = part.split("=", 1)
+            if k.strip() and v.strip():
+                out[k.strip()] = v.strip()
+    return out
+
+
 @dataclass
 class Settings:
     # Basis
@@ -78,6 +100,20 @@ class Settings:
     system_smtp_user: str | None = field(default_factory=lambda: _env("SYSTEM_SMTP_USER"))
     system_smtp_password: str | None = field(default_factory=lambda: _env("SYSTEM_SMTP_PASSWORD"))
     system_from: str = field(default_factory=lambda: _env("SYSTEM_FROM", "Locadas <info@locadas.de>"))
+
+    # WhatsApp-Sekretär (Meta WhatsApp Cloud API). Ohne Token/Nummer/App-Secret geht alles per Mail.
+    whatsapp_token: str | None = field(default_factory=lambda: _env("WHATSAPP_TOKEN"))
+    whatsapp_phone_number_id: str | None = field(default_factory=lambda: _env("WHATSAPP_PHONE_NUMBER_ID"))
+    whatsapp_app_secret: str | None = field(default_factory=lambda: _env("WHATSAPP_APP_SECRET"))
+    whatsapp_verify_token: str | None = field(default_factory=lambda: _env("WHATSAPP_VERIFY_TOKEN"))
+    whatsapp_api_version: str = field(default_factory=lambda: _env("WHATSAPP_API_VERSION", "v21.0"))
+    whatsapp_template_lang: str = field(default_factory=lambda: _env("WHATSAPP_TEMPLATE_LANG", "de"))
+    # Namen der freigegebenen Vorlagen, überschreibbar per WHATSAPP_TEMPLATES="preview=meine_vorschau,event=..."
+    whatsapp_templates: dict[str, str] = field(default_factory=lambda: _templates(_env("WHATSAPP_TEMPLATES", "")))
+
+    @property
+    def whatsapp_enabled(self) -> bool:
+        return bool(self.whatsapp_token and self.whatsapp_phone_number_id and self.whatsapp_app_secret)
 
     @property
     def sqlalchemy_url(self) -> str:

@@ -6,7 +6,8 @@
 <div class="wrap wrap--narrow" style="max-width:560px">
 <div class="app-head"><div><h1 class="h2">Anmelden</h1><p class="app-sub">Kein Passwort. Wir schicken dir einen Link in dein Postfach.</p></div></div>
 {% if sent %}
-<div class="card accent"><h3 class="h3">Link ist raus</h3><p style="margin:0">Schau in das Postfach <b>{{ sent }}</b>. Der Link ist zwei Stunden gültig. Absender ist dein eigenes Postfach, die Mail landet also nicht im Spam.</p></div>
+{% if channel == 'whatsapp' %}<div class="card accent"><h3 class="h3">Link ist raus</h3><p style="margin:0">Schau auf WhatsApp, dein Locadas-Sekretär hat dir den Link geschickt. Er ist zwei Stunden gültig.</p></div>
+{% else %}<div class="card accent"><h3 class="h3">Link ist raus</h3><p style="margin:0">Schau in das Postfach <b>{{ sent }}</b>. Der Link ist zwei Stunden gültig. Absender ist dein eigenes Postfach, die Mail landet also nicht im Spam.</p></div>{% endif %}
 {% else %}
 <form class="form-card" method="post" action="/login">
 {% if error %}<div class="note err">{{ error }}{% if 'kein Postfach' in error %} <a href="/verbinden">Jetzt verbinden</a>{% endif %}</div>{% endif %}

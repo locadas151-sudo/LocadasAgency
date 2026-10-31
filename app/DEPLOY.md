@@ -15,6 +15,7 @@ Repo → Settings → Secrets and variables → Actions → **Secrets**:
 | `APP_SECRET_KEY` | `python3 -c "import secrets;print(secrets.token_urlsafe(48))"` |
 | `APP_ENCRYPTION_KEY` | `python3 -c "from cryptography.fernet import Fernet;print(Fernet.generate_key().decode())"` – **nie ändern**, sonst sind alle Postfach-Zugangsdaten unlesbar |
 | `ANTHROPIC_API_KEY` | der Claude-Key (ohne Key läuft nur die Regex-Heuristik, der Angebots-Check ist dann aus) |
+| `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` | optional, WhatsApp-Sekretär (Einrichtung und Vorlagen: `WHATSAPP.md`). Ohne geht alles per Mail. |
 
 Optional als **Variables**: `APP_DOMAIN` (Default `app.locadas.de`), `APP_BASE_URL` (Default `https://app.locadas.de`), `CLAUDE_MODEL`.
 

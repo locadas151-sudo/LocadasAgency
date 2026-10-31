@@ -13,6 +13,9 @@ from ..config import settings
 from ..db import Business, DocKind, DocStatus, Document, FollowUp, FollowUpStatus, log_event, utcnow
 from ..mail.imap import MailAuthError, MailConnectError
 from ..mail.smtp import build_message
+from ..notify import Notification, send_email
+from ..notify import messages as wa_msgs
+from ..notify import send as notify
 from . import accounts as acc
 from . import personalize, texts
 
@@ -188,24 +191,14 @@ def _approval_mail(business: Business, fu: FollowUp) -> tuple[str, str]:
 
 
 def notify_business(session: Session, business: Business, subject: str, body: str) -> bool:
-    """Schickt dem Betrieb eine Mail in sein eigenes Postfach, über sein eigenes SMTP."""
-    account = next((a for a in business.accounts if a.status.value != "disconnected"), None)
-    if account is None:
-        return False
-    msg = build_message(
-        from_name="Locadas Nachfasser",
-        from_addr=account.email,
-        to_name=business.owner_name or business.name,
-        to_addr=account.email,
-        subject=subject,
-        body=body,
-    )
-    try:
-        acc.smtp_for(account).send(msg)
-        return True
-    except (MailAuthError, MailConnectError) as exc:
-        acc.mark_error(session, account, str(exc))
-        return False
+    """Nur Mail ins eigene Postfach. Neue Stellen bitte über notify.send(Notification) schicken."""
+    return send_email(session, business, subject, body)
+
+
+def approval_notification(business: Business, fus: list[FollowUp], subject: str, body: str) -> Notification:
+    """WhatsApp zeigt die Freigaben einzeln nacheinander (3 Knöpfe pro Nachricht), die Mail bündelt sie."""
+    left = max(0, settings.approvals_before_auto - business.approvals_done) if business.needs_approval else None
+    return wa_msgs.approval(business, fus[0], 1, len(fus), subject, body, left)
 
 
 def _needs_approval(business: Business, doc: Document) -> bool:
@@ -244,7 +237,7 @@ def request_approvals(session: Session, business: Business, fus: list[FollowUp])
         lines += ["", "Locadas Nachfasser"]
         subject = f"{len(fus)} Kunden zum Nachfassen, bitte kurz freigeben"
         body = "\n".join(lines)
-    if notify_business(session, business, subject, body):
+    if notify(session, approval_notification(business, fus, subject, body)):
         for fu in fus:
             d = fu.document
             log_event(session, d.business_id, "approval", f"Freigabe angefragt: Nachfass-Mail {fu.step} für {d.kind_label} {d.document_number or d.title}.", d.id)
@@ -343,7 +336,7 @@ def send_preview(session: Session, business: Business, fus: list[FollowUp], now:
         ]
     lines += ["Du musst sonst nichts tun.", "", "Locadas Nachfasser"]
     names = ", ".join((f.document.customer_name or f.document.customer_email).split(" <")[0] for f in fus[:3]) + (" …" if len(fus) > 3 else "")
-    if notify_business(session, business, f"Heute nachfassen: {names}", "\n".join(lines)):
+    if notify(session, wa_msgs.preview(business, fus, send_time, f"Heute nachfassen: {names}", "\n".join(lines)), now):
         for fu in fus:
             fu.announced_at = now
     else:
@@ -400,7 +393,7 @@ def finish_exhausted(session: Session, now: datetime | None = None, grace_days: 
         if pending or not sent:
             continue
         if max(sent) + timedelta(days=grace) <= now:
-            close_document(session, doc, DocStatus.DONE, "Alle Nachfass-Schritte durch, keine Antwort per Mail")
+            close_document(session, doc, DocStatus.DONE, OUTCOME_PENDING_REASON)
             if doc.outcome_asked_at is None:
                 asks.setdefault(doc.business_id, []).append(doc)
     for docs_ in asks.values():
@@ -408,7 +401,10 @@ def finish_exhausted(session: Session, now: datetime | None = None, grace_days: 
     return sum(len(v) for v in asks.values())
 
 
-def ask_outcome(session: Session, business: Business, docs: list[Document], now: datetime) -> None:
+OUTCOME_PENDING_REASON = "Alle Nachfass-Schritte durch, keine Antwort per Mail"
+
+
+def outcome_mail(business: Business, docs: list[Document]) -> tuple[str, str]:
     base = settings.base_url
     lines = [f"Hallo {business.owner_name or business.name},", "", "bei diesen Vorgängen habe ich alles nachgefasst und per Mail kam keine Antwort. Wie ist es ausgegangen? Ein Klick reicht.", ""]
     for d in docs:
@@ -419,7 +415,13 @@ def ask_outcome(session: Session, business: Business, docs: list[Document], now:
             lines += [head, f"  Ist bezahlt:              {base}/o/{d.outcome_token}/paid", f"  Nicht bezahlt, ich kümmere mich: {base}/o/{d.outcome_token}/unpaid", ""]
     lines += ["Damit siehst du im Dashboard, wie viele deiner Angebote zum Auftrag werden.", "", "Locadas Nachfasser"]
     subject = f"Wie ist es ausgegangen? {len(docs)} {'Vorgang' if len(docs) == 1 else 'Vorgänge'}"
-    if notify_business(session, business, subject, "\n".join(lines)):
+    return subject, "\n".join(lines)
+
+
+def ask_outcome(session: Session, business: Business, docs: list[Document], now: datetime) -> None:
+    """Eine Mail mit allen Vorgängen; per WhatsApp eine Frage nach der anderen (nächste nach jeder Antwort)."""
+    subject, body = outcome_mail(business, docs)
+    if notify(session, wa_msgs.outcome(docs[0], 1, len(docs), subject, body), now):
         for d in docs:
             d.outcome_asked_at = now
             log_event(session, d.business_id, "outcome_asked", f"Abschlussfrage zu {d.kind_label} {d.document_number or d.title} gestellt.", d.id)

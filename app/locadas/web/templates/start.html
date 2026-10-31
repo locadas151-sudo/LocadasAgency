@@ -40,6 +40,19 @@
 </div>
 <div class="note" style="margin-top:16px">Passt eines nicht (falscher Kunde, schon erledigt)? Klick drauf und setz den Status. Die erste Nachfass-Mail geht erst raus, wenn du sie freigegeben hast.</div>
 {% endif %}
+
+<div class="card" id="whatsapp" style="margin-top:16px">
+<h3 class="h3">Dein Sekretär auf WhatsApp</h3>
+{% if wa_msg == 'wa_ok' %}<div class="note" style="margin-bottom:12px">Fertig. Schau auf dein Handy, dein Locadas-Sekretär hat dir geschrieben.</div>
+{% elif wa_msg == 'wa_bald' %}<div class="note" style="margin-bottom:12px">Gespeichert. WhatsApp schalten wir in Kürze frei, bis dahin kommt alles per Mail.</div>
+{% elif wa_msg == 'wa_fehler' %}<div class="note warn" style="margin-bottom:12px">Gespeichert, aber die Nachricht ging nicht raus. Stimmt die Nummer?</div>
+{% elif wa_msg == 'wa_ungueltig' %}<div class="note warn" style="margin-bottom:12px">Die Nummer konnten wir nicht lesen. Bitte als Handynummer eingeben, zum Beispiel 0171 2345678.</div>{% endif %}
+<p class="muted" style="margin-top:0">Statt Mails bekommst du kurze WhatsApp-Nachrichten mit Knöpfen: „Hat angerufen“, „Auftrag bekommen“, „Bezahlt“. Ein Tipp reicht.</p>
+<form method="post" action="/whatsapp">
+{% include "_whatsapp_fields.html" %}
+<button class="btn sm" type="submit">Speichern</button>
+</form>
+</div>
 </div>
 </section>
 {% endblock %}

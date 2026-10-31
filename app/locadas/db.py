@@ -114,6 +114,11 @@ class Business(Base):
     style_updated_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     style_samples_json: Mapped[str] = mapped_column(Text, default="")  # gekürzte Mailtexte, nur bis zur nächsten Ableitung
     approvals_done: Mapped[int] = mapped_column(Integer, default=0)
+    # WhatsApp-Sekretär: Nummer in E.164 ohne „+“ (49171…), nur mit ausdrücklichem Opt-in
+    whatsapp_number: Mapped[str] = mapped_column(String(20), default="", server_default="", index=True)
+    whatsapp_opt_in: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    whatsapp_last_inbound_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)  # 24h-Fenster
+    whatsapp_context: Mapped[str] = mapped_column(Text, default="", server_default="")  # JSON: nummerierte Liste der letzten Vorschau u. ä.
     auto_mode: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     last_login_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
@@ -259,6 +264,17 @@ class Event(Base):
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, index=True)
 
     business: Mapped[Business] = relationship(back_populates="events")
+
+
+class WhatsAppInbound(Base):
+    """Bereits verarbeitete WhatsApp-Nachrichten (Meta schickt Webhooks bei Fehlern mehrfach)."""
+
+    __tablename__ = "whatsapp_inbound"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    wamid: Mapped[str] = mapped_column(String(200), unique=True, index=True)
+    business_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
 
 class SeenMessage(Base):
