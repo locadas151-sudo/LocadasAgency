@@ -9,6 +9,7 @@ LIMITS: dict[str, tuple[int, float]] = {
     "login": (5, 60.0),       # 5 sofort, dann einer pro Minute
     "verbinden": (6, 120.0),  # Passwort-Versuche gegen fremde Mailserver bremsen
     "check": (10, 300.0),     # Claude-Aufrufe für den Angebots-Check
+    "feedback": (5, 600.0),   # Rückmeldungen aus dem Kundenportal (je eine Nachricht an den Betrieb)
 }
 
 _lock = threading.Lock()

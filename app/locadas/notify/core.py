@@ -16,7 +16,7 @@ from . import whatsapp as wa
 
 log = logging.getLogger(__name__)
 
-KINDS = {"preview", "opened", "replied", "bounced", "outcome", "approval", "login", "info"}
+KINDS = {"preview", "opened", "replied", "bounced", "outcome", "approval", "login", "info", "completion"}
 
 
 @dataclass

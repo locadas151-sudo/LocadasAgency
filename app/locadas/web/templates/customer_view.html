@@ -17,6 +17,8 @@ body{background:var(--bg)}
 .cv-biz{background:#fff;border:1px solid var(--bs);border-radius:var(--r);padding:16px 18px;margin-bottom:22px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
 .cv-biz b{font-size:19px;display:block}
 .cv-biz a{color:inherit}
+.cv-portal{text-align:center;margin:16px 0 0;font-weight:600}
+.cv-portal a{color:var(--g2);text-decoration:none}
 @media(max-width:700px){.cv-frame{height:60vh}}
 </style>
 </head>
@@ -39,6 +41,7 @@ body{background:var(--bg)}
 </div>
 </div>
 <iframe class="cv-frame" src="/a/{{ token }}/pdf" title="{{ doc.term }}"></iframe>
+{% if portal_token %}<p class="cv-portal"><a href="/k/{{ portal_token }}">Alle Unterlagen zu Ihrem Auftrag →</a></p>{% endif %}
 <p class="cv-foot">Diese Seite zeigt das PDF, das {{ b.name }} Ihnen per Mail geschickt hat. Fragen? Antworten Sie einfach auf die Mail.</p>
 </div>
 </body>

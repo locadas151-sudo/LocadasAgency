@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -18,8 +19,9 @@ from sqlalchemy.orm import Session
 
 from . import __version__, fmt
 from .config import check_startup, settings
-from .db import AccountStatus, Business, DocKind, DocStatus, Document, Event, FollowUp, FollowUpStatus, MailAccount, init_db, log_event, new_session, utcnow
+from .db import AccountStatus, Business, Customer, DocKind, DocStatus, Document, Event, FollowUp, FollowUpStatus, MailAccount, init_db, log_event, new_session, utcnow
 from .engine import accounts as acc
+from .engine import customers as cust
 from .engine import followups as fu_engine
 from .engine.scanner import scan_account
 from .engine.scheduler import run_cycle, start_scheduler
@@ -367,8 +369,12 @@ def dashboard(request: Request, business: Business = Depends(require_business), 
     open_amount = session.scalar(
         select(func.coalesce(func.sum(Document.amount_gross), 0)).where(Document.business_id == business.id, Document.status == DocStatus.OPEN, Document.kind == DocKind.INVOICE)
     ) or 0
+    if cust.backfill(session, business.id):  # Kunden zu Dokumenten von vor dem Kundenportal
+        session.commit()
+    customers = {c.email: c for c in session.scalars(select(Customer).where(Customer.business_id == business.id)).all()}
+    counts["review_clicks"] = sum(1 for c in customers.values() if c.review_clicked_at)
     account = next((a for a in business.accounts if a.status != AccountStatus.DISCONNECTED), None)
-    return render(request, "dashboard.html", business=business, docs=docs, pending=pending, events=events, counts=counts, open_amount=open_amount, account=account, filter=filter, msg=msg)
+    return render(request, "dashboard.html", business=business, docs=docs, pending=pending, events=events, counts=counts, open_amount=open_amount, account=account, filter=filter, msg=msg, customers=customers)
 
 
 @app.get("/freigaben", response_class=HTMLResponse)
@@ -407,7 +413,34 @@ def document_page(request: Request, doc_id: int, business: Business = Depends(re
         raise HTTPException(404)
     events = session.scalars(select(Event).where(Event.document_id == doc.id).order_by(Event.created_at.desc())).all()
     previews = {f.id: (fu_engine.texts.subject_for(doc, f.step), fu_engine.texts.body_for(doc, f.step)) for f in doc.followups if not f.body}
-    return render(request, "document.html", business=business, doc=doc, events=events, previews=previews, msg=msg)
+    customer = cust.for_document(session, doc)
+    session.commit()  # Kunde ggf. eben erst angelegt (ältere Dokumente)
+    return render(request, "document.html", business=business, doc=doc, events=events, previews=previews, msg=msg, customer=customer,
+                  portal_url=cust.portal_url(customer) if customer else "")
+
+
+FERTIG_MSG = {
+    "sent": "fertig", "already": "fertig_schon", "failed": "fertig_fehler", "no_account": "fertig_fehler",
+}
+
+
+def _safe_next(value: str, fallback: str) -> str:
+    """Nur eigene Seiten als Rücksprung (kein offener Redirect)."""
+    if value.startswith(("/dashboard", "/dokument/")) and "//" not in value and "\\" not in value:
+        return value
+    return fallback
+
+
+@app.post("/kunde/{customer_id}/fertig")
+def customer_done(customer_id: int, business: Business = Depends(require_business), session: Session = Depends(get_db), next: str = Form("/dashboard")):
+    c = session.get(Customer, customer_id)
+    if c is None or c.business_id != business.id:
+        raise HTTPException(404)
+    result = cust.mark_complete(session, c)
+    session.commit()
+    target = _safe_next(next, "/dashboard")
+    sep = "&" if "?" in target else "?"
+    return RedirectResponse(f"{target}{sep}msg={FERTIG_MSG[result]}", status_code=303)
 
 
 @app.post("/dokument/{doc_id}/status")
@@ -501,7 +534,9 @@ def customer_view(request: Request, token: str, session: Session = Depends(get_d
                 f"Guter Moment für einen kurzen Anruf.\n\n{settings.base_url}/dokument/{doc.id}\n\nLocadas Nachfasser",
             ))
             session.commit()
-    return render(request, "customer_view.html", doc=doc, token=token)
+    c = cust.for_document(session, doc)
+    session.commit()
+    return render(request, "customer_view.html", doc=doc, token=token, portal_token=c.portal_token if c else "")
 
 
 @app.get("/a/{token}/pdf")
@@ -510,6 +545,105 @@ def customer_pdf(token: str, session: Session = Depends(get_db)):
     if doc is None or not doc.pdf_path or not Path(doc.pdf_path).exists():
         raise HTTPException(404)
     return FileResponse(doc.pdf_path, media_type="application/pdf", filename=doc.pdf_filename or "dokument.pdf", content_disposition_type="inline")
+
+
+# --- Kundenportal (ohne Login, nur über den nicht erratbaren Link) -------------------------
+
+def _portal_headers(resp: Response) -> Response:
+    resp.headers["X-Robots-Tag"] = "noindex, nofollow"
+    resp.headers["Referrer-Policy"] = "no-referrer"  # Portal-Link nicht an Google & Co. weiterreichen
+    return resp
+
+
+def _portal_customer(session: Session, token: str) -> Customer:
+    c = cust.by_token(session, token)
+    if c is None:
+        raise HTTPException(404)
+    return c
+
+
+@app.get("/k/{token}", response_class=HTMLResponse)
+def portal(request: Request, token: str, session: Session = Depends(get_db), danke: str = ""):
+    c = _portal_customer(session, token)
+    b = c.business
+    docs = cust.documents(session, c)
+    ref = docs[-1] if docs else None
+    account = ref.account if ref is not None and ref.account is not None else next((a for a in b.accounts), None)
+    sender = account.email if account else b.email
+    title = cust.job_title(docs)
+    subject = f"Frage zu meinem Auftrag{f' „{title}“' if title else ''}"
+    resp = render(
+        request, "portal.html", c=c, b=b, docs=docs, steps=cust.timeline(c, docs), sender=sender, title=title, mail_subject=subject,
+        doc_state=cust.doc_state, wa_number=b.whatsapp_number, phone_link=re.sub(r"[^\d+]", "", b.phone or ""),
+        danke=danke == "1", feedback_max=cust.FEEDBACK_MAX, has_offer=any(d.kind == DocKind.OFFER for d in docs),
+    )
+    return _portal_headers(resp)
+
+
+@app.get("/k/{token}/bewerten")
+def portal_review(request: Request, token: str, session: Session = Depends(get_db)):
+    """Weiterleitung zu Google. Erster Klick wird notiert (eigene Vorschau des Betriebs zählt nicht)."""
+    c = _portal_customer(session, token)
+    url = cust.valid_review_url(c.business.google_review_url)
+    if not url:
+        return _portal_headers(RedirectResponse(f"/k/{token}", status_code=302))
+    viewer = auth.business_from_token(session, request.cookies.get(auth.COOKIE))
+    if viewer is None or viewer.id != c.business_id:
+        if cust.record_click(session, c):
+            session.commit()
+    return _portal_headers(RedirectResponse(url, status_code=302))
+
+
+@app.post("/k/{token}/rueckmeldung")
+def portal_feedback(request: Request, token: str, session: Session = Depends(get_db), text: str = Form("")):
+    c = _portal_customer(session, token)
+    if rate_limited(request, "feedback"):
+        return _too_many(request)
+    cust.save_feedback(session, c, text)
+    session.commit()
+    return _portal_headers(RedirectResponse(f"/k/{token}?danke=1#rueckmeldung", status_code=303))
+
+
+# --- Auftrag fertig per Link (Betrieb, ohne Login) ------------------------------------------
+
+def _fertig_customer(session: Session, token: str) -> Customer:
+    c = cust.customer_from_fertig_token(session, token)
+    if c is None:
+        raise HTTPException(404)
+    return c
+
+
+def _fertig_doc(session: Session, c: Customer) -> Document | None:
+    docs = cust.documents(session, c)
+    return docs[-1] if docs else None
+
+
+@app.get("/fertig/{token}", response_class=HTMLResponse)
+def fertig_link(request: Request, token: str, session: Session = Depends(get_db)):
+    """Nur Bestätigungsseite. Erst der POST schickt die Abschluss-Mail."""
+    c = _fertig_customer(session, token)
+    doc = _fertig_doc(session, c)
+    who = c.name or c.email
+    if c.completed_at is not None:
+        return render(request, "approval.html", title="Schon gemeldet", text=f"{who} hat die Abschluss-Mail am {fmt_date(c.completed_at)} bekommen.", doc=doc, fu=None)
+    review = " und dem Link zu deiner Google-Bewertung" if c.business.google_review_url else ""
+    return render(request, "confirm.html", title="Auftrag fertig?", text=f"Dann bekommt {who} jetzt eine kurze Abschluss-Mail in deinem Namen, mit allen Unterlagen{review}.", doc=doc, button="Ja, Auftrag ist fertig", action=f"/fertig/{token}", preview=None)
+
+
+@app.post("/fertig/{token}", response_class=HTMLResponse)
+def fertig_submit(request: Request, token: str, session: Session = Depends(get_db)):
+    c = _fertig_customer(session, token)
+    who = c.name or c.email
+    result = cust.mark_complete(session, c)
+    session.commit()
+    doc = _fertig_doc(session, c)
+    if result == "sent":
+        title, text = "Abschluss-Mail ist raus", f"{who} hat die Mail mit allen Unterlagen{' und dem Bewertungslink' if c.review_requested_at else ''} bekommen, in deinem Namen."
+    elif result == "already":
+        title, text = "Schon gemeldet", f"{who} hat die Abschluss-Mail schon bekommen."
+    else:
+        title, text = "Nicht gesendet", "Die Mail ging nicht raus. Prüf bitte die Postfach-Verbindung im Dashboard."
+    return render(request, "approval.html", title=title, text=text, doc=doc, fu=None)
 
 
 OUTCOME_BUTTON = {"won": "Ja, Auftrag bekommen", "lost": "Nicht bekommen", "paid": "Ja, ist bezahlt", "unpaid": "Nicht bezahlt, ich kümmere mich"}
@@ -554,8 +688,13 @@ def outcome_submit(request: Request, token: str, outcome: str, session: Session 
     if doc.status == DocStatus.OPEN:
         fu_engine.cancel_open_followups(session, doc, "Vom Betrieb per Link gesetzt")
     label = fu_engine.set_outcome(session, doc, outcome)
+    extra = None
+    if outcome == "won":
+        c = cust.for_document(session, doc)
+        if c is not None and c.completed_at is None:
+            extra = (f"/fertig/{cust.fertig_token(c)}", "Auftrag ist schon fertig? Fertig melden")
     session.commit()
-    return render(request, "approval.html", title="Danke, ist notiert", text=f"{doc.customer_name or doc.customer_email}: {label}.", doc=doc, fu=None)
+    return render(request, "approval.html", title="Danke, ist notiert", text=f"{doc.customer_name or doc.customer_email}: {label}.", doc=doc, fu=None, extra=extra)
 
 
 # --- Freigabe per Link (ohne Login) ------------------------------------------------
@@ -781,9 +920,18 @@ def settings_save(
     followup_offers: str = Form(""), followup_invoices: str = Form(""), paused: str = Form(""), review_mode: str | None = Form(None),
     approval_threshold: str | None = Form(None), notify_opened: str = Form(""),
     include_view_link: str = Form(""), personalize: str = Form(""), doc_delivery: str | None = Form(None), tone: str | None = Form(None),
-    whatsapp_number: str | None = Form(None), whatsapp_opt_in: str = Form(""),
+    whatsapp_number: str | None = Form(None), whatsapp_opt_in: str = Form(""), google_review_url: str | None = Form(None), review_field: str = Form(""),
 ):
     b = session.get(Business, business.id)
+    review_ok = True
+    if google_review_url is not None or review_field:  # Feld war im Formular (leer kommt als None an)
+        google_review_url = google_review_url or ""
+        if not google_review_url.strip():
+            b.google_review_url = ""
+        elif (clean := cust.valid_review_url(google_review_url)) is not None:
+            b.google_review_url = clean
+        else:
+            review_ok = False
     b.name = name.strip() or b.name
     b.owner_name = owner_name.strip()
     b.phone = phone.strip()
@@ -818,6 +966,8 @@ def settings_save(
     msg = "gespeichert"
     if whatsapp_number is not None:  # Feld war im Formular
         msg = _save_whatsapp(session, b, whatsapp_number, bool(whatsapp_opt_in))
+    if not review_ok:
+        msg = "review_ungueltig"
     session.commit()
     return RedirectResponse(f"/einstellungen?msg={msg}", status_code=303)
 

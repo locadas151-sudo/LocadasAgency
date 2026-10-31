@@ -49,6 +49,9 @@ from sim.personas import Event, Persona, Sent, build, pdf_attachments  # noqa: E
 from tests.fakemail import FakeImapServer, FakeSmtpServer  # noqa: E402
 
 BERLIN = ZoneInfo("Europe/Berlin")
+# Bei diesen Betrieben meldet der Inhaber am Ende einen Auftrag fertig und der Kunde klickt den Bewertungslink
+PORTAL = {"shk", "maler", "elektro"}
+REVIEW_URL = "https://g.page/r/CsimReview123/review"
 # Bei diesen Betrieben klicken die Kunden den Link in der Nachfass-Mail
 CLICKERS = {k: True for k in ("shk", "glas", "solo_ch", "maler", "elektro", "pv", "fenster", "heizung", "reinigung", "volt")}
 PASSWORD = "sim-pass"
@@ -273,6 +276,10 @@ def run_persona(p: Persona, days: int = 22) -> dict:
                     nxt = d.next_followup_at if d else None
                     check(nxt is not None and nxt >= day + timedelta(days=3), f"{label}: nach eigenem Nachfassen nächste Stufe frühestens in 3 Tagen ({nxt and nxt.astimezone(BERLIN).strftime('%d.%m.')})")
 
+    # --- Kundenportal: Auftrag fertig, Kunde klickt den Bewertungslink -------------------------
+    if p.key in PORTAL:
+        portal_run(p, bid, web, smtp, f"Tag {i} (Ende)", check, timeline, collect)
+
     # --- Invarianten ------------------------------------------------------------------
     with new_session() as s:
         docs = s.scalars(select(Document).where(Document.business_id == bid)).all()
@@ -326,6 +333,57 @@ def run_persona(p: Persona, days: int = 22) -> dict:
         "notifications": notifications,
         "approval_mails": approvals_mails,
     }
+
+
+def portal_run(p: Persona, bid: int, web, smtp, label: str, check, timeline: list[str], collect) -> None:
+    """Inhaber hinterlegt den Google-Link, meldet einen gewonnenen (sonst den jüngsten) Auftrag fertig, Kunde klickt."""
+    from locadas.db import Customer, DocKind
+    from locadas.engine import customers as cust
+    from locadas.web import auth
+
+    with new_session() as s:
+        b = s.get(Business, bid)
+        b.google_review_url = REVIEW_URL
+        docs = s.scalars(select(Document).where(Document.business_id == bid, Document.customer_email != "").order_by(Document.sent_at)).all()
+        won = [d for d in docs if d.kind == DocKind.OFFER and d.status == DocStatus.WON]
+        target = (won or docs)[-1] if docs else None
+        c = cust.for_document(s, target) if target else None
+        s.commit()
+        if c is None:
+            check(False, "Kundenportal: kein Dokument mit Kunde gefunden")
+            return
+        cid, addr, who = c.id, c.email, f"{target.kind_label} {target.document_number or target.title}"
+    web.cookies.set(auth.COOKIE, auth.session_token(bid))
+    before = len(smtp.messages)
+    r = web.post(f"/kunde/{cid}/fertig", data={"next": "/dashboard"}, follow_redirects=False)
+    r2 = web.post(f"/kunde/{cid}/fertig", data={"next": "/dashboard"}, follow_redirects=False)  # Doppelklick
+    web.cookies.clear()
+    mails = [(rc, raw) for _, rc, raw in smtp.messages[before:] if rc == [addr]]
+    check(r.status_code == 303 and "msg=fertig" in r.headers.get("location", ""), f"Kundenportal: Fertig melden für {who} ({r.status_code} {r.headers.get('location')})")
+    check("fertig_schon" in r2.headers.get("location", ""), "Kundenportal: zweites Fertig melden schickt nichts")
+    check(len(mails) == 1, f"Kundenportal: genau eine Abschluss-Mail an {addr} ({len(mails)})")
+    collect(label)
+    if not mails:
+        return
+    m = email.message_from_bytes(mails[0][1], policy=email.policy.default)
+    body = m.get_content()
+    portal = re.search(r"https://app\.locadas\.de(/k/[A-Za-z0-9_-]+)\s", body)
+    review = re.search(r"https://app\.locadas\.de(/k/[A-Za-z0-9_-]+/bewerten)", body)
+    check(portal is not None and review is not None, f"Kundenportal: Abschluss-Mail mit Portal- und Bewertungslink („{m['Subject']}“)")
+    check(not str(m["Subject"]).lower().startswith(("aw:", "re:")) and not m["In-Reply-To"], "Kundenportal: Abschluss-Mail ohne vorgetäuschtes „AW:“")
+    if not (portal and review):
+        return
+    page = web.get(portal.group(1))
+    check(page.status_code == 200 and "Ihr Auftrag ist fertig" in page.text and "Bei Google bewerten" in page.text, "Kundenportal: Seite zeigt Abschluss und Google-Karte")
+    others = [d for d in docs if (d.customer_email or "").lower() != addr]
+    leaked = [d.document_number for d in others if d.document_number and d.document_number in page.text]
+    check(not leaked, f"Kundenportal: keine Unterlagen anderer Kunden ({leaked})")
+    rr = web.get(review.group(1), follow_redirects=False)
+    check(rr.status_code == 302 and rr.headers.get("location") == REVIEW_URL, f"Kundenportal: Bewertungslink leitet zu Google ({rr.status_code})")
+    with new_session() as s:
+        c = s.get(Customer, cid)
+        check(c.completed_at is not None and c.review_requested_at is not None and c.review_clicked_at is not None, "Kundenportal: Fertig, Bewertungsbitte und Klick gespeichert")
+    timeline.append(f"{label}: Inhaber meldet {who} fertig, Kunde bekommt die Abschluss-Mail und klickt auf „Bei Google bewerten“")
 
 
 # --- Bewertung durch Claude als Inhaber ----------------------------------------------

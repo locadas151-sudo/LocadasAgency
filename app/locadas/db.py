@@ -131,12 +131,16 @@ class Business(Base):
     review_mode: Mapped[str] = mapped_column(String(10), default="auto", server_default="auto")
     approval_threshold: Mapped[float | None] = mapped_column(Float, nullable=True)  # None = settings.approval_threshold
     avv_accepted_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    # Kundenportal: Link zur Google-Bewertung (jeder Kunde bekommt denselben Link, siehe engine/customers.py)
+    google_review_url: Mapped[str] = mapped_column(String(500), default="", server_default="")
+    review_hint_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)  # einmaliger Tipp „Bewertungslink hinterlegen“
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     last_login_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
 
     accounts: Mapped[list["MailAccount"]] = relationship(back_populates="business", cascade="all, delete-orphan")
     documents: Mapped[list["Document"]] = relationship(back_populates="business", cascade="all, delete-orphan")
     events: Mapped[list["Event"]] = relationship(back_populates="business", cascade="all, delete-orphan")
+    customers: Mapped[list["Customer"]] = relationship(back_populates="business", cascade="all, delete-orphan")
 
     @property
     def needs_approval(self) -> bool:
@@ -276,6 +280,37 @@ class Document(Base):
     @property
     def reply_intent_label(self) -> str:
         return REPLY_INTENT_LABEL.get(self.reply_intent, "Antwort") if self.reply_intent else ""
+
+
+def _portal_token() -> str:
+    import secrets
+
+    return secrets.token_urlsafe(24)  # 192 Bit, nicht erratbar
+
+
+class Customer(Base):
+    """Endkunde eines Betriebs (eine Mailadresse). Dokumente hängen über (business_id, customer_email) dran.
+
+    Das Kundenportal /k/{portal_token} zeigt nur Dokumente dieses Kunden, ohne Login.
+    """
+
+    __tablename__ = "customers"
+    __table_args__ = (Index("ux_customer_business_email", "business_id", "email", unique=True),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
+    email: Mapped[str] = mapped_column(String(320))  # immer kleingeschrieben
+    name: Mapped[str] = mapped_column(String(200), default="")
+    portal_token: Mapped[str] = mapped_column(String(64), default=_portal_token, unique=True, index=True)
+    completed_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)         # Auftrag fertig gemeldet
+    completion_asked_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)  # Betrieb einmal gefragt „Ist der Auftrag fertig?“
+    review_requested_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)  # höchstens einmal je Kunde
+    review_clicked_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    feedback_text: Mapped[str] = mapped_column(Text, default="", server_default="")
+    feedback_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+    business: Mapped[Business] = relationship(back_populates="customers")
 
 
 class FollowUp(Base):

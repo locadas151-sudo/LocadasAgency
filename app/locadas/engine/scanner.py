@@ -32,7 +32,7 @@ from ..holidays import add_workdays
 from ..extract.pdftext import pdf_to_text
 from ..mail.imap import Attachment, ImapClient, MailAuthError, MailConnectError, ParsedMail, since_days
 from . import accounts as acc
-from . import matcher, style
+from . import customers, matcher, style
 from .absence import parse_return_date
 from ..notify import messages as wa_msgs
 from ..notify import send as notify
@@ -344,8 +344,12 @@ def process_sent_mail(session: Session, account: MailAccount, mail: ParsedMail, 
         log_event(session, doc.business_id, "paid", f"{doc.kind_label} {doc.document_number or doc.title}: {paid}. Ich erinnere hier nicht.", doc.id)
     else:
         schedule_followups(session, doc)
+    customers.for_document(session, doc)
     if doc.kind == DocKind.INVOICE:
         close_won_offers(session, account, mail, [a for _, a in recipients], text, doc.term)
+        if not first_run:  # alte Rechnungen aus dem Erst-Scan: nicht nach längst fertigen Aufträgen fragen
+            session.commit()
+            customers.suggest_completion(session, doc)
     return doc
 
 

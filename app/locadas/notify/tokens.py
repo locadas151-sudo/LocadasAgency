@@ -24,6 +24,8 @@ ACTIONS = {
     "done",     # erledigt, nur abhaken
     "reopen",   # doch weiter nachfassen
     "pick",     # Vorschau mit mehreren Kunden: wer hat angerufen?
+    "fertig",   # Auftrag fertig: Abschluss-Mail an den Kunden (id = Kunde)
+    "notyet",   # Auftrag noch nicht fertig (id = Kunde)
 }
 
 

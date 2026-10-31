@@ -12,6 +12,7 @@
 {% if account and account.status.value == 'error' %}
 <div class="card danger" style="margin-bottom:20px"><b>Postfach-Verbindung gestört:</b> {{ account.last_error }}<br><span class="small">Meist hilft es, das Postfach <a href="/verbinden">neu zu verbinden</a> (bei geändertem Passwort).</span></div>
 {% endif %}
+{% if msg == 'fertig' %}<div class="note" style="margin-bottom:20px">Abschluss-Mail ist raus.</div>{% elif msg == 'fertig_fehler' %}<div class="note err" style="margin-bottom:20px">Die Abschluss-Mail ging nicht raus. Prüf bitte die Postfach-Verbindung.</div>{% elif msg == 'fertig_schon' %}<div class="note" style="margin-bottom:20px">Wurde schon gemeldet.</div>{% endif %}
 {% if msg == 'laeuft' %}
 <div class="card" style="margin-bottom:20px">Gerade läuft schon eine Prüfung. In ein paar Minuten ist alles aktuell.</div>
 {% endif %}
@@ -19,11 +20,12 @@
 <div class="card warn" style="margin-bottom:20px"><b>Nachfassen ist pausiert.</b> In den <a href="/einstellungen">Einstellungen</a> wieder einschalten.</div>
 {% endif %}
 
-<div class="kpis">
+<div class="kpis kpis5">
 <div class="kpi"><span class="kpi-num">{{ counts.open_offers }}</span><span class="kpi-lbl">Offene Angebote</span></div>
 <div class="kpi"><span class="kpi-num">{{ counts.open_invoices }}</span><span class="kpi-lbl">Offene Rechnungen{% if open_amount %} · {{ open_amount|money }}{% endif %}</span></div>
 <div class="kpi"><span class="kpi-num">{{ counts.sent }}</span><span class="kpi-lbl">Nachfass-Mails geschickt</span></div>
 <div class="kpi"><span class="kpi-num">{{ counts.won }}</span><span class="kpi-lbl">Aufträge und Zahlungen</span></div>
+<div class="kpi"><span class="kpi-num">{{ counts.review_clicks }}</span><span class="kpi-lbl">Bewertungs-Klicks{% if not business.google_review_url %} · <a href="/einstellungen#bewertung">Link hinterlegen</a>{% endif %}</span></div>
 </div>
 
 {% if pending %}
@@ -64,6 +66,8 @@
 </div>
 <div class="right">
 <span class="amt">{{ d.amount_gross|money(d.currency) }}</span>
+{% set c = customers.get((d.customer_email or '')|lower) %}
+{% if d.kind == DocKind.OFFER and d.status == DocStatus.WON and c %}<div class="next">{% if c.completed_at %}<span class="pill good">fertig {{ c.completed_at|date }}</span>{% else %}<form method="post" action="/kunde/{{ c.id }}/fertig" class="inline-form"><input type="hidden" name="next" value="/dashboard?filter={{ filter }}"><button class="btn ghost sm" type="submit" onclick="return confirm('Auftrag fertig melden? Der Kunde bekommt dann eine kurze Abschluss-Mail in deinem Namen.')">Fertig melden</button></form>{% endif %}</div>{% endif %}
 <div class="next">{% if d.first_opened_at %}<span class="pill good" title="zuletzt {{ d.last_opened_at|datetime }}">geöffnet{% if d.open_count > 1 %} {{ d.open_count }}×{% endif %}</span> {% endif %}{% if d.status == DocStatus.OPEN %}{% if d.next_followup_at %}nachfassen {{ d.next_followup_at|rel }}{% elif d.followups_sent %}{{ d.followups_sent }}× nachgefasst{% endif %}{% else %}<span class="pill {{ STATUS_CLASS[d.status] }}">{{ STATUS_LABEL[d.status] }}</span>{% endif %}</div>
 </div>
 </li>

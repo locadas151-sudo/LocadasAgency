@@ -127,6 +127,9 @@ def run_payload(session: Session, businesses: list[Business], value: str, now: d
     if action == "ok":
         return "Alles klar.", None
 
+    if action in ("fertig", "notyet"):
+        return _completion(session, allowed, action, ids, now), None
+
     if action == "pick":
         docs = [d for d in (own_doc(i) for i in ids) if d is not None and d.status == DocStatus.OPEN]
         if not docs:
@@ -173,14 +176,26 @@ def run_payload(session: Session, businesses: list[Business], value: str, now: d
 
     if action in OUTCOME_LABEL:
         label = OUTCOME_LABEL[action]
+        newly = False
         if doc.status == OUTCOME_STATUS[action] and doc.close_reason == label:
             reply = f"Ist schon notiert: {m.who(doc)}, {label}."
         else:
+            newly = True
             if doc.status == DocStatus.OPEN:
                 fe.cancel_open_followups(session, doc, "Vom Betrieb per WhatsApp gesetzt")
             fe.set_outcome(session, doc, action)
             reply = f"Notiert: {m.who(doc)}, {label}."
-        return reply, next_outcome(session, doc.business)
+        follow = next_outcome(session, doc.business)
+        if action == "won" and newly:
+            from ..engine import customers
+
+            c = customers.for_document(session, doc)
+            if c is not None and c.completed_at is None:
+                if follow is None:
+                    follow = customers.won_followup(doc, c)
+                else:
+                    reply += " Ist der Auftrag später fertig, tipp im Dashboard auf „Fertig melden“."
+        return reply, follow
 
     if action == "call":
         return _contact(doc), None
@@ -197,6 +212,27 @@ def run_payload(session: Session, businesses: list[Business], value: str, now: d
         return f"Alles klar, ich fasse bei {m.who(doc)} weiter nach.{_next_hint(doc)}", None
 
     return "", None
+
+
+def _completion(session: Session, allowed: set[int], action: str, ids: list[int], now: datetime) -> str:
+    from ..db import Customer
+    from ..engine import customers
+
+    c = session.get(Customer, ids[0]) if ids else None
+    if c is None or c.business_id not in allowed:
+        return "Diesen Kunden finde ich nicht mehr."
+    who = c.name or c.email
+    if action == "notyet":
+        return f"Alles klar, ich frage nicht noch einmal. Ist der Auftrag bei {who} fertig, tipp im Dashboard auf „Fertig melden“."
+    result = customers.mark_complete(session, c, now)
+    if result == "sent":
+        review = " und dem Link zu deiner Google-Bewertung" if c.review_requested_at else ""
+        return f"Erledigt. {who} hat die Abschluss-Mail mit allen Unterlagen{review} bekommen, in deinem Namen."
+    if result == "already":
+        return f"{who} hat die Abschluss-Mail schon bekommen."
+    if result == "no_account":
+        return "Dein Postfach ist nicht verbunden, deshalb konnte ich nichts schicken."
+    return "Die Abschluss-Mail ging nicht raus. Prüf bitte die Postfach-Verbindung im Dashboard und versuch es dort noch einmal."
 
 
 def _stop(session: Session, doc: Document) -> str:

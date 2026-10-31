@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#f0fdf4">
+<title>Ihr Auftrag · {{ b.name }}</title>
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/static/Gellix-SemiBold.dcac5bbef4f3f1758782.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/static/Gellix-Regular.dcf6566770bb03e30252.woff2">
+<link rel="stylesheet" href="/static/site.css">
+<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/portal.css">
+</head>
+<body class="kp-body">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
+<symbol id="i-wa" viewBox="0 0 24 24"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 .8a4 4 0 0 1-1.8-1.8l.8-1-1-2z"/></symbol>
+<symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+</svg>
+
+<div class="kp">
+<header class="kp-biz">
+<div class="kp-mono" aria-hidden="true">{{ (b.name or '?')[:1]|upper }}</div>
+<div class="kp-biz-t">
+<b>{{ b.name }}</b>
+{% if b.owner_name and b.owner_name != b.name %}<span>{{ b.owner_name }}</span>{% endif %}
+</div>
+</header>
+
+<nav class="kp-contact" aria-label="Kontakt">
+{% if phone_link %}<a class="kp-cbtn" href="tel:{{ phone_link }}"><svg class="ic"><use href="#i-phone"/></svg><span>Anrufen</span></a>{% endif %}
+{% if sender %}<a class="kp-cbtn" href="mailto:{{ sender }}?subject={{ mail_subject|urlencode }}"><svg class="ic"><use href="#i-mail"/></svg><span>E-Mail</span></a>{% endif %}
+{% if wa_number %}<a class="kp-cbtn" href="https://wa.me/{{ wa_number }}" rel="noopener"><svg class="ic"><use href="#i-wa"/></svg><span>WhatsApp</span></a>{% endif %}
+</nav>
+
+<section class="kp-hero {% if c.completed_at %}is-done{% endif %}">
+{% if c.completed_at %}
+<div class="kp-badge"><svg class="ic"><use href="#i-check"/></svg></div>
+<p class="kp-eyebrow">Abgeschlossen am {{ c.completed_at|date }}</p>
+<h1>Ihr Auftrag ist fertig</h1>
+<p class="kp-lead">Vielen Dank{% if c.name %}, {{ c.name }}{% endif %}! Hier finden Sie alle Unterlagen zu Ihrem Auftrag{% if title %} „{{ title }}“{% endif %}.</p>
+{% else %}
+<p class="kp-eyebrow">Ihr Auftrag bei {{ b.name }}</p>
+<h1>{{ title or 'Ihr Auftrag im Überblick' }}</h1>
+<p class="kp-lead">{% if c.name %}Guten Tag {{ c.name }}, hier{% else %}Hier{% endif %} sehen Sie den aktuellen Stand und alle Unterlagen.</p>
+{% endif %}
+</section>
+
+{% if c.completed_at %}
+<section class="kp-review" id="rueckmeldung" aria-label="Bewertung und Rückmeldung">
+{# Google-Richtlinie: kein Review Gating. Google-Link für alle gleich, Rückmeldung gleichrangig daneben, nie davor. #}
+{% if b.google_review_url %}
+<div class="kp-card kp-google">
+<div class="kp-stars" aria-hidden="true">{% for i in range(5) %}<svg class="ic"><use href="#i-star"/></svg>{% endfor %}</div>
+<h2>Bewertung bei Google</h2>
+<p>Wie war Ihre Erfahrung mit {{ b.name }}? Ihre ehrliche Bewertung hilft anderen bei der Suche nach einem guten Betrieb.</p>
+<a class="btn kp-btn" href="/k/{{ c.portal_token }}/bewerten" rel="noopener noreferrer">Bei Google bewerten<svg class="ic"><use href="#i-arrow"/></svg></a>
+</div>
+{% endif %}
+<div class="kp-card kp-feedback">
+<div class="kp-ficon" aria-hidden="true"><svg class="ic"><use href="#i-chat"/></svg></div>
+<h2>Direkt an {{ b.name }}</h2>
+{% if danke %}
+<p class="kp-thanks"><svg class="ic"><use href="#i-check"/></svg>Danke! Ihre Rückmeldung ist angekommen.</p>
+{% else %}
+<p>Möchten Sie {{ b.owner_name or b.name }} etwas mitteilen? Lob, Fragen oder Anregungen gehen direkt an den Betrieb.</p>
+<form method="post" action="/k/{{ c.portal_token }}/rueckmeldung">
+<label class="kp-sr" for="kp-text">Ihre Rückmeldung</label>
+<textarea id="kp-text" name="text" rows="3" maxlength="{{ feedback_max }}" required placeholder="Ihre Nachricht"></textarea>
+<button class="btn ghost kp-btn" type="submit">Rückmeldung senden</button>
+</form>
+{% endif %}
+</div>
+</section>
+{% endif %}
+
+<section class="kp-card">
+<h2 class="kp-h">Stand</h2>
+<ol class="kp-steps">
+{% for s in steps %}
+<li class="{% if s.done %}done{% elif s.current %}now{% else %}todo{% endif %}">
+<span class="kp-dot" aria-hidden="true">{% if s.done %}<svg class="ic"><use href="#i-check"/></svg>{% endif %}</span>
+<span class="kp-st">{{ s.label }}</span>
+<span class="kp-sd">{% if s.date %}{{ s.date|date }}{% elif s.current %}als Nächstes{% endif %}</span>
+</li>
+{% endfor %}
+</ol>
+</section>
+
+<section class="kp-card">
+<h2 class="kp-h">Unterlagen</h2>
+{% if not docs %}
+<p class="muted" style="margin:0">Noch keine Unterlagen.</p>
+{% else %}
+<ul class="kp-docs">
+{% for d in docs|reverse %}{% set st = doc_state(d) %}
+<li>
+<span class="kp-dicon" aria-hidden="true"><svg class="ic"><use href="#i-doc"/></svg></span>
+<div class="kp-dmain">
+<b>{{ d.term }}{% if d.document_number %} {{ d.document_number }}{% endif %}</b>
+<span class="kp-dmeta">{% if d.title %}{{ d.title }} · {% endif %}{{ d.sent_at|date }}{% if d.kind == DocKind.INVOICE and d.due_date and d.status != DocStatus.PAID %} · fällig {{ d.due_date|date }}{% endif %}</span>
+</div>
+<div class="kp-dside">
+{% if d.amount_gross %}<span class="kp-amt">{{ d.amount_gross|money(d.currency) }}</span>{% endif %}
+<span class="pill {{ st[1] }}">{{ st[0] }}</span>
+</div>
+{% if d.pdf_path %}<a class="kp-view" href="/a/{{ d.view_token }}" aria-label="{{ d.term }} {{ d.document_number }} ansehen">Ansehen</a>{% endif %}
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+</section>
+
+<footer class="kp-foot">
+<p>{{ b.name }}{% if b.phone %} · {{ b.phone }}{% endif %}{% if sender %} · <a href="mailto:{{ sender }}">{{ sender }}</a>{% endif %}</p>
+<p class="kp-by"><img src="/static/logo.png" alt="" width="16" height="16">bereitgestellt über <a href="https://locadas.de" rel="noopener">Locadas</a></p>
+</footer>
+</div>
+</body>
+</html>

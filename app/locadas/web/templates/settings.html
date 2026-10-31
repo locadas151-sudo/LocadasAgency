@@ -10,6 +10,7 @@
 {% if msg == 'wa_bald' %}<div class="note" style="margin-bottom:16px">Gespeichert. WhatsApp schalten wir in Kürze frei, bis dahin kommt alles per Mail.</div>{% endif %}
 {% if msg == 'wa_fehler' %}<div class="note warn" style="margin-bottom:16px">Gespeichert, aber die WhatsApp-Nachricht ging nicht raus. Stimmt die Nummer? Bis dahin kommt alles per Mail.</div>{% endif %}
 {% if msg == 'wa_ungueltig' %}<div class="note warn" style="margin-bottom:16px">Die WhatsApp-Nummer konnten wir nicht lesen. Bitte als Handynummer eingeben, zum Beispiel 0171 2345678.</div>{% endif %}
+{% if msg == 'review_ungueltig' %}<div class="note warn" style="margin-bottom:16px">Der Bewertungslink muss eine Google-Adresse sein, zum Beispiel https://g.page/r/…/review oder https://search.google.com/local/writereview?placeid=… Der Rest ist gespeichert.</div>{% endif %}
 {% if msg == 'bestaetigen' %}<div class="note warn" style="margin-bottom:16px">Zum Trennen bitte „ja“ ins Feld schreiben.</div>{% endif %}
 <div class="grid2">
 <form class="form-card" method="post" action="/einstellungen" style="max-width:none">
@@ -19,6 +20,8 @@
 </div>
 <div class="field"><label>Telefon</label><input name="phone" value="{{ business.phone }}"></div>
 {% include "_whatsapp_fields.html" %}
+<div class="field" id="bewertung"><input type="hidden" name="review_field" value="1"><label>Google-Bewertungslink <small>(optional)</small></label><input name="google_review_url" type="url" inputmode="url" value="{{ business.google_review_url }}" placeholder="https://g.page/r/…/review"></div>
+<p class="small muted" style="margin:-6px 0 0">Wenn du einen Auftrag fertig meldest, bekommt der Kunde eine Abschluss-Mail mit diesem Link. So findest du ihn: im Google Unternehmensprofil auf „Rezensionen erhalten“ bzw. „Mehr Rezensionen erhalten“ tippen und den Link kopieren. Oder mit deiner Place-ID: https://search.google.com/local/writereview?placeid=DEINE_PLACE_ID. Jeder Kunde bekommt denselben Link, ohne Vorauswahl, so wie Google es verlangt.</p>
 <div class="field"><label>Grußformel und Signatur <small>(leer = „Viele Grüße“, Name, Betrieb, Telefon)</small></label><textarea name="signature" placeholder="Viele Grüße&#10;Thomas Müller&#10;Müller Haustechnik GmbH&#10;0171 2345678">{{ business.signature }}</textarea></div>
 <div>
 <label class="toggle"><input type="checkbox" name="followup_offers" value="1" {% if business.followup_offers %}checked{% endif %}><div><b>Angebote nachfassen</b><span>{{ settings.offer_followup_days|join(', ') }} Tage nach Versand, bis der Kunde antwortet.</span></div></label>
