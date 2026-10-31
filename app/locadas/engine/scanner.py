@@ -27,7 +27,7 @@ from ..extract.fields import extract_fields, utc_from_iso
 from ..extract.pdftext import pdf_to_text
 from ..mail.imap import Attachment, ImapClient, MailAuthError, MailConnectError, ParsedMail, since_days
 from . import accounts as acc
-from . import matcher
+from . import matcher, style
 from .followups import close_document, notify_business, schedule_followups
 from .matcher import MatchResult
 
@@ -168,6 +168,7 @@ def process_sent_mail(session: Session, account: MailAccount, mail: ParsedMail, 
     """Eine gesendete Mail prüfen und ggf. als Dokument anlegen oder aktualisieren."""
     if is_forward(mail.subject):
         return None
+    style.collect_sample(session, account, mail)  # Stilprobe für personalisierte Nachfass-Texte, wirft nie
     pdfs = mail.pdf_attachments
     if not pdfs:
         handle_manual_mail(session, account, mail)

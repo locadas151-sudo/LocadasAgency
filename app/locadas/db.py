@@ -108,6 +108,11 @@ class Business(Base):
     paused: Mapped[bool] = mapped_column(Boolean, default=False)
     notify_opened: Mapped[bool] = mapped_column(Boolean, default=True)
     include_view_link: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Personalisierte Nachfass-Texte im Stil des Betriebs
+    personalize: Mapped[bool] = mapped_column(Boolean, default=True)
+    style_json: Mapped[str] = mapped_column(Text, default="")          # abgeleitetes Stilprofil
+    style_updated_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    style_samples_json: Mapped[str] = mapped_column(Text, default="")  # gekürzte Mailtexte, nur bis zur nächsten Ableitung
     approvals_done: Mapped[int] = mapped_column(Integer, default=0)
     auto_mode: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)

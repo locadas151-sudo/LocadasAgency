@@ -14,7 +14,7 @@ from ..db import Business, DocKind, DocStatus, Document, FollowUp, FollowUpStatu
 from ..mail.imap import MailAuthError, MailConnectError
 from ..mail.smtp import build_message
 from . import accounts as acc
-from . import texts
+from . import personalize, texts
 
 log = logging.getLogger(__name__)
 
@@ -108,7 +108,8 @@ def _prepare(fu: FollowUp) -> None:
     if not fu.subject:
         fu.subject = texts.subject_for(doc, fu.step)
     if not fu.body:
-        fu.body = texts.body_for(doc, fu.step)
+        # Personalisiert (Claude + Prüfung), wenn Schlüssel da und im Betrieb an; sonst bzw. bei Fehler die Vorlage
+        fu.body = personalize.body_for(doc, fu.step)
 
 
 def send_followup(session: Session, fu: FollowUp) -> bool:
