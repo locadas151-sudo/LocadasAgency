@@ -86,10 +86,11 @@ STATUS_LABEL = {
     DocStatus.PAID: "Bezahlt",
     DocStatus.DONE: "Keine Antwort",
     DocStatus.IGNORED: "Ausgeschlossen",
+    DocStatus.BOUNCED: "Adresse unzustellbar",
 }
 STATUS_CLASS = {
     DocStatus.OPEN: "open", DocStatus.REPLIED: "good", DocStatus.WON: "good", DocStatus.PAID: "good",
-    DocStatus.LOST: "bad", DocStatus.DONE: "muted", DocStatus.IGNORED: "muted",
+    DocStatus.LOST: "bad", DocStatus.DONE: "muted", DocStatus.IGNORED: "muted", DocStatus.BOUNCED: "bad",
 }
 FU_LABEL = {
     FollowUpStatus.SCHEDULED: "geplant", FollowUpStatus.AWAITING_APPROVAL: "wartet auf deine Freigabe",
@@ -281,6 +282,33 @@ def dashboard(request: Request, business: Business = Depends(require_business), 
     ) or 0
     account = next((a for a in business.accounts if a.status != AccountStatus.DISCONNECTED), None)
     return render(request, "dashboard.html", business=business, docs=docs, pending=pending, events=events, counts=counts, open_amount=open_amount, account=account, filter=filter)
+
+
+@app.get("/freigaben", response_class=HTMLResponse)
+def approvals_page(request: Request, business: Business = Depends(require_business), session: Session = Depends(get_db)):
+    pending = session.scalars(
+        select(FollowUp).join(Document).where(Document.business_id == business.id, FollowUp.status == FollowUpStatus.AWAITING_APPROVAL).order_by(Document.sent_at)
+    ).all()
+    return render(request, "approvals.html", business=business, pending=pending)
+
+
+@app.post("/freigaben")
+async def approvals_submit(request: Request, business: Business = Depends(require_business), session: Session = Depends(get_db)):
+    form = await request.form()
+    for key, value in form.items():
+        if not key.startswith("fu_"):
+            continue
+        f = session.get(FollowUp, int(key[3:]))
+        if f is None or f.document.business_id != business.id or f.status != FollowUpStatus.AWAITING_APPROVAL:
+            continue
+        if value == "send":
+            fu_engine.approve(session, f)
+        elif value == "stop":
+            fu_engine.close_document(session, f.document, DocStatus.REPLIED, "Vom Betrieb als erledigt markiert")
+        elif value == "skip":
+            fu_engine.skip(session, f)
+        session.commit()
+    return RedirectResponse("/dashboard", status_code=303)
 
 
 @app.get("/dokument/{doc_id}", response_class=HTMLResponse)

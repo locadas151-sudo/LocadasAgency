@@ -6,6 +6,7 @@ import imaplib
 import logging
 import re
 import socket
+import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from email.header import decode_header, make_header
@@ -48,10 +49,38 @@ class ParsedMail:
     references: list[str]
     text: str
     attachments: list[Attachment] = field(default_factory=list)
+    headers: dict[str, str] = field(default_factory=dict)
+    content_type: str = ""
 
     @property
     def pdf_attachments(self) -> list[Attachment]:
         return [a for a in self.attachments if a.filename.lower().endswith(".pdf") or "pdf" in a.content_type]
+
+    @property
+    def is_bounce(self) -> bool:
+        f = self.from_addr.lower()
+        if any(x in f for x in ("mailer-daemon", "postmaster@", "mail-daemon")):
+            return True
+        if self.content_type == "multipart/report" and "delivery-status" in self.headers.get("content-type", ""):
+            return True
+        s = self.subject.lower()
+        return any(x in s for x in ("undeliverable", "unzustellbar", "delivery status notification (failure)", "mail delivery failed", "returned mail", "nicht zustellbar"))
+
+    @property
+    def is_auto_reply(self) -> bool:
+        h = self.headers
+        auto = h.get("auto-submitted", "").lower()
+        if auto and auto != "no":
+            return True
+        if h.get("x-autoreply") or h.get("x-autorespond") or h.get("x-auto-response-suppress", "").lower() in ("all", "oof"):
+            return True
+        if h.get("precedence", "").lower() in ("auto_reply", "bulk", "junk"):
+            return True
+        s = self.subject.lower()
+        return any(x in s for x in (
+            "abwesenheit", "out of office", "automatische antwort", "auto-reply", "autoreply", "automatic reply",
+            "bin nicht im büro", "nicht im hause", "urlaubsbedingt", "abwesenheitsnotiz", "ich bin derzeit nicht",
+        ))
 
 
 def decode_str(value) -> str:
@@ -159,6 +188,8 @@ def parse_message(uid: int, raw: bytes) -> ParsedMail:
         references=refs,
         text="\n".join(text_parts).strip(),
         attachments=attachments,
+        headers={k.lower(): decode_str(v) for k, v in msg.items()},
+        content_type=msg.get_content_type(),
     )
 
 
@@ -281,6 +312,16 @@ class ImapClient:
             if isinstance(item, tuple) and len(item) >= 2:
                 return parse_message(uid, item[1])
         return None
+
+    def append(self, folder: str, raw: bytes) -> bool:
+        """Kopie einer selbst verschickten Mail in den Gesendet-Ordner legen."""
+        assert self.conn
+        quoted = '"' + _encode_utf7(folder).replace('\\', '\\\\').replace('"', '\\"') + '"'
+        try:
+            typ, _ = self.conn.append(quoted, "(\\Seen)", imaplib.Time2Internaldate(time.time()), raw)
+        except imaplib.IMAP4.error:
+            return False
+        return typ == "OK"
 
     def fetch_message_size(self, uid: int) -> int:
         assert self.conn

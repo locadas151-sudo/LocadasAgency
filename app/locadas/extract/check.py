@@ -63,7 +63,6 @@ def check_offer(text: str) -> CheckResult | None:
         resp = client.messages.create(
             model=settings.claude_model,
             max_tokens=1500,
-            temperature=0.2,
             messages=[{"role": "user", "content": _PROMPT.replace("{text}", text[:20000])}],
         )
     except Exception as exc:

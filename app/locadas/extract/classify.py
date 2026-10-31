@@ -55,11 +55,32 @@ def classify(subject: str, filenames: list[str], pdf_text: str) -> DocKind | Non
     return None
 
 
+FREEMAIL = {
+    "gmail.com", "googlemail.com", "gmx.de", "gmx.net", "gmx.at", "gmx.ch", "web.de", "t-online.de", "outlook.com", "outlook.de",
+    "hotmail.com", "hotmail.de", "live.de", "live.com", "yahoo.de", "yahoo.com", "icloud.com", "me.com", "freenet.de",
+    "posteo.de", "mailbox.org", "aol.com", "aol.de", "arcor.de", "online.de", "magenta.de", "bluewin.ch",
+}
+# Steuerberater, Buchhaltung, Rechnungseingang von Plattformen: dorthin geht nie ein Kunden-Angebot
+_NOT_CUSTOMER_PARTS = (
+    "noreply", "no-reply", "donotreply", "do-not-reply", "mailer-daemon", "postmaster", "datev", "steuerber", "stb-",
+    "kanzlei", "belege@", "upload@", "lexoffice", "sevdesk", "candis", "getmyinvoices", "datev-",
+)
+
+
 def looks_like_customer(addr: str, own_addr: str) -> bool:
-    """Empfänger plausibel ein Kunde? Eigene Adresse, No-Reply und Großhändler raus."""
-    a = addr.lower()
-    if not a or a == own_addr.lower():
+    """Empfänger plausibel ein Kunde? Eigene Adresse, Kollegen, Steuerberater, No-Reply raus."""
+    a = addr.lower().strip()
+    own = own_addr.lower().strip()
+    if not a or "@" not in a or a == own:
         return False
-    if any(x in a for x in ("noreply", "no-reply", "donotreply", "mailer-daemon", "postmaster")):
+    if any(x in a for x in _NOT_CUSTOMER_PARTS):
         return False
+    own_domain = own.rsplit("@", 1)[-1]
+    if a.rsplit("@", 1)[-1] == own_domain and own_domain not in FREEMAIL:
+        return False  # Kollege aus dem eigenen Betrieb
     return True
+
+
+def is_forward(subject: str) -> bool:
+    s = subject.strip().lower()
+    return s.startswith(("wg:", "wg :", "fw:", "fwd:", "weitergeleitet:", "tr:"))

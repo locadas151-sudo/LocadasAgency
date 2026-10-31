@@ -83,7 +83,6 @@ def _claude_extract(kind_hint: DocKind | None, subject: str, recipients: str, ma
         resp = client.messages.create(
             model=settings.claude_model,
             max_tokens=600,
-            temperature=0,
             messages=[{"role": "user", "content": prompt}],
         )
     except Exception as exc:
@@ -138,11 +137,19 @@ def _iso(value) -> str | None:
 # --- Heuristik ---------------------------------------------------------------
 
 _AMOUNT_LABELS = (
-    r"gesamtbetrag", r"endbetrag", r"rechnungsbetrag", r"zu zahlen(?:der betrag)?", r"zahlbetrag", r"gesamt brutto",
-    r"bruttobetrag", r"brutto", r"gesamtsumme", r"summe brutto", r"angebotssumme", r"gesamt\b", r"total",
+    r"zu zahlen(?:der betrag)?", r"zahlbetrag", r"noch zu zahlen", r"rechnungsbetrag", r"endbetrag", r"gesamtbetrag",
+    r"gesamt brutto", r"bruttobetrag", r"summe brutto", r"brutto", r"angebotssumme", r"gesamtsumme", r"gesamtpreis",
+    r"summe", r"gesamt\b", r"total",
 )
-_MONEY = r"(?P<amt>\d{1,3}(?:[.\s]\d{3})*(?:,\d{2})|\d+(?:,\d{2}))\s*(?:€|eur)?"
-_NUMBER_RE = re.compile(r"(?:angebots?|rechnungs?|kostenvoranschlags?)[\s-]*(?:nr\.?|nummer|no\.?|#)?\s*[:.]?\s*([A-Z]{0,4}[-/]?\d[\w\-/]{2,})", re.I)
+_MONEY_CH = r"(?:chf|fr\.)\s*(?P<amt>\d{1,3}(?:'\d{3})*(?:\.\d{2})|\d+\.\d{2})"
+_MONEY = r"(?P<amt>\d{1,3}(?:[.\s]\d{3})*(?:,\d{2}|,-{1,2})|\d+(?:,\d{2}|,-{1,2}))\s*(?:€|eur)?"
+_NUMBER_RE = re.compile(r"(?:angebots?|rechnungs?|kostenvoranschlags?|offerte|abschlagsrechnung|auftrags?)[\s-]*(?:nr\.?|nummer|no\.?|#)?\s*[:.]?\s*([A-Z0-9][A-Z0-9\-/]*\d[\w\-/]*)", re.I)
+_DATE_RE = r"(\d{1,2})\.(\d{1,2})\.(\d{2,4})"
+_DUE_RE = re.compile(r"(?:zahlbar\s+(?:bis|zum)|zahlungsziel|fällig(?:keit)?(?:\s+am)?|bitte\s+(?:überweisen|zahlen)\s+(?:sie\s+)?bis(?:\s+zum)?)\s*:?\s*(?:am\s+)?" + _DATE_RE, re.I)
+_DUE_DAYS_RE = re.compile(r"(?:innerhalb\s+von|zahlbar\s+innerhalb|zahlungsziel:?)\s*(\d{1,2})\s*tage", re.I)
+_VALID_RE = re.compile(r"(?:gültig\s+bis|gueltig\s+bis|bindefrist(?:\s+bis)?|angebot\s+gilt\s+bis)\s*:?\s*(?:zum\s+)?" + _DATE_RE, re.I)
+_VALID_DAYS_RE = re.compile(r"(?:gültig|gueltig|bindefrist)\D{0,20}?(\d{1,3})\s*tage", re.I)
+_DOCDATE_RE = re.compile(r"(?:datum|vom|rechnungsdatum|angebotsdatum)\s*:?\s*" + _DATE_RE, re.I)
 _DATE_RE = r"(\d{1,2})\.(\d{1,2})\.(\d{2,4})"
 _DUE_RE = re.compile(r"(?:zahlbar\s+(?:bis|zum)|zahlungsziel|fällig(?:keit)?(?:\s+am)?|bitte\s+(?:überweisen|zahlen)\s+(?:sie\s+)?bis(?:\s+zum)?)\s*:?\s*(?:am\s+)?" + _DATE_RE, re.I)
 _DUE_DAYS_RE = re.compile(r"(?:innerhalb\s+von|zahlbar\s+innerhalb|zahlungsziel:?)\s*(\d{1,2})\s*tage", re.I)
@@ -152,7 +159,7 @@ _DOCDATE_RE = re.compile(r"(?:datum|vom|rechnungsdatum|angebotsdatum)\s*:?\s*" +
 
 
 def _to_float(s: str) -> float | None:
-    s = s.replace(" ", "").replace(".", "").replace(",", ".")
+    s = s.replace(" ", "").replace(".", "").replace(",--", ",00").replace(",-", ",00").replace(",", ".")
     try:
         return float(s)
     except ValueError:
@@ -172,13 +179,23 @@ def _to_iso(d: str, m: str, y: str) -> str | None:
 def heuristic_extract(kind: DocKind, subject: str, recipients: list[tuple[str, str]], mail_date: datetime, text: str) -> Extracted:
     t = text or ""
     amount: float | None = None
-    # Betrag: erste Zeile mit einem Gesamt-Label, sonst größter Geldbetrag im Text
+    # Betrag: Zeilen mit Gesamt-Label, Netto/MwSt-Zeilen auslassen; sonst größter Betrag
     for label in _AMOUNT_LABELS:
-        m = re.search(label + r"[^\d\n]{0,40}" + _MONEY, t, flags=re.I)
-        if m:
+        for m in re.finditer(r"(?im)^.*?" + label + r"[^\d\n]{0,40}" + _MONEY, t):
+            line = m.group(0).lower()
+            if "netto" in line or "mwst" in line or "ust" in line.split(label)[0][-12:] or "zzgl" in line:
+                continue
             amount = _to_float(m.group("amt"))
             if amount:
                 break
+        if amount:
+            break
+    currency = "EUR"
+    if amount is None and re.search(r"(?i)\bchf\b", t):
+        currency = "CHF"
+        hits = [m for m in re.finditer(r"(?im)^.*?(total inkl|total|gesamt|endbetrag|betrag)[^\n]*?" + _MONEY_CH, t)]
+        if hits:
+            amount = float(hits[-1].group("amt").replace("'", ""))
     if amount is None:
         candidates = [_to_float(m.group("amt")) for m in re.finditer(_MONEY, t)]
         candidates = [c for c in candidates if c]
@@ -232,6 +249,7 @@ def heuristic_extract(kind: DocKind, subject: str, recipients: list[tuple[str, s
         document_number=number[:100],
         title=title,
         amount_gross=amount,
+        currency=currency,
         document_date=doc_date,
         due_date=due,
         valid_until=valid,

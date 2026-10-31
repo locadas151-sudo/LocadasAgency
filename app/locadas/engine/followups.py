@@ -139,6 +139,7 @@ def send_followup(session: Session, fu: FollowUp) -> bool:
         log.warning("Versand fehlgeschlagen für Dokument %s: %s", doc.id, exc)
         return False
     acc.mark_ok(account)
+    _copy_to_sent(account, msg)
     fu.status = FollowUpStatus.SENT
     fu.sent_at = utcnow()
     doc.followups_sent += 1
@@ -146,6 +147,21 @@ def send_followup(session: Session, fu: FollowUp) -> bool:
     doc.next_followup_at = min(remaining) if remaining else None
     log_event(session, doc.business_id, "sent", f"Nachfass-Mail {fu.step} für {doc.kind_label} {doc.document_number or doc.title} an {doc.customer_email} geschickt.", doc.id)
     return True
+
+
+# Diese Anbieter legen per SMTP verschickte Mails selbst im Gesendet-Ordner ab
+_AUTO_SAVES_SENT = {"gmail", "google", "outlook", "microsoft"}
+
+
+def _copy_to_sent(account, msg) -> None:
+    """Damit der Betrieb seine Nachfass-Mails im eigenen Gesendet-Ordner sieht."""
+    if account.provider in _AUTO_SAVES_SENT:
+        return
+    try:
+        with acc.imap_for(account) as client:
+            client.append(account.sent_folder, msg.as_bytes())
+    except Exception as exc:  # nie den Versand daran scheitern lassen
+        log.info("Kopie in Gesendet fehlgeschlagen (%s): %s", account.email, exc)
 
 
 def _approval_mail(business: Business, fu: FollowUp) -> tuple[str, str]:
@@ -191,24 +207,74 @@ def notify_business(session: Session, business: Business, subject: str, body: st
         return False
 
 
+def _needs_approval(business: Business, doc: Document) -> bool:
+    return business.needs_approval or doc.needs_review
+
+
+def request_approvals(session: Session, business: Business, fus: list[FollowUp]) -> None:
+    """Eine einzige Mail mit allen anstehenden Freigaben, statt eine pro Kunde."""
+    if not fus:
+        return
+    for fu in fus:
+        _prepare(fu)
+        fu.status = FollowUpStatus.AWAITING_APPROVAL
+    base = settings.base_url
+    if len(fus) == 1:
+        subject, body = _approval_mail(business, fus[0])
+    else:
+        lines = [
+            f"Hallo {business.owner_name or business.name},",
+            "",
+            f"bei {len(fus)} Kunden würde ich jetzt nachfassen. Ein Klick pro Kunde reicht.",
+            f"Alle Texte in Ruhe ansehen und freigeben: {base}/freigaben",
+            "",
+        ]
+        for fu in fus:
+            d = fu.document
+            hint = " (älter als dein Start bei uns, schon erledigt?)" if d.needs_review else ""
+            lines += [
+                f"• {d.customer_name or d.customer_email}: {d.kind_label} {d.document_number or d.title}{_money(d.amount_gross)}, gesendet {d.sent_at.strftime('%d.%m.')}{hint}",
+                f"  Senden: {base}/f/{fu.approval_token}/send",
+                f"  Erledigt, nicht nachfassen: {base}/f/{fu.approval_token}/stop",
+                "",
+            ]
+        if business.needs_approval:
+            lines.append(f"Noch {max(0, settings.approvals_before_auto - business.approvals_done)} Freigaben, dann läuft es automatisch.")
+        lines += ["", "Locadas Nachfasser"]
+        subject = f"{len(fus)} Kunden zum Nachfassen, bitte kurz freigeben"
+        body = "\n".join(lines)
+    if notify_business(session, business, subject, body):
+        for fu in fus:
+            d = fu.document
+            log_event(session, d.business_id, "approval", f"Freigabe angefragt: Nachfass-Mail {fu.step} für {d.kind_label} {d.document_number or d.title}.", d.id)
+
+
 def request_approval(session: Session, fu: FollowUp) -> None:
-    doc = fu.document
-    _prepare(fu)
-    fu.status = FollowUpStatus.AWAITING_APPROVAL
-    subject, body = _approval_mail(doc.business, fu)
-    if notify_business(session, doc.business, subject, body):
-        log_event(session, doc.business_id, "approval", f"Freigabe angefragt: Nachfass-Mail {fu.step} für {doc.kind_label} {doc.document_number or doc.title}.", doc.id)
+    request_approvals(session, fu.document.business, [fu])
+
+
+def _money(v) -> str:
+    return f" über {v:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".") if v else ""
+
+
+def _sent_today(session: Session, business_id: int, now: datetime) -> int:
+    start = now - timedelta(hours=24)
+    return len(session.scalars(
+        select(FollowUp.id).join(Document).where(Document.business_id == business_id, FollowUp.status == FollowUpStatus.SENT, FollowUp.sent_at >= start)
+    ).all())
 
 
 def process_due(session: Session, now: datetime | None = None) -> dict[str, int]:
-    """Alle fälligen Nachfass-Schritte: freigeben lassen oder senden."""
+    """Alle fälligen Nachfass-Schritte: Freigaben bündeln oder senden, mit Tageslimit pro Betrieb."""
     now = now or utcnow()
-    stats = {"sent": 0, "approval": 0, "skipped": 0}
+    stats = {"sent": 0, "approval": 0, "skipped": 0, "capped": 0}
     if not in_send_window(now):
         return stats
     due = session.scalars(
         select(FollowUp).where(FollowUp.status == FollowUpStatus.SCHEDULED, FollowUp.due_at <= now).order_by(FollowUp.due_at)
     ).all()
+    approvals: dict[int, list[FollowUp]] = {}
+    sent_count: dict[int, int] = {}
     for fu in due:
         doc = fu.document
         business = doc.business
@@ -221,15 +287,26 @@ def process_due(session: Session, now: datetime | None = None) -> dict[str, int]
         if doc.kind == DocKind.INVOICE and not business.followup_invoices:
             fu.status = FollowUpStatus.SKIPPED
             continue
-        # Nur ein Schritt pro Dokument gleichzeitig: wartet ein älterer auf Freigabe, nicht stapeln
+        # Nur ein Schritt pro Dokument gleichzeitig
         if any(f.status == FollowUpStatus.AWAITING_APPROVAL for f in doc.followups):
             continue
-        if business.needs_approval:
-            request_approval(session, fu)
-            stats["approval"] += 1
-        else:
-            if send_followup(session, fu):
-                stats["sent"] += 1
+        if any(f.document_id == doc.id for f in approvals.get(business.id, [])):
+            continue
+        if _needs_approval(business, doc):
+            approvals.setdefault(business.id, []).append(fu)
+            continue
+        if business.id not in sent_count:
+            sent_count[business.id] = _sent_today(session, business.id, now)
+        if sent_count[business.id] >= settings.max_sends_per_day:
+            stats["capped"] += 1
+            continue
+        if send_followup(session, fu):
+            stats["sent"] += 1
+            sent_count[business.id] += 1
+        session.commit()
+    for business_id, fus in approvals.items():
+        request_approvals(session, fus[0].document.business, fus)
+        stats["approval"] += len(fus)
         session.commit()
     return stats
 
@@ -248,6 +325,9 @@ def approve(session: Session, fu: FollowUp) -> bool:
     ok = send_followup(session, fu)
     if ok:
         b = fu.document.business
+        if fu.document.needs_review:
+            fu.document.needs_review = False
+            return ok
         b.approvals_done += 1
         if b.approvals_done >= settings.approvals_before_auto:
             b.auto_mode = True

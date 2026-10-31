@@ -14,13 +14,17 @@ from aiosmtpd.controller import Controller
 
 
 class _Store:
-    def __init__(self):
-        self.folders: dict[str, list[tuple[int, bytes]]] = {"INBOX": [], "Gesendet": []}
-        self.uidnext: dict[str, int] = {"INBOX": 1, "Gesendet": 1}
-        self.uidvalidity: dict[str, int] = {"INBOX": 11, "Gesendet": 22}
+    def __init__(self, sent: str = "Gesendet", sent_flag: bool = True):
+        self.sent = sent
+        self.sent_flag = sent_flag
+        self.folders: dict[str, list[tuple[int, bytes]]] = {"INBOX": [], sent: []}
+        self.uidnext: dict[str, int] = {"INBOX": 1, sent: 1}
+        self.uidvalidity: dict[str, int] = {"INBOX": 11, sent: 22}
         self.lock = threading.Lock()
 
     def append(self, folder: str, raw: bytes) -> int:
+        if folder == "Gesendet" and folder not in self.folders:
+            folder = self.sent
         with self.lock:
             uid = self.uidnext[folder]
             self.uidnext[folder] = uid + 1
@@ -72,8 +76,21 @@ class _Handler(socketserver.StreamRequestHandler):
                 self._send(f"{tag} OK NOOP completed")
             elif cmd == "LIST":
                 self._send('* LIST (\\HasNoChildren) "/" "INBOX"')
-                self._send('* LIST (\\HasNoChildren \\Sent) "/" "Gesendet"')
+                self._send('* LIST (\\HasNoChildren) "/" "Entw&APw-rfe"')
+                flag = " \\Sent" if store.sent_flag else ""
+                self._send(f'* LIST (\\HasNoChildren{flag}) "/" "{store.sent}"')
                 self._send(f"{tag} OK LIST completed")
+            elif cmd == "APPEND":
+                m = re.match(r'"([^"]+)".*\{(\d+)\}$', rest)
+                if not m or m.group(1) not in store.folders:
+                    self._send(f"{tag} NO [TRYCREATE] no such mailbox")
+                    continue
+                self._send("+ Ready for literal data")
+                data = self.rfile.read(int(m.group(2)))
+                self.rfile.readline()
+                store.append(m.group(1), data)
+                srv.appended.append((m.group(1), data))
+                self._send(f"{tag} OK APPEND completed")
             elif cmd in ("SELECT", "EXAMINE"):
                 name = rest.strip().strip('"')
                 if name not in store.folders:
@@ -124,11 +141,12 @@ class FakeImapServer(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
     daemon_threads = True
 
-    def __init__(self, user: str, password: str):
+    def __init__(self, user: str, password: str, sent: str = "Gesendet", sent_flag: bool = True):
         super().__init__(("127.0.0.1", 0), _Handler)
         self.user, self.password = user, password
-        self.store = _Store()
+        self.store = _Store(sent, sent_flag)
         self.log: list[str] = []
+        self.appended: list[tuple[str, bytes]] = []
         self._thread = threading.Thread(target=self.serve_forever, daemon=True)
 
     def start(self) -> "FakeImapServer":

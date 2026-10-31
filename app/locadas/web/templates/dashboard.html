@@ -25,7 +25,7 @@
 
 {% if pending %}
 <div class="card warn" style="margin-bottom:20px">
-<h3 class="h3">Wartet auf deine Freigabe</h3>
+<div class="app-head" style="margin-bottom:6px"><h3 class="h3" style="margin:0">Wartet auf deine Freigabe ({{ pending|length }})</h3><a class="btn sm" href="/freigaben">Alle durchgehen</a></div>
 <p class="small muted" style="margin:0 0 10px">Noch {{ settings.approvals_before_auto - business.approvals_done if settings.approvals_before_auto > business.approvals_done else 0 }} Freigaben, dann läuft es automatisch. <a href="/einstellungen">Jetzt schon umstellen</a></p>
 <ul class="list">
 {% for f in pending %}

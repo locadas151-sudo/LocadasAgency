@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Freigaben · Locadas Nachfasser{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap wrap--narrow">
+<div class="app-head"><div><h1 class="h2">Kurz <em>freigeben</em></h1><p class="app-sub">Pro Kunde eine Entscheidung. Danach auf Speichern.</p></div></div>
+{% if not pending %}
+<div class="card"><p class="muted" style="margin:0">Nichts offen. <a href="/dashboard">Zum Dashboard</a></p></div>
+{% else %}
+<form method="post" action="/freigaben">
+{% for f in pending %}{% set d = f.document %}
+<div class="card" style="margin-bottom:14px">
+<div class="app-head" style="margin-bottom:10px">
+<div><b style="font-size:17px">{{ d.customer_name or d.customer_email }}</b>
+<div class="meta muted small"><span class="pill kind">{{ d.kind_label }}{% if d.document_number %} {{ d.document_number }}{% endif %}</span> {% if d.amount_gross %}{{ d.amount_gross|money }} · {% endif %}gesendet {{ d.sent_at|date }}{% if d.kind == DocKind.INVOICE and d.due_date %} · fällig {{ d.due_date|date }}{% endif %}</div></div>
+{% if d.needs_review %}<span class="pill warn">vor deinem Start verschickt, schon erledigt?</span>{% endif %}
+</div>
+<details class="step"><summary><span>Text der Nachfass-Mail {{ f.step }}</span></summary><p class="sub"><b>Betreff:</b> {{ f.subject }}</p><pre>{{ f.body }}</pre></details>
+<div class="btn-row" style="margin-top:12px">
+<label class="check"><input type="radio" name="fu_{{ f.id }}" value="send" {% if not d.needs_review %}checked{% endif %}> Senden</label>
+<label class="check"><input type="radio" name="fu_{{ f.id }}" value="stop" {% if d.needs_review and d.kind == DocKind.INVOICE %}checked{% endif %}> {{ 'Bezahlt / erledigt' if d.kind == DocKind.INVOICE else 'Erledigt, nicht nachfassen' }}</label>
+<label class="check"><input type="radio" name="fu_{{ f.id }}" value="skip" {% if d.needs_review and d.kind == DocKind.OFFER %}checked{% endif %}> Diesmal nicht</label>
+</div>
+</div>
+{% endfor %}
+<button class="btn" type="submit">Speichern und senden</button>
+</form>
+{% endif %}
+</div>
+</section>
+{% endblock %}

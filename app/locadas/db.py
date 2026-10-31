@@ -64,6 +64,7 @@ class DocStatus(str, enum.Enum):
     PAID = "paid"            # bezahlt (Rechnung)
     DONE = "done"            # alle Nachfass-Schritte durch, keine Antwort
     IGNORED = "ignored"      # vom Betrieb ausgeschlossen
+    BOUNCED = "bounced"      # Adresse unzustellbar
 
 
 class FollowUpStatus(str, enum.Enum):
@@ -175,6 +176,8 @@ class Document(Base):
     last_customer_reply_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     closed_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     close_reason: Mapped[str] = mapped_column(String(200), default="")
+    # Beim ersten Scan gefundene ältere Dokumente: Nachfassen nur mit Freigabe (könnte schon erledigt sein)
+    needs_review: Mapped[bool] = mapped_column(Boolean, default=False)
     # Lese-Tracking über den Link in den Nachfass-Mails
     view_token: Mapped[str] = mapped_column(String(64), default=lambda: __import__("secrets").token_urlsafe(18), index=True)
     first_opened_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
