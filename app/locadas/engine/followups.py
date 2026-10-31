@@ -249,6 +249,9 @@ def send_followup(session: Session, fu: FollowUp) -> bool:
         return False
     except Exception:
         fu.status = before  # unerwarteter Fehler: Zustand zurück, nichts ging raus
+        from sqlalchemy.orm.attributes import flag_modified
+
+        flag_modified(fu, "status")  # _claim schrieb per UPDATE, ohne das sieht das ORM keine Änderung
         fu.sent_at = None
         session.commit()
         raise

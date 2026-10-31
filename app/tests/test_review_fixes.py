@@ -785,3 +785,33 @@ def test_unrelated_mail_never_reaches_claude(fresh_db, imap, smtp, monkeypatch):
     with new_session() as s:
         assert scan_account(s, s.get(MailAccount, account.id))["replies"] == 0
     assert calls == []
+
+
+def test_unexpected_send_error_releases_claim(fresh_db, imap, smtp, monkeypatch):
+    """Unerwarteter Fehler beim Versand: Stufe steht sofort wieder auf geplant, nicht 30 Minuten auf „sending“."""
+    from sqlalchemy import select as _select
+
+    from locadas.db import Document as _Doc, FollowUp as _FU, FollowUpStatus as _S, new_session as _ns
+    from locadas.engine import followups as _fe
+    from locadas.engine.scanner import scan_account as _scan
+    from tests.test_e2e import _seed_sent, _setup
+
+    _seed_sent(imap)
+    with _ns() as s:
+        b, account = _setup(s, imap, smtp)
+        _scan(s, account)
+        offer = s.scalars(_select(_Doc).where(_Doc.document_number == "A-2026-118")).one()
+        fu = offer.followups[0]
+        fu_id = fu.id
+
+        def boom(*a, **k):
+            raise RuntimeError("kaputt")
+
+        monkeypatch.setattr(_fe.acc, "smtp_for", boom)
+        try:
+            _fe.send_followup(s, fu)
+        except Exception:
+            pass
+        s.commit()
+    with _ns() as s:
+        assert s.get(_FU, fu_id).status != _S.SENDING
