@@ -7,8 +7,15 @@
 <div class="app-head">
 <div><h1 class="h2">Postfach <em>verbinden</em></h1><p class="app-sub">Zwei Minuten. Danach läuft das Nachfassen von allein.</p></div>
 </div>
+<div class="upgrade" style="margin-bottom:20px" id="onboarding">
+<h3 class="h3">Lieber zusammen? 15 Minuten mit Julius, kostenlos.</h3>
+<p style="margin-bottom:12px">Wir verbinden dein Postfach gemeinsam am Telefon und schauen deine ersten Angebote an. Du musst nichts vorbereiten.</p>
+<div class="btn-row"><a class="btn sm" href="{{ settings.calendly_url }}" target="_blank" rel="noopener"><svg class="ic"><use href="#i-cal"/></svg>Termin buchen</a>{% if not trial_token %}<a class="cta-second" href="/testen">Oder erst ohne Anmeldung testen</a>{% endif %}</div>
+</div>
+{% if trial_token %}<div class="note" style="margin-bottom:20px">Deine Angebote aus dem Test bleiben erhalten. Ab dem Verbinden fassen wir automatisch in deinem Namen nach.</div>{% endif %}
 <div class="grid2">
 <form class="form-card" method="post" action="/verbinden" autocomplete="on" id="connect">
+<input type="hidden" name="trial_token" id="trial_token" value="{{ trial_token or values.trial_token or '' }}">
 {% if error %}<div class="note err"><b>{{ error }}</b>{% if hint %}<br>{{ hint }}{% endif %}</div>{% endif %}
 <div class="fields2">
 <div class="field"><label for="business_name">Betrieb</label><input id="business_name" name="business_name" value="{{ values.business_name or '' }}" placeholder="Müller Haustechnik GmbH" required></div>
@@ -93,7 +100,7 @@ var email=document.getElementById('email'),hint=document.getElementById('provide
 function upd(){var d=(email.value.split('@')[1]||'').toLowerCase();var k=map[d];hint.textContent=k?texts[k]:(d?'Eigene Domain: Dein normales Postfach-Passwort. Wir suchen den Server automatisch.':'Das Passwort, mit dem du dich auch in deinem Mailprogramm anmeldest.');}
 email.addEventListener('input',upd);email.addEventListener('change',upd);
 var f=document.getElementById('connect'),b=document.getElementById('submit');
-document.querySelectorAll('[data-oauth]').forEach(function(a){a.addEventListener('click',function(e){var bn=document.getElementById('business_name').value.trim();if(!bn){e.preventDefault();document.getElementById('business_name').focus();document.getElementById('business_name').reportValidity();return;}var av=document.getElementById('avv');if(!av.checked){e.preventDefault();av.reportValidity();return;}var q=new URLSearchParams({business_name:bn,owner_name:document.getElementById('owner_name').value,phone:document.getElementById('phone').value,avv:'1'});a.href=a.getAttribute('href').split('?')[0]+'?'+q.toString();});});
+document.querySelectorAll('[data-oauth]').forEach(function(a){a.addEventListener('click',function(e){var bn=document.getElementById('business_name').value.trim();if(!bn){e.preventDefault();document.getElementById('business_name').focus();document.getElementById('business_name').reportValidity();return;}var av=document.getElementById('avv');if(!av.checked){e.preventDefault();av.reportValidity();return;}var q=new URLSearchParams({business_name:bn,owner_name:document.getElementById('owner_name').value,phone:document.getElementById('phone').value,avv:'1',trial_token:document.getElementById('trial_token').value});a.href=a.getAttribute('href').split('?')[0]+'?'+q.toString();});});
 f.addEventListener('submit',function(){b.disabled=true;b.textContent='Verbindung wird geprüft …';});
 })();
 </script>

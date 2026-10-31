@@ -16,7 +16,7 @@ from . import whatsapp as wa
 
 log = logging.getLogger(__name__)
 
-KINDS = {"preview", "opened", "replied", "bounced", "outcome", "approval", "login", "info", "completion", "tap"}
+KINDS = {"preview", "opened", "replied", "bounced", "outcome", "approval", "login", "info", "completion", "tap", "trial"}
 
 
 @dataclass
@@ -106,7 +106,7 @@ def send_email(session: Session, business: Business, subject: str, body: str) ->
 
     account = next((a for a in business.accounts if a.status.value != "disconnected"), None)
     if account is None:
-        return False
+        return send_system_email(business, subject, body)
     msg = build_message(
         from_name="Locadas Nachfasser",
         from_addr=account.email,
@@ -120,4 +120,25 @@ def send_email(session: Session, business: Business, subject: str, body: str) ->
         return True
     except (MailAuthError, MailConnectError) as exc:
         acc.mark_error(session, account, str(exc))
+        return False
+
+
+def send_system_email(business: Business, subject: str, body: str) -> bool:
+    """Ohne verbundenes Postfach (Tester): über den Locadas-eigenen Versand (SYSTEM_SMTP_*), nur an eine echte Adresse."""
+    to = business.owner_email
+    if not to or not settings.system_smtp_host:
+        return False
+    from email.utils import parseaddr
+
+    from ..mail.smtp import SmtpClient
+
+    from_name, from_addr = parseaddr(settings.system_from)
+    msg = build_message(from_name=from_name or "Locadas", from_addr=from_addr or "info@locadas.de",
+                        to_name=business.owner_name or business.name, to_addr=to, subject=subject, body=body)
+    try:
+        SmtpClient(settings.system_smtp_host, settings.system_smtp_port, settings.system_smtp_port == 465,
+                   settings.system_smtp_user or "", settings.system_smtp_password or "").send(msg)
+        return True
+    except (MailAuthError, MailConnectError) as exc:
+        log.warning("System-Mail an Betrieb %s fehlgeschlagen: %s", business.id, exc)
         return False

@@ -266,6 +266,8 @@ def process_sent_mail(session: Session, account: MailAccount, mail: ParsedMail, 
     """Eine gesendete Mail prüfen und ggf. als Dokument anlegen oder aktualisieren."""
     if is_forward(mail.subject):
         return None
+    if mail.message_id and session.scalar(select(Document.id).where(Document.business_id == account.business_id, Document.message_id == mail.message_id)):
+        return None  # schon per Kopie an die Weiterleitungsadresse angekommen (engine/inbound_mail.py)
     style.collect_sample(session, account, mail)  # Stilprobe für personalisierte Nachfass-Texte, wirft nie
     pdfs = mail.pdf_attachments
     if not pdfs:

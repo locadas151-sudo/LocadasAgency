@@ -214,6 +214,9 @@ def send_followup(session: Session, fu: FollowUp) -> bool:
     doc = fu.document
     account = doc.account
     business = doc.business
+    if account is None:
+        fu.error = "Kein Postfach verbunden"
+        return False
     if not doc.customer_email:
         fu.status = FollowUpStatus.FAILED
         fu.error = "Keine Kundenadresse"
@@ -534,7 +537,7 @@ def process_due(session: Session, now: datetime | None = None, business_id: int 
             continue  # inzwischen woanders verschickt
         doc = fu.document
         business = doc.business
-        if fu.due_at > now and taps.channel_for(doc) != "whatsapp_tap":
+        if fu.due_at > now and taps.channel_for(doc) != "whatsapp_tap" and not business.is_trial:
             continue  # Mail-Stufen erst, wenn sie wirklich fällig sind
         if doc.status != DocStatus.OPEN or business.paused:
             stats["skipped"] += 1
@@ -549,6 +552,14 @@ def process_due(session: Session, now: datetime | None = None, business_id: int 
         if any(f.status in (FollowUpStatus.AWAITING_APPROVAL, FollowUpStatus.SENDING, FollowUpStatus.AWAITING_TAP) for f in doc.followups):
             continue
         if any(f.document_id == doc.id for f in approvals.get(business.id, [])):
+            continue
+        if business.is_trial or doc.account_id is None:
+            # Ohne Postfach (Testen): nie selbst senden, der Betrieb schickt mit einem Tipp (WhatsApp, Mail-App oder Kopieren)
+            from . import trial
+
+            trial.start_tap(session, fu, now)
+            stats["tap"] += 1
+            session.commit()
             continue
         if taps.channel_for(doc) == "whatsapp_tap" and not _wa_business_active(session, business):
             # Der Betrieb schickt selbst per WhatsApp: keine Mail, keine Freigabe (er sieht den Text und tippt selbst)

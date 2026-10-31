@@ -69,6 +69,14 @@ jobs:
           WHATSAPP_PHONE_NUMBER_ID=${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
           WHATSAPP_APP_SECRET=${{ secrets.WHATSAPP_APP_SECRET }}
           WHATSAPP_VERIFY_TOKEN=${{ secrets.WHATSAPP_VERIFY_TOKEN }}
+          WHATSAPP_DISPLAY_NUMBER=${{ vars.WHATSAPP_DISPLAY_NUMBER }}
+          INBOUND_DOMAIN=${{ vars.INBOUND_DOMAIN || 'angebot.locadas.de' }}
+          INBOUND_SMTP_PORT=2525
+          INBOUND_WEBHOOK_SECRET=${{ secrets.INBOUND_WEBHOOK_SECRET }}
+          SYSTEM_SMTP_HOST=${{ secrets.SYSTEM_SMTP_HOST }}
+          SYSTEM_SMTP_PORT=${{ vars.SYSTEM_SMTP_PORT || '587' }}
+          SYSTEM_SMTP_USER=${{ secrets.SYSTEM_SMTP_USER }}
+          SYSTEM_SMTP_PASSWORD=${{ secrets.SYSTEM_SMTP_PASSWORD }}
           EOF
       - name: Dateien auf den Server kopieren
         if: steps.check.outputs.skip == 'false'

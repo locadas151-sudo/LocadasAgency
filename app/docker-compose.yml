@@ -5,10 +5,14 @@ services:
     env_file: .env
     environment:
       DATA_DIR: /data
+      INBOUND_SMTP_PORT: ${INBOUND_SMTP_PORT:-2525}
     volumes:
       - locadas-data:/data
     expose:
       - "8000"
+    ports:
+      # Weiterleitungsadressen *@INBOUND_DOMAIN: Port 25 außen auf den SMTP-Empfänger im Container (nimmt nur diese Domain an, kein Relay)
+      - "25:2525"
 
   caddy:
     image: caddy:2

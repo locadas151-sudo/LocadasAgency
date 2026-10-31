@@ -126,6 +126,8 @@ def tap(b: Business, fu: FollowUp, reminder: bool = False) -> Notification:
     from ..engine import taps
 
     d = fu.document
+    if fu.tap_kind in ("mailto", "manual"):
+        return _tap_other(b, fu, reminder)
     both = fu.status.value != "awaiting_tap"
     head = f"{ref(d)}{dmoney(d)}, Nachricht {fu.step} von 3"
     if both:
@@ -147,6 +149,32 @@ def tap(b: Business, fu: FollowUp, reminder: bool = False) -> Notification:
         template="tap", template_params=[hello(b), who(d), f"{ref(d)}{dmoney(d)}", fu.wa_text or ""],
         template_url=fu.tap_token,
         template_buttons=[payload("tsent", fu.id), payload("treplied", fu.id), payload("tskip", fu.id)],
+    )
+
+
+def _tap_other(b: Business, fu: FollowUp, reminder: bool) -> Notification:
+    """Testen ohne Postfach: fertige Mail im eigenen Mailprogramm (mailto) oder Text zum Kopieren, wenn der Kontakt fehlt."""
+    from ..engine import taps
+
+    d = fu.document
+    head = f"{ref(d)}{dmoney(d)}, Nachricht {fu.step} von 3"
+    if fu.tap_kind == "mailto":
+        intro = f"{head}. Tipp auf „Mail öffnen“, dann ist die Mail an {who(d)} in deinem Mailprogramm fertig. Nur noch abschicken."
+        event = f"Bei {who(d)} ({ref(d)}) ist heute die Nachfass-Mail dran. Ein Tipp öffnet sie fertig in deinem Mailprogramm: {taps.tap_url(fu)}"
+    else:
+        intro = (f"{head}. Mir fehlt die Handynummer oder Mailadresse von {who(d) or 'deinem Kunden'}. Schick sie mir einfach hier, "
+                 "dann ist die Nachricht mit einem Tipp fertig. Oder kopier den Text und schick ihn selbst.")
+        event = f"Bei {who(d) or 'deinem Kunden'} ({ref(d)}) ist heute die Nachfass-Nachricht dran. Mir fehlt die Nummer oder Mailadresse, schick sie mir hier. Text zum Kopieren: {taps.tap_url(fu)}"
+    third = button("Ist bezahlt", "tpaid", fu.id) if d.kind == DocKind.INVOICE else button("Hat geantwortet", "treplied", fu.id)
+    return Notification(
+        business=b, kind="tap",
+        title=f"{'Noch offen: ' if reminder else ''}{who(d) or ref(d)} nachfassen",
+        text=f"{intro}\n\n{fu.wa_text}",
+        buttons=[button("Gesendet", "tsent", fu.id), third, button("Diesmal nicht", "tskip", fu.id)],
+        buttons_text=f"Hast du die Nachricht an {who(d) or 'deinen Kunden'} abgeschickt?",
+        cta=(taps.open_label(fu), taps.tap_url(fu)),
+        doc_ids=[d.id], footer="Erinnerung" if reminder else "",
+        template="event", template_params=[hello(b), event], template_buttons=[payload("ok")],
     )
 
 

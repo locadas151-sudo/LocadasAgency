@@ -42,6 +42,8 @@ from .notify.phone import normalize_phone
 from .web import auth, ratelimit
 from .channels import web as wab_web
 from .channels import webhook as wab_webhook
+from .engine import trial
+from .web import trial_routes
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG if settings.debug else logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -51,6 +53,7 @@ app = FastAPI(title="Locadas Nachfasser", version=__version__, docs_url=None, re
 app.mount("/static", StaticFiles(directory=BASE / "web" / "static"), name="static")
 templates = Jinja2Templates(directory=BASE / "web" / "templates")
 _scheduler = None
+_inbound_smtp = None
 
 
 # --- Hilfen --------------------------------------------------------------------
@@ -118,7 +121,7 @@ templates.env.globals.update(
     STATUS_LABEL=STATUS_LABEL, STATUS_CLASS=STATUS_CLASS, FU_LABEL=FU_LABEL, DocStatus=DocStatus, DocKind=DocKind,
     FollowUpStatus=FollowUpStatus, settings=settings, PROVIDERS=PROVIDERS, version=__version__,
     review_question=fu_engine.review_question, channel_for=taps.channel_for, CHANNEL_LABEL=taps.CHANNEL_LABEL,
-    phone_pretty=phone_x.pretty, configured_channel=taps.configured_channel,
+    phone_pretty=phone_x.pretty, configured_channel=taps.configured_channel, tap_label=taps.open_label,
     oauth_providers=lambda: [p for p in oauth.providers().values() if p.enabled],
 )
 
@@ -194,6 +197,9 @@ def set_session(response: Response, business: Business) -> Response:
     return response
 
 
+trial_routes.install(app, render, get_db, current_business, set_session, client_ip)  # Testen ohne Postfach
+
+
 @app.exception_handler(StarletteHTTPException)
 async def _redirect_handler(request: Request, exc: StarletteHTTPException):
     if exc.status_code == 303 and exc.headers and "Location" in exc.headers:
@@ -209,12 +215,19 @@ def _startup():
     check_startup()  # ohne SECRET_KEY/ENCRYPTION_KEY kein Start (außer DEBUG bzw. ALLOW_INSECURE_DEV)
     init_db()
     _scheduler = start_scheduler()
+    if settings.inbound_smtp_port:  # Weiterleitungsadressen per eigenem SMTP-Empfänger (sonst nur Webhook /inbound/raw)
+        global _inbound_smtp
+        from .mail import inbound_smtp
+
+        _inbound_smtp = inbound_smtp.start()
 
 
 @app.on_event("shutdown")
 def _shutdown():
     if _scheduler:
         _scheduler.shutdown(wait=False)
+    if _inbound_smtp is not None:
+        _inbound_smtp.stop()
 
 
 # --- Öffentlich -----------------------------------------------------------------
@@ -229,13 +242,26 @@ def health():
     return {"ok": True, "version": __version__}
 
 
+def _trial_for_connect(session: Session, request: Request, token: str = "") -> Business | None:
+    """Tester, der jetzt sein Postfach verbindet: per signiertem Link (?b=) oder angemeldet per Cookie."""
+    b = trial.business_from_connect_token(session, token) if token else None
+    if b is None:
+        cur = auth.business_from_token(session, request.cookies.get(auth.COOKIE))
+        b = cur if cur is not None and cur.is_trial else None
+    return b
+
+
 @app.get("/verbinden", response_class=HTMLResponse)
-def connect_form(request: Request, business: Business | None = Depends(current_business), email: str = "", avv: str = ""):
+def connect_form(request: Request, business: Business | None = Depends(current_business), session: Session = Depends(get_db), email: str = "", avv: str = "", b: str = ""):
     if business and business.accounts:
         return RedirectResponse("/dashboard", status_code=303)
+    tester = _trial_for_connect(session, request, b)
+    values = {"business_name": tester.name, "owner_name": tester.owner_name, "phone": phone_x.pretty(tester.whatsapp_number)} if tester else {}
+    email = email or (tester.owner_email if tester else "")
     provider = detect_provider(email) if email else None
     error = "Bitte akzeptiere zuerst den Auftragsverarbeitungsvertrag (AVV)." if avv == "fehlt" else None
-    return render(request, "connect.html", business=business, email=email, provider=provider, error=error, hint=None, values={})
+    return render(request, "connect.html", business=business, email=email, provider=provider, error=error, hint=None, values=values,
+                  trial_token=trial.connect_token(tester) if tester else "")
 
 
 @app.post("/verbinden", response_class=HTMLResponse)
@@ -254,9 +280,10 @@ def connect_submit(
     username: str = Form(""),
     consent: str = Form(""),
     avv: str = Form(""),
+    trial_token: str = Form(""),
 ):
     email = email.strip().lower()
-    values = dict(business_name=business_name, owner_name=owner_name, email=email, phone=phone, imap_host=imap_host, imap_port=imap_port, smtp_host=smtp_host, smtp_port=smtp_port, username=username)
+    values = dict(business_name=business_name, owner_name=owner_name, email=email, phone=phone, imap_host=imap_host, imap_port=imap_port, smtp_host=smtp_host, smtp_port=smtp_port, username=username, trial_token=trial_token)
     provider = detect_provider(email)
     if rate_limited(request, "verbinden"):
         return _too_many(request)
@@ -282,6 +309,11 @@ def connect_submit(
         return render(request, "connect.html", business=None, email=email, provider=provider, values=values, error="Port muss eine Zahl sein.", hint=None, show_advanced=True)
 
     business = auth.business_by_email(session, email)
+    tester = _trial_for_connect(session, request, trial_token)
+    if tester is not None and (business is None or business.id == tester.id):
+        business = tester  # Test wird zum verbundenen Betrieb, Dokumente bleiben
+        business.email = email
+        business.phone = phone.strip() or business.phone
     if business is None:
         business = Business(name=business_name.strip(), owner_name=owner_name.strip(), email=email, phone=phone.strip())
         session.add(business)
@@ -293,6 +325,8 @@ def connect_submit(
             a.status = AccountStatus.DISCONNECTED
     business.avv_accepted_at = utcnow()
     account = acc.create_account(session, business, cfg, password)
+    if business.is_trial:
+        trial.convert(session, business, account)
     business.last_login_at = utcnow()
     session.commit()
     # Erst-Scan im Hintergrund, damit die Seite sofort da ist
@@ -384,7 +418,8 @@ def dashboard(request: Request, business: Business = Depends(require_business), 
     counts["review_clicks"] = sum(1 for c in customers.values() if c.review_clicked_at)
     account = next((a for a in business.accounts if a.status != AccountStatus.DISCONNECTED), None)
     wa_taps = taps.open_taps(session, business.id)
-    return render(request, "dashboard.html", business=business, docs=docs, pending=pending, events=events, counts=counts, open_amount=open_amount, account=account, filter=filter, msg=msg, customers=customers, wa_taps=wa_taps)
+    trial_ctx = {"connect_url": trial.connect_url(business), "docs_used": trial.docs_in_window(session, business), "wa_link": trial_routes.secretary_link()} if business.is_trial else None
+    return render(request, "dashboard.html", business=business, docs=docs, pending=pending, events=events, counts=counts, open_amount=open_amount, account=account, filter=filter, msg=msg, customers=customers, wa_taps=wa_taps, trial_ctx=trial_ctx)
 
 
 @app.get("/freigaben", response_class=HTMLResponse)
@@ -619,7 +654,7 @@ def portal(request: Request, token: str, session: Session = Depends(get_db), dan
     docs = cust.documents(session, c)
     ref = docs[-1] if docs else None
     account = ref.account if ref is not None and ref.account is not None else next((a for a in b.accounts), None)
-    sender = account.email if account else b.email
+    sender = account.email if account else b.owner_email
     title = cust.job_title(docs)
     subject = f"Frage zu meinem Auftrag{f' „{title}“' if title else ''}"
     resp = render(
@@ -856,9 +891,18 @@ def tap_redirect(request: Request, token: str, session: Session = Depends(get_db
     if fu is None or fu_engine.link_expired(fu):
         raise HTTPException(404)
     doc = fu.document
+    if fu.tap_kind == "manual" or (fu.tap_kind == "mailto" and not doc.customer_email):
+        # Testen ohne Postfach, Kontakt fehlt: Text zum Kopieren plus Feld für Nummer oder Mailadresse
+        return render(request, "trial_tap.html", fu=fu, doc=doc, ok=request.query_params.get("ok"), fehler=request.query_params.get("fehler"))
+    human = not _BOT_UA.search(request.headers.get("user-agent", ""))
+    if fu.tap_kind == "mailto":
+        if fu.tap_state == "open" and human:
+            taps.record_tap(fu, utcnow())
+            session.commit()
+        return RedirectResponse(trial.mailto_link(doc.customer_email, fu.subject, fu.body or fu.wa_text), status_code=302)
     if not doc.customer_mobile or not fu.wa_text:
         return render(request, "approval.html", title="Keine Handynummer", text="Für diesen Kunden ist keine Handynummer hinterlegt. Trag sie beim Dokument ein.", doc=doc, fu=fu)
-    if fu.tap_state == "open" and not _BOT_UA.search(request.headers.get("user-agent", "")):
+    if fu.tap_state == "open" and human:
         taps.record_tap(fu, utcnow())
         session.commit()
     return RedirectResponse(taps.wa_link(doc.customer_mobile, fu.wa_text), status_code=302)
@@ -903,8 +947,15 @@ def tap_action_submit(request: Request, token: str, action: str, session: Sessio
     fu = _tap_fu(session, token, action)
     if fu_engine.link_expired(fu):
         return _expired(request)
+    was_open = fu.tap_state == "open"
     title, text = taps.handle(session, fu, action, utcnow())
     session.commit()
+    b = fu.document.business
+    if b.is_trial:
+        trial.touch(b)
+        if action == "sent" and was_open and fu.tap_state == "sent":
+            trial.maybe_upgrade(session, b)  # einmal: „Soll das künftig automatisch laufen?“
+        session.commit()
     if next:
         return RedirectResponse(_safe_next(next, "/dashboard") + "#whatsapp", status_code=303)
     return render(request, "approval.html", title=title, text=text, doc=fu.document, fu=fu)
@@ -964,13 +1015,14 @@ def _oauth_state_load(token: str) -> dict | None:
 
 
 @app.get("/oauth/{key}/start")
-def oauth_start(key: str, business_name: str = "", owner_name: str = "", phone: str = "", avv: str = ""):
+def oauth_start(request: Request, key: str, business_name: str = "", owner_name: str = "", phone: str = "", avv: str = "", trial_token: str = "", session: Session = Depends(get_db)):
     p = oauth.get(key)
     if p is None or not p.enabled:
         raise HTTPException(404)
     if avv != "1":
         return RedirectResponse("/verbinden?avv=fehlt", status_code=303)
-    state = _oauth_state({"k": key, "b": business_name.strip()[:200], "o": owner_name.strip()[:200], "p": phone.strip()[:60], "avv": 1})
+    tester = _trial_for_connect(session, request, trial_token)
+    state = _oauth_state({"k": key, "b": business_name.strip()[:200], "o": owner_name.strip()[:200], "p": phone.strip()[:60], "avv": 1, "t": tester.id if tester else 0})
     return RedirectResponse(oauth.authorize_url(p, state), status_code=303)
 
 
@@ -1007,6 +1059,10 @@ def oauth_callback(request: Request, key: str, session: Session = Depends(get_db
         smtp_host=p.smtp_host, smtp_port=p.smtp_port, smtp_ssl=p.smtp_ssl, sent_folder=sent,
     )
     business = auth.business_by_email(session, email)
+    tester = session.get(Business, int(data.get("t") or 0)) if data.get("t") else None
+    if tester is not None and tester.is_trial and (business is None or business.id == tester.id):
+        business = tester  # Test wird zum verbundenen Betrieb
+        business.email = email
     if business is None:
         business = Business(name=values["business_name"] or email.split("@")[0], owner_name=values["owner_name"], email=email, phone=values["phone"])
         session.add(business)
@@ -1018,6 +1074,8 @@ def oauth_callback(request: Request, key: str, session: Session = Depends(get_db
             a.status = AccountStatus.DISCONNECTED
     business.avv_accepted_at = utcnow()
     account = acc.create_account(session, business, cfg, tok["refresh_token"], auth_type="oauth")
+    if business.is_trial:
+        trial.convert(session, business, account)
     oauth._cache[f"acc:{account.id}"] = (tok["access_token"], __import__("time").time() + int(tok.get("expires_in", 3600)))
     business.last_login_at = utcnow()
     session.commit()
@@ -1125,8 +1183,17 @@ def login_submit(request: Request, session: Session = Depends(get_db), email: st
     if rate_limited(request, "login"):
         return _too_many(request)
     business = auth.business_by_email(session, email)
+    if business is None and "@" not in email:
+        number = normalize_phone(email)  # Tester ohne Mail: Login-Link per WhatsApp an die Handynummer
+        business = session.scalars(select(Business).where(Business.whatsapp_number == number).order_by(Business.id.desc())).first() if number else None
     if business is None:
-        return render(request, "login.html", next=next, sent="", error="Zu dieser Adresse ist kein Postfach verbunden.")
+        return render(request, "login.html", next=next, sent="", error="Zu dieser Adresse oder Nummer kennen wir keinen Zugang.")
+    if not business.accounts:
+        ok = notify.send(session, trial_routes.login_notification(business))
+        session.commit()
+        if ok:
+            return render(request, "login.html", next=next, sent=email, channel="whatsapp" if notify.whatsapp_ready(business) else "email", error=None)
+        return render(request, "login.html", next=next, sent="", error="Wir konnten dir gerade keinen Link schicken. Versuch es gleich noch einmal.")
     link = f"{settings.base_url}/login/{auth.login_link_token(business.id)}"
     n = wa_msgs.login(
         business, link, "Dein Login-Link für den Locadas Nachfasser",
@@ -1140,13 +1207,15 @@ def login_submit(request: Request, session: Session = Depends(get_db), email: st
 
 
 @app.get("/login/{token}")
-def login_link(token: str, session: Session = Depends(get_db)):
+def login_link(token: str, session: Session = Depends(get_db), next: str = "/dashboard"):
     business = auth.business_from_login_token(session, token)
     if business is None:
         raise HTTPException(status_code=400, detail="Der Login-Link ist abgelaufen oder ungültig. Fordere bitte einen neuen an.")
     business.last_login_at = utcnow()
+    if business.is_trial:
+        trial.touch(business)
     session.commit()
-    return set_session(RedirectResponse("/dashboard", status_code=303), business)
+    return set_session(RedirectResponse(_safe_next(next, "/dashboard"), status_code=303), business)
 
 
 @app.get("/logout")

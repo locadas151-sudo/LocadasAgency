@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Nachfassen bei {{ doc.customer_name or 'deinem Kunden' }} · Locadas Nachfasser{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap wrap--narrow" style="max-width:640px">
+<div class="app-head"><div><h1 class="h2">{{ doc.customer_name or 'Dein Kunde' }}</h1><p class="app-sub">{{ doc.term }} {{ doc.document_number or doc.title }}{% if doc.amount_gross %} über {{ doc.amount_gross|money(doc.currency) }}{% endif %} · Nachricht {{ fu.step }} von 3</p></div></div>
+{% if ok %}<div class="note" style="margin-bottom:16px">Danke, ist eingetragen.</div>{% endif %}
+{% if fehler %}<div class="note err" style="margin-bottom:16px">Das konnten wir nicht lesen. Bitte eine Handynummer wie 0171 2345678 oder eine Mailadresse eingeben.</div>{% endif %}
+<div class="card">
+<h3 class="h3">Wem sollen wir schreiben?</h3>
+<p class="muted" style="margin-top:0">Uns fehlt die Handynummer oder Mailadresse. Trag sie ein, dann öffnet der nächste Tipp die fertige Nachricht in WhatsApp oder deinem Mailprogramm.</p>
+<form method="post" action="/t/{{ fu.tap_token }}/kontakt" class="copy-row">
+<input class="copy-val" name="contact" inputmode="email" placeholder="0171 2345678 oder kunde@mail.de" aria-label="Handynummer oder Mailadresse" required>
+<button class="copy-btn" type="submit">Speichern</button>
+</form>
+</div>
+<div class="card">
+<h3 class="h3">Oder selbst schicken</h3>
+<pre class="tap-text" id="tap-text">{{ fu.wa_text }}</pre>
+<div class="btn-row" style="margin-top:12px"><button class="btn sm" type="button" data-copy="{{ fu.wa_text }}">Text kopieren</button></div>
+</div>
+{% if fu.tap_state == 'open' %}
+<div class="wa-actions" style="margin-top:16px">
+<form method="post" action="/w/{{ fu.tap_token }}/sent"><button class="btn sm" type="submit">Gesendet</button></form>
+{% if doc.kind == DocKind.INVOICE %}<form method="post" action="/w/{{ fu.tap_token }}/paid"><button class="btn ghost sm" type="submit">Ist bezahlt</button></form>{% else %}<form method="post" action="/w/{{ fu.tap_token }}/replied"><button class="btn ghost sm" type="submit">Hat geantwortet</button></form>{% endif %}
+<form method="post" action="/w/{{ fu.tap_token }}/skip"><button class="btn ghost sm" type="submit">Diesmal nicht</button></form>
+</div>
+{% endif %}
+</div>
+</section>
+{% endblock %}

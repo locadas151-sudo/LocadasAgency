@@ -8,7 +8,9 @@ Handwerker verbindet sein Postfach, Locadas erkennt Angebote und Rechnungen im G
 - `locadas/notify/` ein Kanal für alles an den Betrieb: WhatsApp-Sekretär mit Knöpfen, sonst Mail (siehe `WHATSAPP.md`)
 - `locadas/engine/taps.py` WhatsApp-Nachfassen mit einem Tipp: fertige Nachricht (`engine/wa_texts.py`, höchstens 400 Zeichen), ein Tipp öffnet den Chat des Betriebs mit dem Kunden (wa.me), Kundennummer aus PDF und Mail-Signatur (`extract/phones.py`)
 - `locadas/engine/customers.py` Kundenportal `/k/{token}` je Kunde (Stand, Unterlagen, Kontakt), „Auftrag fertig“-Mail und Weg zur Google-Bewertung ohne Review Gating
-- `locadas/main.py` + `web/` FastAPI, Templates im locadas.de-Design
+- `locadas/engine/trial.py` Testen ohne Postfach (`/testen`): Anmeldung mit Name, Betrieb, Handynummer, persönliche Weiterleitungsadresse `<slug>-<6 Zeichen>@INBOUND_DOMAIN`, Aha-Nachricht nach dem ersten Dokument, jede Stufe als Tipp (WhatsApp, fertige Mail per `mailto:` oder Text zum Kopieren), einmal das Angebot zum Verbinden (Calendly oder `/verbinden?b=<Token>`), Umwandeln beim Verbinden, Grenzen und Löschen nach 60 Tagen
+- `locadas/engine/inbound_mail.py` Eingang für Weiterleitungen, CC/BCC und Dateien per WhatsApp: `process_raw()` für den SMTP-Empfänger (`mail/inbound_smtp.py`, aiosmtpd) und den Webhook `POST /inbound/raw`, Kunde aus dem weitergeleiteten Kopfblock, Dubletten mit dem Postfach-Scan. Fotos und Scans liest `extract/vision.py` (Claude)
+- `locadas/main.py` + `web/` FastAPI, Templates im locadas.de-Design (Test-Routen in `web/trial_routes.py`)
 - `tests/` Tests inkl. End-to-End über Fake-IMAP/SMTP und gemockter WhatsApp Graph API
 - `demo.py` lokal durchklicken ohne echtes Postfach
 

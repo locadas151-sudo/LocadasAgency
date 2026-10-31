@@ -10,6 +10,7 @@ from ..config import settings
 from ..db import AccountStatus, MailAccount, new_session
 from .followups import finish_exhausted, process_due
 from .scanner import scan_account
+from .trial import cleanup_job as trial_cleanup_job
 
 log = logging.getLogger(__name__)
 cycle_lock = threading.Lock()  # ein Durchlauf zur Zeit: Scheduler, „Jetzt prüfen“ und Erst-Scan teilen ihn
@@ -54,6 +55,7 @@ def start_scheduler():
     from apscheduler.schedulers.background import BackgroundScheduler
 
     sched = BackgroundScheduler(timezone="UTC")
+    sched.add_job(trial_cleanup_job, "interval", hours=12, id="trial_cleanup", max_instances=1, coalesce=True)  # Tester nach 60 Tagen ohne Aktivität löschen
     sched.add_job(run_cycle, "interval", minutes=settings.scan_interval_minutes, id="cycle", max_instances=1, coalesce=True)
     sched.start()
     return sched

@@ -124,6 +124,10 @@ Beispiel: {{1}} = Thomas, {{2}} = Die Mail an Familie Schmidt zu Angebot A-2026-
 
 ## 4. Was der Sekretär versteht
 
+- **PDF oder Foto** (Nachrichtentyp `document` bzw. `image`, Testen ohne Postfach und auch verbundene Betriebe): Datei über `GET /{media-id}` und dann die gelieferte URL laden (gleicher Token), wie eine Weiterleitung verarbeiten (`engine/inbound_mail.py`). Fotos und Scans liest Claude. Antwort: „Erkannt: Angebot A-123 an Familie Brandt über 3.724,70 €. Ich melde mich am …“ mit „Passt“ / „Falsch erkannt“. Eine Mailadresse in der Bildunterschrift wird als Kundenadresse übernommen.
+- **Handynummer oder Mailadresse als Text** (nur Tester): wird beim jüngsten offenen Dokument ohne Kontakt eingetragen, der offene Tipp wird dann zur WhatsApp- bzw. Mail-Nachricht.
+- **Tester außerhalb des 24h-Fensters** bekommen alles über die Vorlage `locadas_event` (Text mit Link, Knopf „Alles klar“).
+
 - **Knöpfe**: Jeder Knopf trägt eine signierte Aktion (`SECRET_KEY`, 60 Tage gültig). Zweimal drücken schadet nicht.
   - „Hat angerufen“ / „Stopp: Name“ / „Hat sich gemeldet“: nicht mehr nachfassen
   - „Passt“, „Alles klar“, „Erledigt“: nur bestätigen
