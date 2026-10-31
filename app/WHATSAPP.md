@@ -48,10 +48,12 @@ Beispiel: {{1}} = Thomas
 
 ### locadas_preview
 Text:
-> Hallo {{1}}, heute ab {{2}} Uhr fasse ich bei {{3}} nach. Hat sich schon jemand gemeldet, zum Beispiel am Telefon? Dann tipp auf „Hat angerufen“. Sonst musst du nichts tun.
+> Hallo {{1}}, {{2}} fasse ich bei {{3}} nach. Hat sich schon jemand gemeldet, zum Beispiel am Telefon? Dann tipp auf „Hat angerufen“. Sonst musst du nichts tun.
 
 Knöpfe: `Hat angerufen`, `Passt`
-Beispiel: {{1}} = Thomas, {{2}} = 10:00, {{3}} = Familie Schmidt, Peter Weber
+Beispiel: {{1}} = Thomas, {{2}} = heute ab 10 Uhr, {{3}} = Familie Schmidt, Peter Weber
+
+{{2}} ist die echte Versandzeit („heute ab 12:30 Uhr“, „morgen ab 8 Uhr“, „am Montag, 03.11., ab 8 Uhr“).
 
 ### locadas_opened
 Text:
@@ -73,6 +75,15 @@ Text:
 
 Knöpfe: `Senden`, `Diesmal nicht`, `Hat sich gemeldet`
 Beispiel: {{1}} = Thomas, {{2}} = Familie Schmidt, {{3}} = Angebot A-2026-118 über 3.724,70 €, {{4}} = Guten Tag Familie Schmidt, ich wollte kurz nachhören, ob Sie unser Angebot schon anschauen konnten. Viele Grüße Thomas Müller
+
+Der volle Text muss in {{4}} passen (Meta begrenzt Variablen). Ist er länger, geht die Freigabe außerhalb des 24-Stunden-Fensters per Mail.
+
+### locadas_invoice_open
+Text:
+> Hallo {{1}}, {{2}} Ich sehe dein Konto nicht, deshalb frage ich vor jeder Zahlungserinnerung.
+
+Knöpfe: `Noch offen`, `Bezahlt`
+Beispiel: {{1}} = Thomas, {{2}} = Rechnung R-2026-301 an Peter Weber über 224,91 € ist seit 03.11.2026 fällig. Noch offen?
 
 ### locadas_outcome_offer
 Text:

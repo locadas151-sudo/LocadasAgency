@@ -207,14 +207,19 @@ class FakeSmtpServer:
         return self.sink.messages
 
 
-def make_mail(from_addr: str, to: str, subject: str, body: str, pdf: tuple[str, bytes] | None = None, in_reply_to: str = "", from_name: str = "", to_name: str = "") -> bytes:
+def make_mail(from_addr: str, to: str, subject: str, body: str, pdf: tuple[str, bytes] | None = None, in_reply_to: str = "", from_name: str = "", to_name: str = "",
+              cc: str = "", date=None, headers: dict | None = None) -> bytes:
     msg = EmailMessage()
     msg["From"] = f"{from_name} <{from_addr}>" if from_name else from_addr
     msg["To"] = f"{to_name} <{to}>" if to_name else to
+    if cc:
+        msg["Cc"] = cc
     msg["Subject"] = subject
     from datetime import datetime, timedelta, timezone
     from email.utils import format_datetime
-    msg["Date"] = format_datetime(datetime.now(timezone.utc) - timedelta(days=1))
+    msg["Date"] = format_datetime(date or (datetime.now(timezone.utc) - timedelta(days=1)))
+    for k, v in (headers or {}).items():
+        msg[k] = v
     msg["Message-ID"] = make_msgid(domain="test.local")
     if in_reply_to:
         msg["In-Reply-To"] = in_reply_to

@@ -12,7 +12,8 @@ from .followups import finish_exhausted, process_due
 from .scanner import scan_account
 
 log = logging.getLogger(__name__)
-_lock = threading.Lock()
+cycle_lock = threading.Lock()  # ein Durchlauf zur Zeit: Scheduler, „Jetzt prüfen“ und Erst-Scan teilen ihn
+_lock = cycle_lock
 
 
 def run_cycle() -> dict[str, int]:

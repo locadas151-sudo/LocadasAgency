@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} · Locadas Nachfasser{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<section class="app-main">
+<div class="wrap wrap--narrow" style="max-width:640px">
+<div class="card accent">
+<h1 class="h2" style="font-size:30px">{{ title }}</h1>
+<p style="font-size:16px">{{ text }}</p>
+{% if doc %}<p class="small muted">{{ doc.term }} {{ doc.document_number or doc.title }} · {{ doc.customer_name or doc.customer_email }}{% if doc.amount_gross %} · {{ doc.amount_gross|money(doc.currency) }}{% endif %}</p>{% endif %}
+{% if preview %}<details class="step" open><summary><span>Text, der in deinem Namen rausgeht</span></summary><pre>{{ preview }}</pre></details>{% endif %}
+<form method="post" action="{{ action }}" class="btn-row" style="margin-top:14px">
+<button class="btn" type="submit" id="confirm">{{ button }}</button>
+<a class="btn ghost sm" href="/dashboard">Abbrechen</a>
+</form>
+<p class="small muted" style="margin-top:10px">Erst der Klick auf den Knopf ändert etwas. So lösen Link-Vorschauen in Mailprogrammen nichts aus.</p>
+</div>
+</div>
+</section>
+{% endblock %}

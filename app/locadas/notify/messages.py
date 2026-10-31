@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from .. import fmt
 from ..db import Business, DocKind, Document, FollowUp
+from . import whatsapp as wa
 from .core import Notification
 from .tokens import button, payload
 
@@ -36,11 +37,13 @@ def _pos(i: int, total: int) -> str:
     return f"{i} von {total}" if total > 1 else ""
 
 
-def preview(b: Business, fus: list[FollowUp], send_time: str, subject: str, body: str) -> Notification:
+def preview(b: Business, fus: list[FollowUp], when: str, subject: str, body: str) -> Notification:
+    """`when` ist die echte Versandzeit als Satzanfang, z. B. „heute ab 12:30 Uhr“ oder „morgen ab 8 Uhr“."""
     docs = [f.document for f in fus]
-    lines = [f"Heute ab {send_time} Uhr fasse ich hier nach:", ""]
+    lines = [f"{when[:1].upper()}{when[1:]} fasse ich hier nach:", ""]
     for i, (f, d) in enumerate(zip(fus, docs), start=1):
-        lines.append(f"{i}. {who(d)}: {ref(d)}{dmoney(d)} (Mail {f.step})")
+        own = f" · du hast am {d.owner_contact_at.strftime('%d.%m.')} selbst geschrieben" if getattr(d, "owner_contact_at", None) else ""
+        lines.append(f"{i}. {who(d)}: {ref(d)}{dmoney(d)} (Mail {f.step}){own}")
     lines += ["", "Hat sich schon jemand gemeldet, zum Beispiel am Telefon? Dann tipp auf den Namen."]
     if len(docs) > PREVIEW_BUTTONS_PER_DOC:
         lines.append(f"Für die anderen schreib einfach „Stopp {PREVIEW_BUTTONS_PER_DOC + 1}“ usw.")
@@ -56,7 +59,7 @@ def preview(b: Business, fus: list[FollowUp], send_time: str, subject: str, body
     return Notification(
         business=b, kind="preview", title="Heute fasse ich nach", text="\n".join(lines), buttons=buttons,
         email_subject=subject, email_body=body, doc_ids=[d.id for d in docs],
-        template="preview", template_params=[hello(b), send_time, names], template_buttons=tpl_buttons,
+        template="preview", template_params=[hello(b), when, names], template_buttons=tpl_buttons,
         context={"list": [d.id for d in docs]},
     )
 
@@ -73,35 +76,46 @@ def pick(b: Business, docs: list[Document]) -> Notification:
 
 
 def review(b: Business, fu: FollowUp, index: int, total: int, subject: str, body: str) -> Notification:
-    """Vorgang von vor dem Start: erst fragen. Keine Vorlage (Knöpfe passen nicht), außerhalb des 24h-Fensters per Mail."""
+    """Frage vor dem Nachfassen: Rechnung „Noch offen?“ bzw. Angebot von vor dem Start „Schon erledigt?“."""
     from ..engine.followups import review_labels, review_question
 
     d = fu.document
     done, go = review_labels(d)
+    if d.kind == DocKind.INVOICE:
+        return Notification(
+            business=b, kind="approval", title=f"{who(d)}: Rechnung noch offen?",
+            text=f"{review_question(d)}\n\nIch sehe dein Konto nicht. Die Zahlungserinnerung geht nur raus, wenn du „Noch offen“ tippst.",
+            buttons=[button("Noch offen", "send", fu.id), button("Bezahlt", "settle", fu.id)],
+            email_subject=subject, email_body=body, doc_ids=[d.id], footer=_pos(index, total),
+            template="invoice_open", template_params=[hello(b), review_question(d)],
+        )
+    # Keine Vorlage (Knöpfe passen nicht), außerhalb des 24h-Fensters per Mail
     return Notification(
-        business=b, kind="approval", title=f"{who(d)}: schon {'bezahlt' if d.kind == DocKind.INVOICE else 'erledigt'}?",
+        business=b, kind="approval", title=f"{who(d)}: schon erledigt?",
         text=f"{review_question(d)}\n\nNachgefasst wird nur, wenn du „{go}“ tippst. Den Text siehst du vorher noch.",
         buttons=[button(done, "settle", fu.id), button(go, "send", fu.id)],
         email_subject=subject, email_body=body, doc_ids=[d.id], footer=_pos(index, total),
     )
 
 
-def approval(b: Business, fu: FollowUp, index: int, total: int, subject: str, body: str, approvals_left: int | None) -> Notification:
+def approval(b: Business, fu: FollowUp, index: int, total: int, subject: str, body: str, approvals_left: int | None = None) -> Notification:
+    """Freigabe mit dem vollständigen Text, der rausgehen würde."""
+    from ..engine.followups import approval_reason, is_question
+
     d = fu.document
-    if d.needs_review:
+    if is_question(fu):
         return review(b, fu, index, total, subject, body)
     text = (
         f"{ref(d)}{dmoney(d)}, gesendet {d.sent_at.strftime('%d.%m.')}\n\n"
-        f"Diesen Text würde ich in deinem Namen schicken:\n\n{_quote(fu.body, 650)}"
+        f"Diesen Text würde ich in deinem Namen schicken:\n\nBetreff: {fu.subject}\n\n{(fu.body or '').strip()}\n\n{approval_reason(b, d)}"
     )
-    footer_parts = [_pos(index, total)]
-    if approvals_left:
-        footer_parts.append(f"Noch {approvals_left} Freigaben bis automatisch")
+    # Vorlagen-Parameter sind begrenzt: passt der volle Text nicht hinein, außerhalb des 24h-Fensters lieber per Mail
+    template = "approval" if len(fu.body or "") <= wa.PARAM_MAX else None
     return Notification(
         business=b, kind="approval", title=f"Nachfassen bei {who(d)}?", text=text,
         buttons=[button("Senden", "send", fu.id), button("Diesmal nicht", "skip", fu.id), button("Hat sich gemeldet", "gone", fu.id)],
-        email_subject=subject, email_body=body, doc_ids=[d.id], footer=" · ".join(p for p in footer_parts if p),
-        template="approval", template_params=[hello(b), who(d), f"{ref(d)}{dmoney(d)}", fu.body],
+        email_subject=subject, email_body=body, doc_ids=[d.id], footer=_pos(index, total),
+        template=template, template_params=[hello(b), who(d), f"{ref(d)}{dmoney(d)}", fu.body],
     )
 
 

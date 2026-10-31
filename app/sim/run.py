@@ -32,6 +32,7 @@ _tmp = tempfile.mkdtemp(prefix="locadas-sim-")
 os.environ.setdefault("DATA_DIR", _tmp)
 os.environ["SCHEDULER_ENABLED"] = "0"
 os.environ.setdefault("SECRET_KEY", "sim")
+os.environ.setdefault("ALLOW_INSECURE_DEV", "1")
 os.environ.setdefault("BASE_URL", "https://app.locadas.de")
 os.environ.setdefault("TZ", "Europe/Berlin")
 
@@ -332,7 +333,7 @@ def run_persona(p: Persona, days: int = 22) -> dict:
 CRITIC = """Du bist {owner}, Inhaber von {business} ({trade}, {size}). So arbeitest du: {workflow}
 Dein Charakter: {character}
 
-Du hast gerade drei Wochen lang den „Locadas Nachfasser“ getestet: Du hast dein Postfach verbunden, das Tool hat deine verschickten Angebote und Rechnungen erkannt und in deinem Namen bei Kunden nachgefasst, bis sie antworten. Die ersten 5 Nachfass-Mails musstest du per Mail freigeben. Das Tool ist kostenlos.
+Du hast gerade drei Wochen lang den „Locadas Nachfasser“ getestet: Du hast dein Postfach verbunden, das Tool hat deine verschickten Angebote und Rechnungen erkannt und in deinem Namen bei Kunden nachgefasst, bis sie antworten. Angebote liefen automatisch mit einer Vorschau am Morgen (große Angebote nur mit deiner Freigabe), vor jeder Zahlungserinnerung hat das Tool dich gefragt, ob die Rechnung noch offen ist. Das Tool ist kostenlos.
 
 Hier ist, was du erlebt hast. Sei ein kritischer, ehrlicher Handwerker, kein netter Tester. Wenn etwas peinlich gegenüber deinen Kunden wäre, sag es hart. Wenn es dir Geld bringt, sag das auch.
 

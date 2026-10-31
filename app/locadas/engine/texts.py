@@ -150,12 +150,14 @@ def _datum(dt) -> str:
 
 
 def payment_deadline(now: datetime | None = None) -> datetime:
-    """Versandtag + 7 Tage (lokale Zeit), fällt das aufs Wochenende: der Montag danach."""
+    """Versandtag + 7 Tage (lokale Zeit), fällt das aufs Wochenende oder einen Feiertag: der nächste Werktag."""
     from ..config import settings
+
+    from ..holidays import is_workday
 
     now = now or _db.utcnow()
     local = now.astimezone(ZoneInfo(settings.timezone)) + timedelta(days=PAYMENT_DAYS)
-    while local.weekday() >= 5:
+    while not is_workday(local.date()):
         local += timedelta(days=1)
     return local
 
@@ -303,50 +305,52 @@ def _invoice_text(doc: Document, step: int, now: datetime | None) -> str:
     pay = payment_line(doc, now)
     tone = invoice_tone(doc)
     head = f"{unser(doc)} {t} ({ref}){b_txt}"
+    offen = f"Laut meinen Unterlagen ist {der(doc)} {t} noch offen."
+    # Nur nach Bestätigung durch den Betrieb („Noch offen“). Nie behaupten, wir hätten keinen Zahlungseingang gefunden.
     if tone == "bestimmt":
         if step == 1:
             return (
-                f"{head} war am {faellig} fällig und ist noch nicht bezahlt.{ack}\n\n{pay}\n\n"
+                f"{head} war am {faellig} fällig. {offen}{ack}\n\n{pay}\n\n"
                 f"Bei Fragen zur {t} melden Sie sich bitte umgehend bei mir."
             )
         if step == 2:
             return (
-                f"{head} ist seit dem {faellig} überfällig. Trotz unserer Zahlungserinnerung ist bisher keine Zahlung eingegangen.{ack}\n\n{pay}\n\n"
+                f"{head} ist seit dem {faellig} überfällig und laut meinen Unterlagen trotz unserer Zahlungserinnerung noch offen.{ack}\n\n{pay}\n\n"
                 f"Sie befinden sich mit der Zahlung im Verzug. Geht der Betrag nicht fristgerecht ein, müssen wir Mahnkosten berechnen."
             )
         return (
-            f"trotz zweier Zahlungserinnerungen ist {head}, fällig seit dem {faellig}, weiterhin offen.{ack}\n\n{pay}\n\n"
+            f"trotz zweier Zahlungserinnerungen ist {head}, fällig seit dem {faellig}, laut meinen Unterlagen weiterhin offen.{ack}\n\n{pay}\n\n"
             f"Dies ist unsere letzte Zahlungserinnerung. Geht bis dahin keine Zahlung ein, leiten wir das Mahnverfahren ein. "
             f"Die entstehenden Mahnkosten und Verzugszinsen gehen zu Ihren Lasten."
         )
     if tone == "sachlich":
         if step == 1:
             return (
-                f"für {unser(doc, 'acc')} {t} ({ref}){b_txt}, fällig am {faellig}, liegt uns noch kein Zahlungseingang vor.{ack}\n\n{pay}\n\n"
+                f"{head}, fällig am {faellig}, ist laut meinen Unterlagen noch offen.{ack}\n\n{pay}\n\n"
                 f"Für Rückfragen zur {t} stehe ich gern zur Verfügung."
             )
         if step == 2:
             return (
-                f"für {unser(doc, 'acc')} {t} ({ref}){b_txt}, fällig seit dem {faellig}, ist trotz unserer Erinnerung noch kein Zahlungseingang verbucht.{ack}\n\n{pay}\n\n"
+                f"{head}, fällig seit dem {faellig}, ist laut meinen Unterlagen trotz unserer Erinnerung noch offen.{ack}\n\n{pay}\n\n"
                 f"Sollte die {t} bei Ihnen noch in Prüfung sein oder etwas fehlen, geben Sie mir bitte kurz Bescheid."
             )
         return (
-            f"{head} ist seit dem {faellig} fällig und trotz zweier Erinnerungen noch offen.{ack}\n\n{pay}\n\n"
+            f"{head} ist seit dem {faellig} fällig und laut meinen Unterlagen trotz zweier Erinnerungen noch offen.{ack}\n\n{pay}\n\n"
             f"Geht bis dahin keine Zahlung ein, leiten wir das Mahnverfahren ein."
         )
     # freundlich
     if step == 1:
         return (
-            f"{head} war am {faellig} fällig. Bisher konnte ich dazu noch keinen Zahlungseingang finden.{ack}\n\n{pay}\n\n"
+            f"{head} war am {faellig} fällig. {offen}{ack}\n\n{pay}\n\n"
             f"Haben Sie Fragen zur {t}, melden Sie sich gern bei mir."
         )
     if step == 2:
         return (
-            f"zu {unser(doc, 'dat')} {t} ({ref}){b_txt}, fällig seit dem {faellig}, ist bei uns noch kein Zahlungseingang zu sehen.{ack}\n\n{pay}\n\n"
+            f"{head}, fällig seit dem {faellig}, ist laut meinen Unterlagen noch offen.{ack}\n\n{pay}\n\n"
             f"Gibt es einen Grund für die Verzögerung oder eine Frage zur {t}, melden Sie sich bitte kurz. Dann finden wir eine Lösung."
         )
     return (
-        f"trotz zweier Erinnerungen ist {head}, fällig seit dem {faellig}, noch offen.{ack}\n\n{pay}\n\n"
+        f"trotz zweier Erinnerungen ist {head}, fällig seit dem {faellig}, laut meinen Unterlagen noch offen.{ack}\n\n{pay}\n\n"
         f"Danach müssen wir das Mahnverfahren einleiten. Das bedeutet zusätzliche Kosten für Sie und das möchten wir beide vermeiden."
     )
 

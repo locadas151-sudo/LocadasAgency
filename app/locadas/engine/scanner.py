@@ -12,23 +12,28 @@ Absichtlich vorsichtig:
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import re
 from dataclasses import replace
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import fmt
 from ..config import settings
 from ..db import DocKind, DocStatus, Document, FollowUp, FollowUpStatus, MailAccount, SeenMessage, log_event, utcnow
 from ..extract.classify import classify, is_forward, looks_like_customer
-from ..extract.fields import extract_fields, utc_from_iso
+from ..extract.fields import extract_fields, paid_marker, utc_from_iso
+from ..holidays import add_workdays
 from ..extract.pdftext import pdf_to_text
 from ..mail.imap import Attachment, ImapClient, MailAuthError, MailConnectError, ParsedMail, since_days
 from . import accounts as acc
 from . import matcher, style
+from .absence import parse_return_date
 from ..notify import messages as wa_msgs
 from ..notify import send as notify
 from .followups import close_document, schedule_followups
@@ -48,9 +53,17 @@ def _seen(session: Session, account: MailAccount, message_id: str) -> bool:
     return session.scalar(select(SeenMessage.id).where(SeenMessage.account_id == account.id, SeenMessage.message_id == message_id)) is not None
 
 
-def _mark_seen(session: Session, account: MailAccount, message_id: str) -> None:
-    if message_id:
-        session.add(SeenMessage(account_id=account.id, message_id=message_id))
+def _mark_seen(session: Session, account: MailAccount, message_id: str) -> bool:
+    """Als gesehen eintragen. False, wenn ein anderer Durchlauf die Mail schon beansprucht hat (eindeutiger Index)."""
+    if not message_id:
+        return True
+    session.add(SeenMessage(account_id=account.id, message_id=message_id))
+    try:
+        session.flush()
+    except IntegrityError:
+        session.rollback()
+        return False
+    return True
 
 
 def _is_own_followup(session: Session, message_id: str) -> bool:
@@ -128,7 +141,11 @@ def _push_back(doc: Document, now) -> None:
         return
     gap = timedelta(days=4)
     for i, f in enumerate(pending):
-        f.due_at = max(f.due_at, now + gap * (i + 1))
+        new = max(f.due_at, now + gap * (i + 1))
+        if new != f.due_at:
+            f.due_at = new
+            f.announced_at = None
+            f.send_after = None
     doc.next_followup_at = pending[0].due_at
 
 
@@ -143,28 +160,78 @@ def _reschedule_from(doc: Document, new_base) -> None:
             f.status = FollowUpStatus.SCHEDULED
             f.due_at = max(base + timedelta(days=offsets[idx]), now + timedelta(hours=1))
             f.subject, f.body = "", ""
+            f.announced_at = f.send_after = None
     pending = [f.due_at for f in doc.followups if f.status == FollowUpStatus.SCHEDULED]
     doc.next_followup_at = min(pending) if pending else None
 
 
+_ORDER_CONFIRM_RE = re.compile(r"auftragsbest(?:ä|ae)tigung|order confirmation", re.I)
+
+
+def _mentions_number(hay: str, number: str) -> bool:
+    nr = (number or "").strip()
+    if len(nr) < 3:
+        return False
+    return re.search(r"(?<![\w/-])" + re.escape(nr) + r"(?![\w/-])", hay, re.I) is not None
+
+
+def close_won_offers(session: Session, account: MailAccount, mail: ParsedMail, recipients: list[str], text: str, what: str) -> list[Document]:
+    """Auftragsbestätigung oder Rechnung an den Kunden nach einem offenen Angebot: Angebot ist gewonnen.
+
+    Eindeutig muss es sein: Angebotsnummer im Dokument, sonst genau ein offenes Angebot an dieselbe Adresse
+    bzw. (ohne Treffer) an dieselbe Firmendomain. Bei mehreren Kandidaten ohne Nummer schließen wir nichts.
+    """
+    offers = session.scalars(select(Document).where(
+        Document.business_id == account.business_id, Document.kind == DocKind.OFFER,
+        Document.status == DocStatus.OPEN, Document.sent_at < mail.date,
+    )).all()
+    if not offers:
+        return []
+    hay = f"{mail.subject}\n{text or ''}\n{mail.text or ''}"
+    addrs = {a.lower() for a in recipients}
+    hits = [d for d in offers if _mentions_number(hay, d.document_number)]
+    if not hits:
+        exact = [d for d in offers if (d.customer_email or "").lower() in addrs]
+        if len(exact) == 1:
+            hits = exact
+        elif not exact:
+            dom = [d for d in offers if any(matcher.same_company_domain(d.customer_email or "", a) for a in addrs)]
+            hits = dom if len(dom) == 1 else []
+        else:
+            log_event(session, account.business_id, "info",
+                      f"{what} an {', '.join(sorted(addrs))} verschickt, dort sind mehrere Angebote offen. Markier bitte im Dashboard, welches du bekommen hast.")
+    for d in hits:
+        close_document(session, d, DocStatus.WON, f"{what} verschickt")
+        d.outcome_at = d.outcome_at or utcnow()
+        log_event(session, d.business_id, "won", f"Du hast {d.customer_name or d.customer_email} eine {what} geschickt. {d.kind_label} {d.document_number or d.title} ist damit als „Auftrag bekommen“ markiert, ich fasse dort nicht mehr nach.", d.id)
+    return hits
+
+
 def handle_manual_mail(session: Session, account: MailAccount, mail: ParsedMail) -> Document | None:
-    """Mail ohne PDF aus dem Gesendet-Ordner: Hat der Betrieb selbst beim Kunden nachgefasst?"""
+    """Mail ohne PDF aus dem Gesendet-Ordner: Hat der Betrieb selbst beim Kunden nachgefasst?
+
+    Jede eigene Mail an die genaue Kundenadresse (oder im Thread) zählt: offene Stufen rücken nach hinten.
+    """
     recipients = [a for _, a in mail.to if looks_like_customer(a, account.email)]
     if not recipients:
         return None
+    if _ORDER_CONFIRM_RE.search(mail.subject or ""):
+        if close_won_offers(session, account, mail, recipients, "", "Auftragsbestätigung"):
+            return None
     doc = _doc_in_thread(session, account, _thread_ids(mail))
-    if doc is None:
-        # Ohne Thread-Bezug nur, wenn der Betreff klar auf das Dokument zeigt
-        for r in recipients:
-            cand = _doc_in_thread(session, account, set(), customer=r)
-            if cand and ((cand.document_number and cand.document_number in mail.subject) or (cand.subject and cand.subject.lower() in mail.subject.lower())):
-                doc = cand
-                break
-    if doc is None:
+    docs = [doc] if doc is not None else []
+    if not docs:
+        addrs = {r.lower() for r in recipients}
+        docs = list(session.scalars(select(Document).where(
+            Document.account_id == account.id, Document.status == DocStatus.OPEN, Document.customer_email.in_(addrs),
+        )).all())
+    if not docs:
         return None
-    _push_back(doc, utcnow())
-    log_event(session, doc.business_id, "manual", f"Du hast selbst bei {doc.customer_name or doc.customer_email} nachgefasst. Nächste Stufe rückt nach hinten.", doc.id)
-    return doc
+    for d in docs:
+        _push_back(d, utcnow())
+        d.owner_contact_at = mail.date
+        log_event(session, d.business_id, "manual", f"Du hast selbst an {d.customer_name or d.customer_email} geschrieben ({mail.subject[:80]}). Die nächste Nachfass-Mail rückt nach hinten.", d.id)
+    return docs[0]
 
 
 def process_sent_mail(session: Session, account: MailAccount, mail: ParsedMail, first_run: bool = False) -> Document | None:
@@ -181,13 +248,21 @@ def process_sent_mail(session: Session, account: MailAccount, mail: ParsedMail, 
         return None
     main_pdf, text, kind = _pick_document_pdf(mail.subject, pdfs)
     if kind is None:
+        head = " ".join([mail.subject] + [p.filename for p in pdfs]) + "\n" + (text or "")[:1500]
+        if _ORDER_CONFIRM_RE.search(head):
+            close_won_offers(session, account, mail, [a for _, a in recipients], text, "Auftragsbestätigung")
         return None
-    fields = extract_fields(kind, mail.subject, recipients, mail.date, text, main_pdf.filename)
+    business = account.business
+    own_names = tuple(n for n in (business.name, business.owner_name, account.display_name) if n)
+    fields = extract_fields(kind, mail.subject, recipients, mail.date, text, main_pdf.filename, own_names=own_names)
     doc_kind = DocKind(fields.kind)
     customer_email = (fields.customer_email or recipients[0][1]).lower()
     # Kunde laut PDF ist nicht unter den Empfängern (z. B. Mail ging an Hausverwaltung): Mail-Empfänger nehmen
     if customer_email not in {a for _, a in recipients}:
         customer_email = recipients[0][1]
+    own = (account.email or "").lower()
+    cc = [(n, a) for n, a in mail.cc if a.lower() not in (own, customer_email)]
+    paid = paid_marker(f"{text}\n{mail.text or ''}") if doc_kind == DocKind.INVOICE else ""
 
     # Gleiche Nummer schon da? Dann ist das eine Korrektur / Neufassung oder ein erneuter Versand
     if fields.document_number:
@@ -214,6 +289,11 @@ def process_sent_mail(session: Session, account: MailAccount, mail: ParsedMail, 
                     existing.iban, existing.bic, existing.bank_name, existing.account_holder = fields.iban, fields.bic, fields.bank_name, fields.account_holder
                 if doc_kind == DocKind.INVOICE and fields.due_date:
                     existing.due_date = utc_from_iso(fields.due_date)
+                existing.cc_json = json.dumps(cc, ensure_ascii=False) if cc else ""
+                if paid:
+                    close_document(session, existing, DocStatus.PAID, f"Laut Rechnung schon bezahlt: {paid}")
+                    log_event(session, existing.business_id, "paid", f"{existing.kind_label} {existing.document_number}: {paid}. Ich erinnere hier nicht.", existing.id)
+                    return None
                 _reschedule_from(existing, mail.date)
                 log_event(session, existing.business_id, "updated", f"{existing.kind_label} {existing.document_number} wurde neu verschickt{_fmt_amount(existing.amount_gross, existing.currency)}. Nachfassen startet neu.", existing.id)
             return None
@@ -229,6 +309,7 @@ def process_sent_mail(session: Session, account: MailAccount, mail: ParsedMail, 
         sent_at=mail.date,
         customer_name=fields.customer_name or recipients[0][0],
         customer_email=customer_email,
+        cc_json=json.dumps(cc, ensure_ascii=False) if cc else "",
         document_number=fields.document_number,
         title=fields.title,
         amount_gross=fields.amount_gross,
@@ -254,8 +335,17 @@ def process_sent_mail(session: Session, account: MailAccount, mail: ParsedMail, 
         doc.needs_review = True
     session.add(doc)
     session.flush()
-    schedule_followups(session, doc)
     log_event(session, doc.business_id, "new", f"{doc.kind_label} {doc.document_number or doc.title} an {doc.customer_name or doc.customer_email}{_fmt_amount(doc.amount_gross, doc.currency)} erkannt.", doc.id)
+    if paid:
+        # Bar, EC-Karte, Lastschrift, „Betrag dankend erhalten“: hier gibt es nichts zu erinnern
+        doc.status = DocStatus.PAID
+        doc.closed_at = utcnow()
+        doc.close_reason = f"Laut Rechnung schon bezahlt: {paid}"[:200]
+        log_event(session, doc.business_id, "paid", f"{doc.kind_label} {doc.document_number or doc.title}: {paid}. Ich erinnere hier nicht.", doc.id)
+    else:
+        schedule_followups(session, doc)
+    if doc.kind == DocKind.INVOICE:
+        close_won_offers(session, account, mail, [a for _, a in recipients], text, doc.term)
     return doc
 
 
@@ -278,7 +368,9 @@ def scan_sent(session: Session, account: MailAccount, client: ImapClient) -> int
         account.sent_last_uid = max(account.sent_last_uid, uid)
         if mail is None or _seen(session, account, mail.message_id):
             continue
-        _mark_seen(session, account, mail.message_id)
+        if not _mark_seen(session, account, mail.message_id):
+            account.sent_last_uid = max(account.sent_last_uid, uid)
+            continue
         if _is_own_followup(session, mail.message_id):
             continue
         if first_run and not mail.pdf_attachments:
@@ -348,8 +440,14 @@ def _match_free_mail(session: Session, account: MailAccount, client: ImapClient,
     ).all())
     if not open_docs:
         return fallback, None
+    # Billiger Vorfilter: Claude nur fragen, wenn Absender, Firmendomain, Nummer oder Nachname passt
+    body = ""
+    if not matcher.worth_asking(mail.from_addr, mail.subject, "", open_docs, mail.from_name):
+        body = _mail_body(client, mail)
+        if not matcher.worth_asking(mail.from_addr, mail.subject, body, open_docs, mail.from_name):
+            return fallback, None
     budget[0] -= 1
-    result = matcher.classify_mail(mail, _mail_body(client, mail), open_docs)
+    result = matcher.classify_mail(mail, body or _mail_body(client, mail), open_docs)
     if result is None:
         return fallback, None
     if result.matched:
@@ -427,6 +525,39 @@ def _ack_body(client: ImapClient, mail: ParsedMail) -> str:
     return (mail.text or "") or _mail_body(client, mail)[:3000]
 
 
+def postpone_for_absence(session: Session, doc: Document, named: "datetime.date", back: "datetime.date", mail: ParsedMail) -> bool:
+    """Kunde ist laut Abwesenheitsnotiz weg: offene Stufen frühestens am Werktag nach seiner Rückkehr. Kurz Bescheid geben."""
+    tz = ZoneInfo(settings.timezone)
+    day = add_workdays(back, 1)
+    resume = datetime(day.year, day.month, day.day, settings.send_hour_from, 0, tzinfo=tz).astimezone(timezone.utc)
+    if doc.away_until is not None and doc.away_until >= resume:
+        return True  # schon bekannt, nicht noch einmal melden
+    doc.away_until = resume
+    pending = sorted((f for f in doc.followups if f.status == FollowUpStatus.SCHEDULED), key=lambda f: f.step)
+    earliest = resume
+    for f in pending:
+        if f.due_at < earliest:
+            f.due_at = earliest
+            f.announced_at = None
+            f.send_after = None
+            f.subject, f.body = "", ""
+        earliest = f.due_at + timedelta(days=4)
+    if pending:
+        doc.next_followup_at = min(f.due_at for f in pending)
+    who = doc.customer_name or mail.from_addr
+    gone = f"bis {named.strftime('%d.%m.')} weg" if back != named else f"erst ab {named.strftime('%d.%m.')} wieder da"
+    text = f"{who} ist laut Abwesenheitsnotiz {gone}. Ich warte und fasse frühestens am {day.strftime('%d.%m.')} nach."
+    log_event(session, doc.business_id, "autoreply", text, doc.id)
+    b = doc.business
+    session.commit()
+    notify(session, wa_msgs.info(
+        b, f"{who} ist {gone}", text,
+        f"{who} ist {gone}, ich warte",
+        f"Hallo {b.owner_name or b.name},\n\n{text} ({doc.kind_label} {doc.document_number or doc.title})\n\nLocadas Nachfasser",
+    ))
+    return True
+
+
 def scan_inbox(session: Session, account: MailAccount, client: ImapClient) -> int:
     validity, uidnext = client.select(account.inbox_folder)
     if account.inbox_uidvalidity is None or validity != account.inbox_uidvalidity:
@@ -455,7 +586,10 @@ def scan_inbox(session: Session, account: MailAccount, client: ImapClient) -> in
                         doc.ack_at = mail.date
                         log_event(session, doc.business_id, "ack", f"{mail.from_addr} hat den Eingang von {doc.kind_label} {doc.document_number or doc.title} automatisch bestätigt.", doc.id)
                 else:
-                    log_event(session, doc.business_id, "autoreply", f"Abwesenheitsnotiz von {mail.from_addr}. Ich fasse trotzdem weiter nach.", doc.id)
+                    text = (mail.text or "") or _mail_body(client, mail)[:3000]
+                    back = parse_return_date(f"{mail.subject}\n{text}", mail.date.astimezone(ZoneInfo(settings.timezone)))
+                    if back is None or not postpone_for_absence(session, doc, back[0], back[1], mail):
+                        log_event(session, doc.business_id, "autoreply", f"Abwesenheitsnotiz von {mail.from_addr}. Ich fasse trotzdem weiter nach.", doc.id)
                 session.commit()
             continue
         if doc is not None:

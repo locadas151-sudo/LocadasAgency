@@ -70,6 +70,42 @@ def same_company_domain(a: str, b: str) -> bool:
     return bool(da) and da == db_ and da not in FREEMAIL
 
 
+_SURNAME_SKIP = {
+    "familie", "herr", "frau", "eheleute", "gmbh", "mbh", "und", "co", "kg", "ag", "ohg", "gbr", "verwaltung", "hausverwaltung",
+    "immobilien", "bau", "praxis", "hotel", "stadt", "gemeinde", "firma", "weg", "dr", "prof",
+}
+
+
+def _name_hints(d: Document) -> list[str]:
+    """Nachname bzw. markantes Wort aus dem Kundennamen (mind. 4 Buchstaben), für den billigen Vorfilter."""
+    words = re.findall(r"[A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß-]{3,}", d.customer_name or "")
+    words = [w for w in words if w.lower() not in _SURNAME_SKIP]
+    return words[-1:] if words else []
+
+
+def worth_asking(sender: str, subject: str, body: str, docs: Iterable[Document], sender_name: str = "") -> bool:
+    """Billiger Vorfilter vor dem Claude-Aufruf: nur wenn die Mail erkennbar mit einem offenen Dokument zu tun haben kann.
+
+    Absender = Kundenadresse, gleiche Firmendomain (keine Freemail), oder Dokumentnummer bzw. Kunden-Nachname
+    in Absendername, Absenderadresse, Betreff oder Text. Alles andere (Lieferanten, Newsletter, private Mails) geht nie an Claude.
+    """
+    sender = (sender or "").lower()
+    local = re.sub(r"[._+-]+", " ", sender.split("@")[0])
+    hay = f"{sender_name or ''}\n{local}\n{subject or ''}\n{body or ''}"
+    low = hay.lower()
+    for d in docs:
+        ce = (d.customer_email or "").lower()
+        if ce and (ce == sender or same_company_domain(ce, sender)):
+            return True
+        nr = (d.document_number or "").strip()
+        if len(nr) >= 3 and nr.lower() in low:
+            return True
+        for w in _name_hints(d):
+            if re.search(r"(?<![\wäöüß])" + re.escape(w.lower()) + r"(?![\wäöüß])", low):
+                return True
+    return False
+
+
 # --- Mailtext ----------------------------------------------------------------
 
 _QUOTE_START = re.compile(
@@ -214,7 +250,7 @@ def classify_mail(mail: ParsedMail, body_text: str, docs: list[Document], known:
     try:
         client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
         resp = client.messages.create(
-            model=settings.claude_model,
+            model=settings.claude_fast_model,
             max_tokens=1500,  # Denk-Blöcke zählen mit
             messages=[{"role": "user", "content": prompt}],
         )

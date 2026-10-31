@@ -43,6 +43,7 @@
 </details>
 
 <label class="check"><input type="checkbox" name="consent" value="1" required><span>Ich bin berechtigt, dieses Postfach zu nutzen. Locadas darf Mails mit Angebots- und Rechnungs-PDFs in meinem Gesendet-Ordner lesen, Antworten meiner Kunden im Posteingang erkennen und in meinem Namen Nachfass-Mails über dieses Postfach verschicken. <a href="/datenschutz">Datenschutz</a></span></label>
+<label class="check"><input type="checkbox" name="avv" value="1" id="avv" required><span>Ich akzeptiere den <a href="/avv" target="_blank">AVV (Auftragsverarbeitungsvertrag)</a>. Locadas verarbeitet die Daten meiner Kunden nur in meinem Auftrag.</span></label>
 <button class="btn" type="submit" id="submit">Verbinden und loslegen <svg class="ic"><use href="#i-arrow"/></svg></button>
 <p class="small muted" style="margin:0">Wir prüfen die Verbindung jetzt sofort. Dein Passwort wird verschlüsselt gespeichert und nie angezeigt.</p>
 </form>
@@ -51,10 +52,11 @@
 <div class="card accent">
 <h3 class="h3">Was dann passiert</h3>
 <ul class="plain">
-<li>Wir lesen die Mails der letzten 30 Tage mit PDF-Anhang und legen alle Angebote und Rechnungen an.</li>
+<li>Wir lesen die Mails der letzten 30 Tage mit PDF-Anhang im Gesendet-Ordner und legen alle Angebote und Rechnungen an.</li>
 <li>Du siehst die Liste im Dashboard und kannst alles rauswerfen, was nicht nachgefasst werden soll.</li>
-<li>Die ersten fünf Nachfass-Mails bekommst du vorher per Mail zur Freigabe: Senden, diesmal nicht, oder stopp.</li>
-<li>Danach läuft es automatisch. Jede Antwort eines Kunden stoppt das Nachfassen bei ihm.</li>
+<li>Angebote: Morgens bekommst du eine Vorschau, bei wem ich heute nachfasse, mit Stopp-Knopf. Angebote über 10.000 € gebe ich nur mit deiner Freigabe raus, mit dem vollen Text. Wenn du willst, gibst du jede Mail selbst frei.</li>
+<li>Rechnungen: Vor jeder Zahlungserinnerung frage ich dich „Noch offen?“. Erst nach deinem Ja geht sie raus.</li>
+<li>Jede Antwort eines Kunden stoppt das Nachfassen bei ihm.</li>
 </ul>
 </div>
 <div class="card" style="margin-top:16px">
@@ -91,7 +93,7 @@ var email=document.getElementById('email'),hint=document.getElementById('provide
 function upd(){var d=(email.value.split('@')[1]||'').toLowerCase();var k=map[d];hint.textContent=k?texts[k]:(d?'Eigene Domain: Dein normales Postfach-Passwort. Wir suchen den Server automatisch.':'Das Passwort, mit dem du dich auch in deinem Mailprogramm anmeldest.');}
 email.addEventListener('input',upd);email.addEventListener('change',upd);
 var f=document.getElementById('connect'),b=document.getElementById('submit');
-document.querySelectorAll('[data-oauth]').forEach(function(a){a.addEventListener('click',function(e){var bn=document.getElementById('business_name').value.trim();if(!bn){e.preventDefault();document.getElementById('business_name').focus();document.getElementById('business_name').reportValidity();return;}var q=new URLSearchParams({business_name:bn,owner_name:document.getElementById('owner_name').value,phone:document.getElementById('phone').value});a.href=a.getAttribute('href').split('?')[0]+'?'+q.toString();});});
+document.querySelectorAll('[data-oauth]').forEach(function(a){a.addEventListener('click',function(e){var bn=document.getElementById('business_name').value.trim();if(!bn){e.preventDefault();document.getElementById('business_name').focus();document.getElementById('business_name').reportValidity();return;}var av=document.getElementById('avv');if(!av.checked){e.preventDefault();av.reportValidity();return;}var q=new URLSearchParams({business_name:bn,owner_name:document.getElementById('owner_name').value,phone:document.getElementById('phone').value,avv:'1'});a.href=a.getAttribute('href').split('?')[0]+'?'+q.toString();});});
 f.addEventListener('submit',function(){b.disabled=true;b.textContent='Verbindung wird geprüft …';});
 })();
 </script>

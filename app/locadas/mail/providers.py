@@ -109,20 +109,5 @@ def guess_custom_provider(email: str) -> Provider:
     domain = email.rsplit("@", 1)[-1].lower().strip()
     return Provider(
         "custom", domain, f"imap.{domain}", 993, True, f"smtp.{domain}", 465, True, COMMON_SENT_FOLDERS,
-        hint="Eigene Domain: Wir probieren die üblichen Servernamen. Wenn es nicht klappt, trag die Server deines Anbieters ein (stehen in den Einstellungen deines Mailprogramms).",
+        hint="Eigene Domain: Wir suchen deinen Mailserver über die Domain-Einstellungen (Autoconfig, MX). Wenn es nicht klappt, trag die Server deines Anbieters ein (stehen in den Einstellungen deines Mailprogramms).",
     )
-
-
-def custom_host_candidates(domain: str) -> list[tuple[str, str]]:
-    """(imap_host, smtp_host)-Paare, die bei eigenen Domains typischerweise funktionieren."""
-    return [
-        (f"imap.{domain}", f"smtp.{domain}"),
-        (f"mail.{domain}", f"mail.{domain}"),
-        # Häufige deutsche Hoster, bei denen die Domain nur umgeleitet ist
-        ("imap.ionos.de", "smtp.ionos.de"),
-        ("imap.strato.de", "smtp.strato.de"),
-        ("imap.all-inkl.com", "smtp.all-inkl.com"),
-        ("imap.hosteurope.de", "smtp.hosteurope.de"),
-        ("imap.gmail.com", "smtp.gmail.com"),
-        ("outlook.office365.com", "smtp.office365.com"),
-    ]

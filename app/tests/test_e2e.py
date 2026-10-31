@@ -96,7 +96,8 @@ def test_full_flow(fresh_db, imap, smtp):
         assert scan_account(s, account)["new"] == 0
         assert len(s.scalars(select(Document)).all()) == 2
 
-        # Fälligkeit simulieren: erste Nachfass-Mail des Angebots ist dran, Betrieb braucht Freigabe
+        # Fälligkeit simulieren: erste Nachfass-Mail des Angebots ist dran, Betrieb gibt jede Mail frei
+        b.review_mode = "all"
         offer.followups[0].due_at = WEEKDAY_10 - timedelta(hours=1)
         s.commit()
         assert fu.in_send_window(WEEKDAY_10)
@@ -118,6 +119,10 @@ def test_full_flow(fresh_db, imap, smtp):
         from locadas.main import app
         client = TestClient(app)
         r = client.get(f"/f/{first.approval_token}/send")
+        assert r.status_code == 200 and 'method="post"' in r.text
+        s.expire_all()
+        assert s.get(FollowUp, first.id).status == FollowUpStatus.AWAITING_APPROVAL  # GET ändert nichts
+        r = client.post(f"/f/{first.approval_token}/send")
         assert r.status_code == 200 and "Gesendet" in r.text
         s.expire_all()
         first = s.get(FollowUp, first.id)
@@ -147,21 +152,27 @@ def test_full_flow(fresh_db, imap, smtp):
         assert len(smtp.messages) == 3 and smtp.messages[2][1] == [USER]
         assert "hat geantwortet" in email.message_from_bytes(smtp.messages[2][2], policy=email.policy.default)["Subject"]
 
-        # Rechnung: Betrieb stellt auf Automatik, Nachfass-Mail geht ohne Rückfrage raus
-        b.auto_mode = True
+        # Rechnung: auch bei Automatik nie ungefragt. Erst „Noch offen?“, dann geht die Erinnerung raus
+        b.review_mode = "auto"
         inv = s.get(Document, inv.id)
         inv.followups[0].due_at = WEEKDAY_10 - timedelta(hours=1)
         s.commit()
         stats = fu.process_due(s, now=WEEKDAY_10)
-        assert stats["sent"] == 0 and stats["announced"] == 1
-        preview = email.message_from_bytes(smtp.messages[-1][2], policy=email.policy.default)
-        assert smtp.messages[-1][1] == [USER] and preview["Subject"].startswith("Heute nachfassen")
-        assert "/stop" in preview.get_content()
-        stats = fu.process_due(s, now=WEEKDAY_10 + timedelta(hours=3))
-        assert stats["sent"] == 1
+        assert stats["sent"] == 0 and stats["approval"] == 1
+        q = email.message_from_bytes(smtp.messages[-1][2], policy=email.policy.default)
+        assert smtp.messages[-1][1] == [USER] and q["Subject"].startswith("Noch offen?")
+        qtext = q.get_content()
+        assert "Rechnung R-2026-301 an Peter Weber über 224,91 € ist seit 03.11.2026 fällig. Noch offen?" in qtext
+        inv_fu = s.get(Document, inv.id).followups[0]
+        assert f"/f/{inv_fu.approval_token}/send" in qtext and f"/f/{inv_fu.approval_token}/done" in qtext
+        assert fu.process_due(s, now=WEEKDAY_10 + timedelta(hours=3))["sent"] == 0  # ohne Antwort keine Erinnerung
+        r = client.post(f"/f/{inv_fu.approval_token}/send")
+        assert r.status_code == 200 and "Gesendet" in r.text
         m = email.message_from_bytes(smtp.messages[-1][2], policy=email.policy.default)
         assert smtp.messages[-1][1] == ["p.weber@web.de"]
-        assert "224,91" in m.get_content() and "03.11.2026" in m.get_content()
+        body = m.get_content()
+        assert "224,91" in body and "03.11.2026" in body
+        assert "Laut meinen Unterlagen ist die Rechnung noch offen." in body and "Zahlungseingang" not in body
         # Unbekannte Antwort ohne Thread-Bezug, aber vom Kunden → trotzdem erkannt
         imap.store.append("INBOX", make_mail("p.weber@web.de", USER, "Zahlung", "Ist überwiesen."))
         imap.store.append("INBOX", make_mail("spam@example.com", USER, "Werbung", "Kaufen Sie jetzt."))
@@ -176,7 +187,7 @@ def test_web_connect_and_dashboard(fresh_db, imap, smtp):
     client = TestClient(app)
     r = client.post("/verbinden", data={
         "business_name": "Müller Haustechnik GmbH", "owner_name": "Thomas Müller", "email": USER, "password": PASSWORD,
-        "imap_host": "127.0.0.1", "imap_port": str(imap.port), "smtp_host": "127.0.0.1", "smtp_port": str(smtp.port), "consent": "1",
+        "imap_host": "127.0.0.1", "imap_port": str(imap.port), "smtp_host": "127.0.0.1", "smtp_port": str(smtp.port), "consent": "1", "avv": "1",
     }, follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == "/start"
     assert "locadas_session" in r.cookies
@@ -202,13 +213,13 @@ def test_web_connect_and_dashboard(fresh_db, imap, smtp):
     with new_session() as s:
         d = s.get(Document, doc.id)
         assert d.status == DocStatus.WON and all(f.status == FollowUpStatus.CANCELLED for f in d.followups)
-    r = client.post("/einstellungen", data={"name": "Müller Haustechnik GmbH", "owner_name": "T. Müller", "followup_offers": "1", "auto_mode": "1"}, follow_redirects=False)
+    r = client.post("/einstellungen", data={"name": "Müller Haustechnik GmbH", "owner_name": "T. Müller", "followup_offers": "1", "review_mode": "all", "approval_threshold": "5.000"}, follow_redirects=False)
     assert r.status_code == 303
     with new_session() as s:
         b = s.scalars(select(Business)).one()
-        assert b.auto_mode and not b.followup_invoices
+        assert b.review_mode == "all" and b.approval_threshold == 5000 and not b.followup_invoices
     # Falsches Passwort im Web-Formular zeigt Fehler statt Account anzulegen
-    r = client.post("/verbinden", data={"business_name": "X", "email": "neu@mueller-shk.de", "password": "nope", "imap_host": "127.0.0.1", "imap_port": str(imap.port), "smtp_host": "127.0.0.1", "smtp_port": str(smtp.port), "consent": "1"})
+    r = client.post("/verbinden", data={"business_name": "X", "email": "neu@mueller-shk.de", "password": "nope", "imap_host": "127.0.0.1", "imap_port": str(imap.port), "smtp_host": "127.0.0.1", "smtp_port": str(smtp.port), "consent": "1", "avv": "1"})
     assert r.status_code == 200 and "Login abgelehnt" in r.text
     # Trennen löscht alles
     r = client.post("/einstellungen/trennen", data={"confirm": "ja"}, follow_redirects=False)

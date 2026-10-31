@@ -9,7 +9,7 @@ os.environ.update({
     "BASE_URL": "http://testserver",
     "ANTHROPIC_API_KEY": "",
     "TZ": "Europe/Berlin",
-    "APPROVALS_BEFORE_AUTO": "5",
+    "ALLOW_INSECURE_DEV": "1",
 })
 
 import pytest  # noqa: E402
@@ -19,6 +19,14 @@ from tests.fakemail import FakeImapServer, FakeSmtpServer  # noqa: E402
 
 USER = "info@mueller-shk.de"
 PASSWORD = "geheim123"
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limits():
+    from locadas.web import ratelimit
+
+    ratelimit.reset()
+    yield
 
 
 @pytest.fixture()
@@ -40,3 +48,12 @@ def smtp():
     srv = FakeSmtpServer().start()
     yield srv
     srv.stop()
+
+
+def click(client, path: str):
+    """Link aus einer Mail öffnen: GET zeigt nur die Bestätigungsseite (ändert nichts), der Knopf schickt POST."""
+    r = client.get(path)
+    assert r.status_code == 200, r.text
+    if 'method="post"' not in r.text:
+        return r  # schon erledigt o. Ä.: keine Bestätigung nötig
+    return client.post(path)

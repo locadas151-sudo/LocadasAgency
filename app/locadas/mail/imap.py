@@ -6,6 +6,7 @@ import imaplib
 import logging
 import re
 import socket
+import ssl
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -26,7 +27,20 @@ class MailAuthError(Exception):
 
 
 class MailConnectError(Exception):
-    """Server nicht erreichbar."""
+    """Server nicht erreichbar (oder ohne Verschlüsselung)."""
+
+
+LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1"}
+
+
+def is_local_host(host: str) -> bool:
+    """Nur für Tests und Demo: lokaler Mailserver darf ohne TLS."""
+    return (host or "").strip().lower() in LOCAL_HOSTS
+
+
+def tls_context() -> ssl.SSLContext:
+    """Zertifikat und Hostname werden immer geprüft."""
+    return ssl.create_default_context()
 
 
 @dataclass
@@ -51,6 +65,7 @@ class ParsedMail:
     attachments: list[Attachment] = field(default_factory=list)
     headers: dict[str, str] = field(default_factory=dict)
     content_type: str = ""
+    cc: list[tuple[str, str]] = field(default_factory=list)  # (name, addr), auch in `to` enthalten
 
     @property
     def pdf_attachments(self) -> list[Attachment]:
@@ -147,6 +162,7 @@ def parse_message(uid: int, raw: bytes) -> ParsedMail:
     from_pairs = getaddresses([decode_str(msg.get("From", ""))])
     from_name, from_addr = (from_pairs[0] if from_pairs else ("", ""))
     to_pairs = [(decode_str(n), a.lower()) for n, a in getaddresses([decode_str(msg.get("To", "")), decode_str(msg.get("Cc", ""))]) if a]
+    cc_pairs = [(decode_str(n), a.lower()) for n, a in getaddresses([decode_str(msg.get("Cc", ""))]) if a]
     try:
         date = parsedate_to_datetime(msg.get("Date"))
         if date.tzinfo is None:
@@ -190,6 +206,7 @@ def parse_message(uid: int, raw: bytes) -> ParsedMail:
         attachments=attachments,
         headers={k.lower(): decode_str(v) for k, v in msg.items()},
         content_type=msg.get_content_type(),
+        cc=cc_pairs,
     )
 
 
@@ -241,9 +258,21 @@ class ImapClient:
     def connect(self) -> None:
         try:
             if self.ssl:
-                self.conn = imaplib.IMAP4_SSL(self.host, self.port, timeout=_TIMEOUT)
+                self.conn = imaplib.IMAP4_SSL(self.host, self.port, ssl_context=tls_context(), timeout=_TIMEOUT)
             else:
                 self.conn = imaplib.IMAP4(self.host, self.port, timeout=_TIMEOUT)
+                if "STARTTLS" in self.conn.capabilities:
+                    self.conn.starttls(ssl_context=tls_context())
+                elif not is_local_host(self.host):
+                    # Passwort nie im Klartext über das Netz schicken
+                    try:
+                        self.conn.logout()
+                    except Exception:
+                        pass
+                    self.conn = None
+                    raise MailConnectError(f"IMAP-Server {self.host}:{self.port} bietet keine Verschlüsselung (STARTTLS). Bitte Port 993 (SSL) verwenden.")
+        except MailConnectError:
+            raise
         except (OSError, socket.timeout, imaplib.IMAP4.error) as exc:
             raise MailConnectError(f"IMAP-Server {self.host}:{self.port} nicht erreichbar: {exc}") from exc
         try:

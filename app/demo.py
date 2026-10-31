@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 os.environ.setdefault("DATA_DIR", os.path.join(tempfile.gettempdir(), "locadas-demo"))
 os.environ.setdefault("SECRET_KEY", "demo-secret")
+os.environ.setdefault("ALLOW_INSECURE_DEV", "1")  # lokaler Test-Mailserver ohne TLS, Demo-Schlüssel
 os.environ.setdefault("SCAN_INTERVAL_MINUTES", "1")
 os.environ.setdefault("BASE_URL", "http://localhost:8000")
 

@@ -12,6 +12,9 @@
 {% if account and account.status.value == 'error' %}
 <div class="card danger" style="margin-bottom:20px"><b>Postfach-Verbindung gestört:</b> {{ account.last_error }}<br><span class="small">Meist hilft es, das Postfach <a href="/verbinden">neu zu verbinden</a> (bei geändertem Passwort).</span></div>
 {% endif %}
+{% if msg == 'laeuft' %}
+<div class="card" style="margin-bottom:20px">Gerade läuft schon eine Prüfung. In ein paar Minuten ist alles aktuell.</div>
+{% endif %}
 {% if business.paused %}
 <div class="card warn" style="margin-bottom:20px"><b>Nachfassen ist pausiert.</b> In den <a href="/einstellungen">Einstellungen</a> wieder einschalten.</div>
 {% endif %}
@@ -25,13 +28,13 @@
 
 {% if pending %}
 <div class="card warn" style="margin-bottom:20px">
-<div class="app-head" style="margin-bottom:6px"><h3 class="h3" style="margin:0">Wartet auf deine Freigabe ({{ pending|length }})</h3><a class="btn sm" href="/freigaben">Alle durchgehen</a></div>
-<p class="small muted" style="margin:0 0 10px">Noch {{ settings.approvals_before_auto - business.approvals_done if settings.approvals_before_auto > business.approvals_done else 0 }} Freigaben, dann läuft es automatisch. <a href="/einstellungen">Jetzt schon umstellen</a></p>
+<div class="app-head" style="margin-bottom:6px"><h3 class="h3" style="margin:0">Wartet auf dich ({{ pending|length }})</h3><a class="btn sm" href="/freigaben">Alle durchgehen</a></div>
+<p class="small muted" style="margin:0 0 10px">Rechnungen: Ich erinnere erst, wenn du bestätigst, dass sie noch offen sind. Angebote über {{ business.threshold|money }}{% if business.review_mode == 'all' %} und alle anderen (so eingestellt){% endif %} gibst du vorher frei. <a href="/einstellungen">Einstellungen</a></p>
 <ul class="list">
 {% for f in pending %}
 <li class="row">
 <div><a class="t" href="/dokument/{{ f.document.id }}">{{ f.document.kind_label }} {{ f.document.document_number or f.document.title }} · {{ f.document.customer_name or f.document.customer_email }}</a><div class="meta"><span>Nachfass-Mail {{ f.step }}</span><span>{{ f.subject }}</span></div></div>
-<div class="right btn-row"><a class="btn sm" href="/f/{{ f.approval_token }}/send">Senden</a><a class="btn ghost sm" href="/f/{{ f.approval_token }}/skip">Diesmal nicht</a></div>
+<div class="right btn-row">{% if f.document.kind == DocKind.INVOICE %}<a class="btn sm" href="/f/{{ f.approval_token }}/send">Noch offen</a><a class="btn ghost sm" href="/f/{{ f.approval_token }}/done">Bezahlt</a>{% else %}<a class="btn sm" href="/f/{{ f.approval_token }}/send">Senden</a><a class="btn ghost sm" href="/f/{{ f.approval_token }}/skip">Diesmal nicht</a>{% endif %}</div>
 </li>
 {% endfor %}
 </ul>
@@ -83,8 +86,9 @@
 <ul class="plain">
 <li>Angebote: nachfassen {{ settings.offer_followup_days|join(', ') }} Tage nach Versand{% if not business.followup_offers %} (<b>aus</b>){% endif %}</li>
 <li>Rechnungen: nachfassen {{ settings.invoice_followup_days|join(', ') }} Tage nach Fälligkeit{% if not business.followup_invoices %} (<b>aus</b>){% endif %}</li>
-<li>{% if business.auto_mode or business.approvals_done >= settings.approvals_before_auto %}Automatisch, ohne Rückfrage{% else %}Mit Freigabe per Mail, noch {{ settings.approvals_before_auto - business.approvals_done }}×{% endif %}</li>
-<li>Versand nur werktags {{ settings.send_hour_from }} bis {{ settings.send_hour_to }} Uhr</li>
+<li>{% if business.review_mode == 'all' %}Angebote: jede Mail mit deiner Freigabe{% else %}Angebote: automatisch mit Vorschau am Morgen, über {{ business.threshold|money }} mit Freigabe{% endif %}</li>
+<li>Rechnungen: nur nach deinem „Noch offen“</li>
+<li>Versand nur werktags (ohne Feiertage) {{ settings.send_hour_from }} bis {{ settings.send_hour_to }} Uhr</li>
 </ul>
 <a class="btn ghost sm" href="/einstellungen" style="margin-top:12px">Einstellungen</a>
 </div>

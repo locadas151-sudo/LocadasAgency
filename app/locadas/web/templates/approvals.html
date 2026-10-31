@@ -15,23 +15,30 @@
 <div><b style="font-size:17px">{{ d.customer_name or d.customer_email }}</b>
 <div class="meta muted small"><span class="pill kind">{{ d.term }}{% if d.document_number %} {{ d.document_number }}{% endif %}</span> {% if d.amount_gross %}{{ d.amount_gross|money(d.currency) }} · {% endif %}gesendet {{ d.sent_at|date }}{% if d.kind == DocKind.INVOICE and d.due_date %} · fällig {{ d.due_date|date }}{% endif %}</div></div>
 </div>
-{% if d.needs_review %}
+{% if d.kind == DocKind.INVOICE %}
 <p style="margin:0 0 8px">{{ review_question(d) }}</p>
 <div class="btn-row" style="margin-top:12px">
-<label class="check"><input type="radio" name="fu_{{ f.id }}" value="settle" checked> {{ 'Bezahlt' if d.kind == DocKind.INVOICE else 'Erledigt' }}</label>
+<label class="check"><input type="radio" name="fu_{{ f.id }}" value="send"> Noch offen, Zahlungserinnerung schicken</label>
+<label class="check"><input type="radio" name="fu_{{ f.id }}" value="settle"> Bezahlt</label>
+</div>
+{% elif d.needs_review %}
+<p style="margin:0 0 8px">{{ review_question(d) }}</p>
+<div class="btn-row" style="margin-top:12px">
+<label class="check"><input type="radio" name="fu_{{ f.id }}" value="settle" checked> Erledigt</label>
 <label class="check"><input type="radio" name="fu_{{ f.id }}" value="send"> Bitte nachfassen</label>
 </div>
 {% else %}
-<details class="step"><summary><span>Text der Nachfass-Mail {{ f.step }}</span></summary><p class="sub"><b>Betreff:</b> {{ f.subject }}</p><pre>{{ f.body }}</pre></details>
+<details class="step" open><summary><span>Text der Nachfass-Mail {{ f.step }}</span></summary><p class="sub"><b>Betreff:</b> {{ f.subject }}</p><pre>{{ f.body }}</pre></details>
 <div class="btn-row" style="margin-top:12px">
 <label class="check"><input type="radio" name="fu_{{ f.id }}" value="send" checked> Senden</label>
-<label class="check"><input type="radio" name="fu_{{ f.id }}" value="stop"> {{ 'Bezahlt / erledigt' if d.kind == DocKind.INVOICE else 'Erledigt, nicht nachfassen' }}</label>
+<label class="check"><input type="radio" name="fu_{{ f.id }}" value="stop"> Erledigt, nicht nachfassen</label>
 <label class="check"><input type="radio" name="fu_{{ f.id }}" value="skip"> Diesmal nicht</label>
 </div>
 {% endif %}
 </div>
 {% endfor %}
 <button class="btn" type="submit">Speichern und senden</button>
+<p class="small muted">Rechnungen ohne Auswahl bleiben offen und werden nicht erinnert.</p>
 </form>
 {% endif %}
 </div>
