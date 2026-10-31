@@ -14,6 +14,7 @@ import re
 from datetime import datetime
 
 from ..config import settings
+from ..ops import usage
 from .fields import Extracted, parse_claude_json
 
 log = logging.getLogger(__name__)
@@ -54,11 +55,16 @@ def _call_claude(content: list[dict]) -> str:
     import anthropic
 
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-    resp = client.messages.create(
-        model=settings.claude_fast_model,
-        max_tokens=2000,
-        messages=[{"role": "user", "content": content}],
-    )
+    try:
+        resp = client.messages.create(
+            model=settings.claude_fast_model,
+            max_tokens=2000,
+            messages=[{"role": "user", "content": content}],
+        )
+    except Exception:
+        usage.record("vision", settings.claude_fast_model, error=True)
+        raise
+    usage.record("vision", settings.claude_fast_model, resp)
     return "".join(getattr(b, "text", "") for b in resp.content if getattr(b, "type", "text") == "text").strip()
 
 

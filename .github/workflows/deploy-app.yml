@@ -77,6 +77,16 @@ jobs:
           SYSTEM_SMTP_PORT=${{ vars.SYSTEM_SMTP_PORT || '587' }}
           SYSTEM_SMTP_USER=${{ secrets.SYSTEM_SMTP_USER }}
           SYSTEM_SMTP_PASSWORD=${{ secrets.SYSTEM_SMTP_PASSWORD }}
+          ADMIN_EMAILS=${{ vars.ADMIN_EMAILS }}
+          ADMIN_WHATSAPP=${{ secrets.ADMIN_WHATSAPP }}
+          ADMIN_NAME=${{ vars.ADMIN_NAME || 'Julius' }}
+          ADMIN_DIGEST_HOUR=${{ vars.ADMIN_DIGEST_HOUR || '19' }}
+          BACKUP_S3_BUCKET=${{ vars.BACKUP_S3_BUCKET }}
+          BACKUP_S3_PREFIX=${{ vars.BACKUP_S3_PREFIX || 'locadas/' }}
+          SCAN_WORKERS=${{ vars.SCAN_WORKERS || '8' }}
+          SCAN_ACCOUNT_TIMEOUT=${{ vars.SCAN_ACCOUNT_TIMEOUT || '300' }}
+          INBOUND_TLS_CERT=${{ vars.INBOUND_TLS_CERT }}
+          INBOUND_TLS_KEY=${{ vars.INBOUND_TLS_KEY }}
           EOF
       - name: Dateien auf den Server kopieren
         if: steps.check.outputs.skip == 'false'

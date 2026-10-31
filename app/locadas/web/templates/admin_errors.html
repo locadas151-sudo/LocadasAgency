@@ -1,0 +1,20 @@
+{% extends "admin_base.html" %}
+{% block atitle %}Fehler{% endblock %}
+{% block admin %}
+<div class="adm-head"><div><h1 class="h2">Fehler und Warnungen</h1><p class="app-sub">Die letzten {{ rows|length }} Einträge ab WARNING</p></div></div>
+<div class="tabs">
+<a class="tab {% if not level %}on{% endif %}" href="/admin/fehler">Alle</a>
+<a class="tab {% if level == 'ERROR' %}on{% endif %}" href="/admin/fehler?level=ERROR">Nur Fehler</a>
+<a class="tab {% if level == 'WARNING' %}on{% endif %}" href="/admin/fehler?level=WARNING">Nur Warnungen</a>
+</div>
+<div class="card adm-scroll" style="padding:8px">
+<table class="adm-tbl">
+<tr><th>Zeit</th><th>Stufe</th><th>Betrieb</th><th>Quelle</th><th>Meldung</th></tr>
+{% for r in rows %}
+<tr><td class="small" style="white-space:nowrap">{{ r.created_at|datetime }}</td><td><span class="pill {{ 'bad' if r.level in ('ERROR', 'CRITICAL') else 'warn' }}">{{ r.level }}</span></td><td class="small">{% if r.business_id %}<a href="/admin/betrieb/{{ r.business_id }}">{{ names.get(r.business_id, r.business_id) }}</a>{% endif %}</td><td class="small adm-mono">{{ r.logger }}</td><td class="adm-mono">{{ r.message[:1000] }}</td></tr>
+{% else %}
+<tr><td colspan="5" class="muted">Keine Einträge. Läuft.</td></tr>
+{% endfor %}
+</table>
+</div>
+{% endblock %}

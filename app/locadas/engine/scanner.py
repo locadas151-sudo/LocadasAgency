@@ -407,6 +407,7 @@ def scan_sent(session: Session, account: MailAccount, client: ImapClient) -> int
         if not _mark_seen(session, account, mail.message_id):
             account.sent_last_uid = max(account.sent_last_uid, uid)
             continue
+        session.commit()  # Schreibsperre freigeben, bevor Claude liest (parallele Scans warten sonst darauf)
         if _is_own_followup(session, mail.message_id):
             continue
         if first_run and not mail.pdf_attachments:

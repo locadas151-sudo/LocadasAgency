@@ -100,6 +100,8 @@ def _post(client, raw: bytes, secret: str = SECRET, rcpt: str = ""):
 def test_signup_creates_trial_with_address(fresh_db, inbound, graph):
     c = _client()
     r = c.post("/testen", data={"owner_name": "Thomas Müller", "business_name": "Müller Haustechnik GmbH", "whatsapp": "0171 2345678"}, follow_redirects=False)
+    assert r.status_code == 200 and "per WhatsApp schreiben darf" in r.text  # Einwilligung fehlt
+    r = c.post("/testen", data={"owner_name": "Thomas Müller", "business_name": "Müller Haustechnik GmbH", "whatsapp": "0171 2345678", "wa_optin": "1"}, follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == "/testen/los"
     with new_session() as s:
         b = s.scalars(select(Business)).one()
@@ -107,6 +109,7 @@ def test_signup_creates_trial_with_address(fresh_db, inbound, graph):
         assert re.fullmatch(r"mueller-haustechnik-[a-z2-9]{6}@angebot\.locadas\.de", b.inbound_address)
         assert b.owner_email == "" and b.email.endswith("@trial.invalid")
         assert b.whatsapp_number == NUM and b.whatsapp_opt_in
+        assert b.wa_optin_at is not None and b.wa_optin_text.startswith("wa-optin-") and b.signup_source == "testen"
         addr = b.inbound_address
     # Willkommen per Vorlage (kein 24h-Fenster), mit der Adresse
     assert graph.calls and graph.last["type"] == "template"
@@ -375,29 +378,6 @@ def test_mailto_encoding():
     assert len(unquote(long.split("&body=", 1)[1])) < 1800
 
 
-def _raw_get(path: str, ua: str = "Mozilla/5.0 (iPhone)") -> tuple[int, dict[str, str]]:
-    """GET direkt über ASGI (httpx kann Location: mailto: nicht einmal ansehen, ohne zu folgen)."""
-    import asyncio
-
-    from locadas.main import app
-
-    out: dict = {}
-
-    async def receive():
-        return {"type": "http.request", "body": b"", "more_body": False}
-
-    async def send(msg):
-        if msg["type"] == "http.response.start":
-            out["status"] = msg["status"]
-            out["headers"] = {k.decode().lower(): v.decode() for k, v in msg["headers"]}
-
-    p, _, q = path.partition("?")
-    scope = {"type": "http", "method": "GET", "path": p, "raw_path": p.encode(), "query_string": q.encode(), "headers": [(b"user-agent", ua.encode()), (b"host", b"testserver")],
-             "scheme": "http", "server": ("testserver", 80), "client": ("127.0.0.1", 1), "http_version": "1.1", "root_path": "", "app": app}
-    asyncio.run(app(scope, receive, send))
-    return out["status"], out["headers"]
-
-
 def _doc(s, b, mobile="", email="", name="Familie Brandt", number="A-1", days_ago=4) -> Document:
     d = Document(business_id=b.id, account_id=None, kind=DocKind.OFFER, status=DocStatus.OPEN, subject="Angebot", sent_at=NOW - timedelta(days=days_ago),
                  customer_name=name, customer_email=email, customer_mobile=mobile, document_number=number, amount_gross=1000.0, source="forward")
@@ -424,15 +404,15 @@ def test_trial_taps_mobile_email_neither(fresh_db, inbound):
     c = _client()
     r = c.get(f"/t/{tokens[0]}", follow_redirects=False)
     assert r.status_code == 302 and r.headers["location"].startswith("https://wa.me/491724455667?text=")
-    status, headers = _raw_get(f"/t/{tokens[1]}")
-    assert status == 302 and headers["location"].startswith(f"mailto:{CUSTOMER}?subject=")
+    r = c.get(f"/t/{tokens[1]}", headers={"user-agent": "Mozilla/5.0 (iPhone)"})  # Seite statt 302 (In-App-Browser blocken mailto:)
+    assert r.status_code == 200 and f'href="mailto:{CUSTOMER}?subject=' in r.text and "Mail öffnen" in r.text and "Text kopieren" in r.text
     r = c.get(f"/t/{tokens[2]}", follow_redirects=False)
     assert r.status_code == 200 and "Wem sollen wir schreiben?" in r.text and "Text kopieren" in r.text
     # Kontakt nachtragen: aus dem Text-Tipp wird ein Mail-Tipp
     r = c.post(f"/t/{tokens[2]}/kontakt", data={"contact": "lange@gmx.de"}, follow_redirects=False)
     assert r.status_code == 303
-    status, headers = _raw_get(f"/t/{tokens[2]}")
-    assert status == 302 and headers["location"].startswith("mailto:lange@gmx.de?")
+    r = c.get(f"/t/{tokens[2]}")
+    assert r.status_code == 200 and 'href="mailto:lange@gmx.de?' in r.text
     with new_session() as s:
         f2 = s.scalar(select(FollowUp).where(FollowUp.tap_token == tokens[1]))
         assert f2.tapped_at is not None  # Tipp gemerkt

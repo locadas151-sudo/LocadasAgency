@@ -152,6 +152,15 @@ class Business(Base):
     trial_limit_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)    # Limit-Hinweis zuletzt
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     last_login_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    # WhatsApp-Einwilligung (Meta verlangt ein klares Opt-in): wann und welche Fassung des Einwilligungstexts
+    wa_optin_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    wa_optin_text: Mapped[str] = mapped_column(String(40), default="", server_default="")
+    wa_optout_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)  # „STOP“ im Chat
+    # Herkunft der Anmeldung: "testen" (/testen) | "verbinden" (Postfach direkt) | "" (unbekannt, alt)
+    signup_source: Mapped[str] = mapped_column(String(12), default="", server_default="")
+    # Admin-Cockpit (web/admin_routes.py): Notiz aus dem Onboarding-Call und wann er war
+    admin_note: Mapped[str] = mapped_column(Text, default="", server_default="")
+    onboarded_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
 
     accounts: Mapped[list["MailAccount"]] = relationship(back_populates="business", cascade="all, delete-orphan")
     documents: Mapped[list["Document"]] = relationship(back_populates="business", cascade="all, delete-orphan")
@@ -547,7 +556,66 @@ class WaUsage(Base):
     count: Mapped[int] = mapped_column(Integer, default=0)
 
 
+# --- Betrieb von Locadas (locadas/ops/) ----------------------------------------------
+
+class OpsLog(Base):
+    """Warnungen und Fehler aus dem Log (Ringpuffer, siehe ops/logstore.py) für den Fehler-Feed im Admin-Cockpit."""
+
+    __tablename__ = "ops_log"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, index=True)
+    level: Mapped[str] = mapped_column(String(10), default="WARNING")
+    logger: Mapped[str] = mapped_column(String(120), default="")
+    message: Mapped[str] = mapped_column(Text, default="")
+    business_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+
+
+class ClaudeUsage(Base):
+    """Claude-Aufrufe je Tag (lokal), Zweck und Modell, mit Tokens für die Kostenschätzung (ops/usage.py)."""
+
+    __tablename__ = "claude_usage"
+    __table_args__ = (Index("ux_claude_usage", "day", "purpose", "model", unique=True),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    day: Mapped[str] = mapped_column(String(10))       # 2026-11-01
+    purpose: Mapped[str] = mapped_column(String(30))   # extract | vision | match | style | check
+    model: Mapped[str] = mapped_column(String(80))
+    calls: Mapped[int] = mapped_column(Integer, default=0)
+    errors: Mapped[int] = mapped_column(Integer, default=0)
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class NotificationLog(Base):
+    """Jede Benachrichtigung an einen Betrieb oder an den Admin: Kanal, Art der WhatsApp-Nachricht, Erfolg."""
+
+    __tablename__ = "notification_log"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, index=True)
+    business_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)  # None = an den Admin
+    kind: Mapped[str] = mapped_column(String(20), default="")
+    title: Mapped[str] = mapped_column(String(200), default="")
+    channel: Mapped[str] = mapped_column(String(10), default="")   # whatsapp | email | "" (nicht zugestellt)
+    wa_mode: Mapped[str] = mapped_column(String(10), default="")   # session | template | ""
+    ok: Mapped[bool] = mapped_column(Boolean, default=True)
+    error: Mapped[str] = mapped_column(Text, default="")
+
+
+class OpsState(Base):
+    """Kleiner Schlüssel-Wert-Speicher (Wasserstände der Alarme, letzte Sicherung, letzte Admin-Nachricht)."""
+
+    __tablename__ = "ops_state"
+
+    key: Mapped[str] = mapped_column(String(60), primary_key=True)
+    value: Mapped[str] = mapped_column(Text, default="")
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, onupdate=utcnow)
+
+
 # --- Engine / Session -------------------------------------------------------
+
+SQLITE_BUSY_MS = 30_000  # Schreibsperre: so lange warten, bevor „database is locked“ (parallele Scans)
 
 _engine = None
 _SessionLocal: sessionmaker[Session] | None = None
@@ -557,13 +625,19 @@ def get_engine():
     global _engine
     if _engine is None:
         url = settings.sqlalchemy_url
-        connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-        _engine = create_engine(url, connect_args=connect_args, future=True)
+        kwargs: dict = {}
+        if url.startswith("sqlite"):
+            kwargs["connect_args"] = {"check_same_thread": False, "timeout": SQLITE_BUSY_MS / 1000}
+            if ":memory:" not in url:
+                kwargs.update(pool_size=12, max_overflow=24)  # Scan-Worker plus Web-Threads
+        _engine = create_engine(url, future=True, **kwargs)
         if url.startswith("sqlite"):
             @event.listens_for(_engine, "connect")
             def _sqlite_pragma(dbapi_conn, _):  # pragma: no cover
                 cur = dbapi_conn.cursor()
                 cur.execute("PRAGMA journal_mode=WAL")
+                cur.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_MS}")
+                cur.execute("PRAGMA synchronous=NORMAL")  # mit WAL sicher und schneller
                 cur.execute("PRAGMA foreign_keys=ON")
                 cur.close()
     return _engine
@@ -594,6 +668,12 @@ def _ensure_indexes() -> None:
 
     with get_engine().begin() as conn:
         conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ux_business_inbound ON businesses (inbound_address)"))
+        # Herkunft der Anmeldung für ältere Betriebe nachtragen (Funnel im Admin-Cockpit)
+        conn.execute(text(
+            "UPDATE businesses SET signup_source='testen' WHERE signup_source='' AND id IN "
+            "(SELECT business_id FROM events WHERE kind='trial' AND text LIKE 'Testzugang angelegt%')"
+        ))
+        conn.execute(text("UPDATE businesses SET signup_source='verbinden' WHERE signup_source='' AND mode='connected'"))
 
 
 def _documents_account_nullable() -> None:

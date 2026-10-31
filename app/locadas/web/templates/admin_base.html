@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{% block atitle %}Cockpit{% endblock %} · Locadas Admin{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+{% block content %}
+<style>
+.adm{padding-top:24px}
+.adm .tabs{margin:0 0 20px}
+.adm-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:18px}
+.adm-head h1{margin:0}
+.adm-tbl{width:100%;border-collapse:collapse;font-size:14px}
+.adm-tbl th{font-weight:600;text-align:left;color:var(--tm);font-size:12.5px;padding:8px 10px;border-bottom:1px solid var(--bs);white-space:nowrap}
+.adm-tbl td{padding:9px 10px;border-bottom:1px solid var(--bsoft);vertical-align:top}
+.adm-tbl tr:hover td{background:var(--gp)}
+.adm-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.adm-err{color:#991b1b;font-size:12.5px;max-width:320px;overflow-wrap:anywhere}
+.adm-num{font-variant-numeric:tabular-nums;text-align:right}
+.adm-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;overflow-wrap:anywhere}
+.adm-search{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.adm-search input{flex:1;min-width:200px;border:1px solid var(--bs);border-radius:12px;padding:10px 12px;font-size:15px}
+.adm-bar{height:10px;border-radius:6px;background:var(--gs);overflow:hidden}
+.adm-bar i{display:block;height:100%;background:var(--g2)}
+.adm-grid{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:900px){.adm-grid{grid-template-columns:1fr}}
+.adm textarea{width:100%;min-height:110px;border:1px solid var(--bs);border-radius:12px;padding:10px 12px;font:inherit}
+.kpi small{display:block;color:var(--tm);font-size:12px;margin-top:4px}
+</style>
+<section class="app-main adm">
+<div class="wrap">
+<div class="tabs">
+<a class="tab {% if request.url.path == '/admin' %}on{% endif %}" href="/admin">Übersicht</a>
+<a class="tab {% if request.url.path.startswith('/admin/betrieb') %}on{% endif %}" href="/admin/betriebe">Betriebe</a>
+<a class="tab {% if request.url.path.startswith('/admin/fehler') %}on{% endif %}" href="/admin/fehler">Fehler</a>
+<a class="tab" href="/admin/logout">Abmelden ({{ admin }})</a>
+</div>
+{% block admin %}{% endblock %}
+</div>
+</section>
+{% endblock %}
