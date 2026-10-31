@@ -10,6 +10,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, UploadFile
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -51,7 +52,7 @@ log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG if settings.debug else logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
 BASE = Path(__file__).parent
-app = FastAPI(title="Locadas Nachfasser", version=__version__, docs_url=None, redoc_url=None)
+app = FastAPI(title="Locadas Nachfasser", version=__version__, docs_url=None, redoc_url=None, openapi_url=None)
 app.mount("/static", StaticFiles(directory=BASE / "web" / "static"), name="static")
 templates = Jinja2Templates(directory=BASE / "web" / "templates")
 _scheduler = None
@@ -123,7 +124,7 @@ templates.env.globals.update(
     STATUS_LABEL=STATUS_LABEL, STATUS_CLASS=STATUS_CLASS, FU_LABEL=FU_LABEL, DocStatus=DocStatus, DocKind=DocKind,
     FollowUpStatus=FollowUpStatus, settings=settings, PROVIDERS=PROVIDERS, version=__version__,
     review_question=fu_engine.review_question, channel_for=taps.channel_for, CHANNEL_LABEL=taps.CHANNEL_LABEL,
-    phone_pretty=phone_x.pretty, configured_channel=taps.configured_channel, tap_label=taps.open_label,
+    phone_pretty=phone_x.pretty, configured_channel=taps.configured_channel, tap_label=taps.open_label, tap_noun=taps.tap_noun,
     reconnect_link=lambda account_id: wa_tokens.reconnect_link(account_id), euro=lambda v: summary.euro(v),
     oauth_providers=lambda: [p for p in oauth.providers().values() if p.enabled],
 )
@@ -154,6 +155,13 @@ wab_web.install(app, templates, get_db, require_business)  # Stufe 2: WhatsApp �
 def render(request: Request, name: str, **ctx) -> HTMLResponse:
     status_code = ctx.pop("status_code", 200)
     ctx.setdefault("request", request)
+    if "business" not in ctx and request.cookies.get(auth.COOKIE):
+        # Kopfzeile: angemeldet bleibt angemeldet, auch auf Link-Seiten (Freigabe, Tipp, Fehler)
+        try:
+            with new_session() as s:
+                ctx["business"] = auth.business_from_token(s, request.cookies.get(auth.COOKIE))
+        except Exception:  # noqa: BLE001
+            ctx["business"] = None
     return templates.TemplateResponse(request, name, ctx, status_code=status_code)
 
 
@@ -211,6 +219,24 @@ async def _redirect_handler(request: Request, exc: StarletteHTTPException):
     if exc.status_code == 404:
         return render(request, "error.html", title="Seite nicht gefunden", message="Diese Seite gibt es nicht.", status_code=404)
     return render(request, "error.html", title="Fehler", message=str(exc.detail), status_code=exc.status_code)
+
+
+@app.exception_handler(RequestValidationError)
+async def _validation_handler(request: Request, exc: RequestValidationError):
+    """Fehlende oder kaputte Formularfelder: freundliche Seite statt JSON auf Englisch."""
+    if request.url.path.startswith(("/inbound/", "/webhook/")):
+        return JSONResponse({"ok": False, "reason": "invalid"}, status_code=422)
+    return render(request, "error.html", title="Da fehlt etwas", message="Das Formular war nicht vollständig. Geh bitte einen Schritt zurück und versuch es noch einmal.", status_code=422)
+
+
+@app.exception_handler(Exception)
+async def _error_handler(request: Request, exc: Exception):
+    """Unerwarteter Fehler: geloggt (Fehler-Feed im Cockpit), der Nutzer sieht eine ruhige Seite."""
+    log.exception("Fehler bei %s %s: %s", request.method, request.url.path, exc)
+    try:
+        return render(request, "error.html", title="Da ist etwas schiefgelaufen", message="Das lag nicht an dir. Versuch es in ein paar Minuten noch einmal. Klappt es dann immer noch nicht, schreib uns an info@locadas.de.", status_code=500)
+    except Exception:  # noqa: BLE001
+        return HTMLResponse("<h1>Da ist etwas schiefgelaufen</h1><p>Bitte versuch es gleich noch einmal.</p>", status_code=500)
 
 
 @app.on_event("startup")
@@ -300,8 +326,8 @@ def connect_submit(
     session: Session = Depends(get_db),
     business_name: str = Form(""),
     owner_name: str = Form(""),
-    email: str = Form(...),
-    password: str = Form(...),
+    email: str = Form(""),
+    password: str = Form(""),
     phone: str = Form(""),
     imap_host: str = Form(""),
     imap_port: str = Form(""),
@@ -325,6 +351,13 @@ def connect_submit(
         return render(request, "connect.html", business=None, email=email, provider=provider, values=values, error="Dieser Server ist eine interne Adresse und kann nicht verbunden werden.", hint="Trag den öffentlichen Servernamen deines Mailanbieters ein, zum Beispiel imap.deinanbieter.de.", show_advanced=True)
     if not business_name.strip():
         return render(request, "connect.html", business=None, email=email, provider=provider, values=values, error="Wie heißt dein Betrieb? Der Name steht als Absender in den Nachfass-Mails.", hint=None)
+    if "@" not in email:
+        return render(request, "connect.html", business=None, email=email, provider=provider, values=values, error="Bitte trag die Mailadresse ein, von der deine Angebote rausgehen.", hint=None)
+    if not password:
+        ms = _provider_for(email)
+        if ms is not None and ms.key == "outlook":
+            return render(request, "connect.html", business=None, email=email, provider=ms, values=values, error="Dein Postfach liegt bei Microsoft. Hier geht es ohne Passwort: tipp auf „Mit Microsoft anmelden“.", hint=None)
+        return render(request, "connect.html", business=None, email=email, provider=provider, values=values, error="Bitte gib das Passwort deines Postfachs ein.", hint=None)
     try:
         cfg = connect_mailbox(
             email, password,
@@ -685,7 +718,7 @@ def customer_view(request: Request, token: str, session: Session = Depends(get_d
             # Höchstens einmal pro Dokument (nur beim ersten Öffnen)
             notify.send(session, wa_msgs.opened(
                 doc,
-                f"{doc.customer_name or doc.customer_email} hat dein {doc.kind_label} geöffnet",
+                f"{doc.customer_name or doc.customer_email} hat {fmt.possessive(doc.kind_label)} geöffnet",
                 f"Hallo {doc.business.owner_name or doc.business.name},\n\n"
                 f"{doc.customer_name or doc.customer_email} hat gerade {doc.kind_label} {doc.document_number or doc.title} geöffnet. "
                 f"Guter Moment für einen kurzen Anruf.\n\n{settings.base_url}/dokument/{doc.id}\n\nLocadas Nachfasser",
@@ -937,7 +970,7 @@ def approval_submit(request: Request, token: str, action: str, session: Session 
     elif action == "send":
         if fu_engine.approve(session, fu):
             what = "Die Zahlungserinnerung" if doc.kind == DocKind.INVOICE else "Die Nachfass-Mail"
-            title, text = "Gesendet", f"{what} an {who} ist raus, in deinem Namen."
+            title, text = "Gesendet", f"{what} an {fmt.dativ(who)} ist raus, in deinem Namen."
         else:
             title, text = "Nicht gesendet", f"Das hat nicht geklappt: {fu.error or 'Freigabe war nicht mehr offen.'}"
     elif action == "skip":
@@ -986,7 +1019,7 @@ def tap_redirect(request: Request, token: str, session: Session = Depends(get_db
 
 
 TAP_CONFIRM = {
-    "sent": ("Abgeschickt?", "Hast du die WhatsApp-Nachricht an {who} abgeschickt? Dann vermerke ich sie als gesendet.", "Ja, ist abgeschickt"),
+    "sent": ("Abgeschickt?", "Hast du die {noun} an {who} abgeschickt? Dann vermerke ich sie als gesendet.", "Ja, ist abgeschickt"),
     "replied": ("Kunde hat geantwortet?", "Hat {who} schon geantwortet, zum Beispiel per WhatsApp oder am Telefon? Dann fasse ich nicht mehr nach.", "Ja, hat geantwortet"),
     "paid": ("Schon bezahlt?", "Hat {who} schon bezahlt? Dann erinnere ich nicht mehr.", "Ja, ist bezahlt"),
     "skip": ("Diesmal nicht?", "Diese Nachricht an {who} wird nicht geschickt, die nächste Stufe bleibt geplant.", "Diesmal nicht"),
@@ -1015,7 +1048,9 @@ def tap_action_link(request: Request, token: str, action: str, session: Session 
     if state:
         return render(request, "approval.html", title=state[0], text=state[1], doc=doc, fu=fu)
     title, text, button = TAP_CONFIRM[action]
-    return render(request, "confirm.html", title=title, text=text.format(who=doc.customer_name or doc.customer_email), doc=doc, button=button,
+    who = doc.customer_name or doc.customer_email
+    who = fmt.dativ(who) if action in ("sent", "skip") else who
+    return render(request, "confirm.html", title=title, text=text.format(who=who, noun=taps.tap_noun(fu)), doc=doc, button=button,
                   action=f"/w/{token}/{action}", preview=fu.wa_text if action == "sent" else None)
 
 
@@ -1310,9 +1345,12 @@ def login_form(request: Request, next: str = "/dashboard", sent: str = ""):
 
 
 @app.post("/login", response_class=HTMLResponse)
-def login_submit(request: Request, session: Session = Depends(get_db), email: str = Form(...), next: str = Form("/dashboard")):
+def login_submit(request: Request, session: Session = Depends(get_db), email: str = Form(""), next: str = Form("/dashboard")):
     if rate_limited(request, "login"):
         return _too_many(request)
+    email = email.strip()
+    if not email:
+        return render(request, "login.html", next=next, sent="", error="Bitte gib deine Mailadresse oder Handynummer ein.")
     business = auth.business_by_email(session, email)
     if business is None and "@" not in email:
         number = normalize_phone(email)  # Tester ohne Mail: Login-Link per WhatsApp an die Handynummer

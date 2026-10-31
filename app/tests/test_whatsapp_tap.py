@@ -312,7 +312,7 @@ def test_whatsapp_tap_flow_no_mail_to_customer(fresh_db, imap, smtp):
         assert stats["tap"] == 1
         f1 = d.followups[0]
         assert f1.status == FollowUpStatus.AWAITING_TAP and f1.tap_state == "open" and f1.tap_token
-        assert len(f1.wa_text) <= wa_texts.WA_MAX and "Hallo Herr Dieter Lange," in f1.wa_text and d.document_number in f1.wa_text
+        assert len(f1.wa_text) <= wa_texts.WA_MAX and "Hallo Herr Lange," in f1.wa_text and d.document_number in f1.wa_text
         assert f1.tap_notified_at is not None and f1.tap_notice == "email"
         # Kunde mit Handy bekommt keine Mail, der ohne Handy läuft normal (Morgen-Vorschau)
         assert not _customer_mails(smtp, "d.lange@arcor.de")
@@ -601,7 +601,7 @@ def test_whatsapp_texts_short_and_clean(fresh_db, imap, smtp, kind, step, tmp_pa
         s.commit()
         t = wa_texts.template_text(d, step, NOW)
         assert len(t) <= wa_texts.WA_MAX, (len(t), t)
-        assert t.startswith("Hallo Frau Dr. Annegret Müller-Lüdenscheidt,")
+        assert t.startswith("Hallo Frau Dr. Müller-Lüdenscheidt,")
         assert d.document_number in t and d.term in t
         assert "–" not in t and "—" not in t and not re.search(r",\s+und\b", t)
         assert "Betreff" not in t and "@" not in t
@@ -633,13 +633,13 @@ def test_personalized_whatsapp_text_guardrails(fresh_db, imap, smtp, monkeypatch
         b, account = _biz(s, imap, smtp)
         d = _doc(s, b, account)
         answers = iter([
-            "Hallo Herr Dieter Lange,\n\nich melde mich wegen unserem Angebot – haben Sie bis Freitag Zeit?",  # Gedankenstrich, Datum
-            f"Hallo Herr Dieter Lange,\n\nich wollte kurz nachhören, ob unser Angebot {d.document_number} angekommen ist. Haben Sie noch Fragen?",
+            "Hallo Herr Lange,\n\nich melde mich wegen unserem Angebot – haben Sie bis Freitag Zeit?",  # Gedankenstrich, Datum
+            f"Hallo Herr Lange,\n\nich wollte kurz nachhören, ob unser Angebot {d.document_number} angekommen ist. Haben Sie noch Fragen?",
         ])
         monkeypatch.setattr(style, "claude_text", lambda prompt, max_tokens: next(answers))
         t = wa_texts.generate(d, 1, {"tone": "sie"}, NOW)
         assert t is not None and len(t) <= wa_texts.WA_MAX and "–" not in t and t.endswith("Viele Grüße\nThomas Müller")
-        monkeypatch.setattr(style, "claude_text", lambda prompt, max_tokens: "Hallo Herr Dieter Lange,\n\n" + "sehr " * 60 + "gut.")
+        monkeypatch.setattr(style, "claude_text", lambda prompt, max_tokens: "Hallo Herr Lange,\n\n" + "sehr " * 60 + "gut.")
         assert wa_texts.generate(d, 1, None, NOW) is None
 
 

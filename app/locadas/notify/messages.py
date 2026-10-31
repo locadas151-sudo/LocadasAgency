@@ -143,7 +143,7 @@ def tap(b: Business, fu: FollowUp, reminder: bool = False) -> Notification:
         title=f"{'Noch offen: ' if reminder else ''}{who(d)} per WhatsApp nachfassen",
         text=f"{intro}\n\n{fu.wa_text}",
         buttons=[button("Gesendet", "tsent", fu.id), third, button("Diesmal nicht", "tskip", fu.id)],
-        buttons_text=f"Hast du die Nachricht an {who(d)} abgeschickt?",
+        buttons_text=f"Hast du die Nachricht an {fmt.dativ(who(d))} abgeschickt?",
         cta=("In WhatsApp öffnen", taps.tap_url(fu)),
         doc_ids=[d.id], footer="Erinnerung" if reminder else "",
         template="tap", template_params=[hello(b), who(d), f"{ref(d)}{dmoney(d)}", fu.wa_text or ""],
@@ -159,7 +159,7 @@ def _tap_other(b: Business, fu: FollowUp, reminder: bool) -> Notification:
     d = fu.document
     head = f"{ref(d)}{dmoney(d)}, Nachricht {fu.step} von 3"
     if fu.tap_kind == "mailto":
-        intro = f"{head}. Tipp auf „Mail öffnen“, dann ist die Mail an {who(d)} in deinem Mailprogramm fertig. Nur noch abschicken."
+        intro = f"{head}. Tipp auf „Mail öffnen“, dann ist die Mail an {fmt.dativ(who(d))} in deinem Mailprogramm fertig. Nur noch abschicken."
         event = f"Bei {who(d)} ({ref(d)}) ist heute die Nachfass-Mail dran. Ein Tipp öffnet sie fertig in deinem Mailprogramm: {taps.tap_url(fu)}"
     else:
         intro = (f"{head}. Mir fehlt die Handynummer oder Mailadresse von {who(d) or 'deinem Kunden'}. Schick sie mir einfach hier, "
@@ -171,7 +171,7 @@ def _tap_other(b: Business, fu: FollowUp, reminder: bool) -> Notification:
         title=f"{'Noch offen: ' if reminder else ''}{who(d) or ref(d)} nachfassen",
         text=f"{intro}\n\n{fu.wa_text}",
         buttons=[button("Gesendet", "tsent", fu.id), third, button("Diesmal nicht", "tskip", fu.id)],
-        buttons_text=f"Hast du die Nachricht an {who(d) or 'deinen Kunden'} abgeschickt?",
+        buttons_text=f"Hast du die Nachricht an {fmt.dativ(who(d)) or 'deinen Kunden'} abgeschickt?",
         cta=(taps.open_label(fu), taps.tap_url(fu)),
         doc_ids=[d.id], footer="Erinnerung" if reminder else "",
         template="event", template_params=[hello(b), event], template_buttons=[payload("ok")],
@@ -193,7 +193,7 @@ def tap_overflow(b: Business, fus: list[FollowUp]) -> Notification:
 def opened(d: Document, subject: str, body: str) -> Notification:
     b = d.business
     return Notification(
-        business=b, kind="opened", title=f"{who(d)} hat dein {d.kind_label} geöffnet",
+        business=b, kind="opened", title=f"{who(d)} hat {fmt.possessive(d.kind_label)} geöffnet",
         text=f"{ref(d)}{dmoney(d)} wurde gerade geöffnet. Guter Moment für einen kurzen Anruf.",
         buttons=[button("Jetzt anrufen", "call", d.id), button("Erledigt", "done", d.id)],
         email_subject=subject, email_body=body, doc_ids=[d.id],
@@ -220,7 +220,7 @@ def bounced(d: Document, subject: str, body: str) -> Notification:
         "Ich fasse dort nicht mehr nach.\n\nSchick mir hier einfach die richtige Mailadresse, dann fasse ich dort weiter nach."
     )
     return Notification(
-        business=b, kind="bounced", title=f"Mail an {who(d)} kam nicht an", text=text,
+        business=b, kind="bounced", title=f"Mail an {fmt.dativ(who(d))} kam nicht an", text=text,
         buttons=[button("Alles klar", "done", d.id)], email_subject=subject, email_body=body, doc_ids=[d.id],
         template="event", template_params=[hello(b), f"Die Mail an {who(d)} ({d.customer_email}) zu {ref(d)} kam nicht an, die Adresse ist unzustellbar. Schick mir hier die richtige Adresse, dann fasse ich weiter nach."],
         context={"bounced": d.id},

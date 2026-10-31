@@ -308,7 +308,7 @@ def invoice_question(doc: Document) -> str:
     betrag = fmt.money(doc.amount_gross, doc.currency)
     due = doc.due_date or doc.sent_at
     when = due.astimezone(ZoneInfo(settings.timezone)).strftime("%d.%m.%Y")
-    return f"{texts.term(doc)} {nr} an {who}{f' über {betrag}' if betrag else ''} ist seit {when} fällig. Noch offen?"
+    return f"{texts.term(doc)} {nr} an {fmt.dativ(who)}{f' über {betrag}' if betrag else ''} ist seit {when} fällig. Noch offen?"
 
 
 def review_question(doc: Document) -> str:
@@ -318,7 +318,7 @@ def review_question(doc: Document) -> str:
     nr = doc.document_number or doc.title or doc.subject
     what = f"{texts.dies(doc, 'acc')} {texts.term(doc)} {nr}{_money(doc.amount_gross, doc.currency)}"
     when = doc.sent_at.astimezone(ZoneInfo(settings.timezone)).strftime("%d.%m.%Y")
-    who = f" an {doc.customer_name or doc.customer_email}" if (doc.customer_name or doc.customer_email) else ""
+    who = f" an {fmt.dativ(doc.customer_name or doc.customer_email)}" if (doc.customer_name or doc.customer_email) else ""
     return f"{what} hast du am {when}{who} verschickt, also vor deinem Start bei uns. Ist {texts.es(doc)} schon erledigt?"
 
 
@@ -343,7 +343,7 @@ def _question_mail(business: Business, fu: FollowUp) -> tuple[str, str]:
         go_line = f"Noch offen, Zahlungserinnerung schicken: {base}/f/{fu.approval_token}/send"
         done_line = f"Ist bezahlt, nicht erinnern:            {base}/f/{fu.approval_token}/done"
         after = "Erst wenn du „Noch offen“ klickst, schicke ich die Zahlungserinnerung in deinem Namen. Ich sehe dein Konto nicht, deshalb frage ich vor jeder Erinnerung."
-        subject = f"Noch offen? {texts.term(doc)} {doc.document_number or doc.title} von {doc.customer_name or doc.customer_email}".strip()
+        subject = f"Noch offen? {texts.term(doc)} {doc.document_number or doc.title} von {fmt.dativ(doc.customer_name or doc.customer_email)}".strip()
     else:
         go_line = f"{go}: {base}/f/{fu.approval_token}/send"
         done_line = f"{done}, nicht nachfassen: {base}/f/{fu.approval_token}/done"
@@ -829,7 +829,11 @@ def outcome_mail(business: Business, docs: list[Document]) -> tuple[str, str]:
             lines += [head, f"  Auftrag bekommen: {base}/o/{d.outcome_token}/won", f"  Nicht bekommen:   {base}/o/{d.outcome_token}/lost", ""]
         else:
             lines += [head, f"  Ist bezahlt:              {base}/o/{d.outcome_token}/paid", f"  Nicht bezahlt, ich kümmere mich: {base}/o/{d.outcome_token}/unpaid", ""]
-    lines += ["Damit siehst du im Dashboard, wie viele deiner Angebote zum Auftrag werden.", "", "Locadas Nachfasser"]
+    if any(d.kind == DocKind.OFFER for d in docs):
+        lines += ["Damit siehst du im Dashboard, wie viele deiner Angebote zum Auftrag werden.", ""]
+    else:
+        lines += ["Damit stimmt die Übersicht im Dashboard.", ""]
+    lines += ["Locadas Nachfasser"]
     subject = f"Wie ist es ausgegangen? {len(docs)} {'Vorgang' if len(docs) == 1 else 'Vorgänge'}"
     return subject, "\n".join(lines)
 

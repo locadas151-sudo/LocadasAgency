@@ -20,7 +20,8 @@
 .adm-bar{height:10px;border-radius:6px;background:var(--gs);overflow:hidden}
 .adm-bar i{display:block;height:100%;background:var(--g2)}
 .adm-grid{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(0,1fr))}
-@media(max-width:900px){.adm-grid{grid-template-columns:1fr}}
+@media(max-width:900px){.adm-grid{grid-template-columns:minmax(0,1fr)}}
+.adm-grid>*{min-width:0}
 .adm textarea{width:100%;min-height:110px;border:1px solid var(--bs);border-radius:12px;padding:10px 12px;font:inherit}
 .kpi small{display:block;color:var(--tm);font-size:12px;margin-top:4px}
 </style>

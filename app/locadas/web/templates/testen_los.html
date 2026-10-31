@@ -26,7 +26,7 @@
 </div>
 {% endif %}
 <div class="note" style="margin-top:16px">
-{% if docs %}<b>Angekommen:</b> {% for d in docs %}{{ d.term }} {{ d.document_number or d.title }}{% if d.customer_name %} an {{ d.customer_name }}{% endif %}{% if d.amount_gross %} über {{ d.amount_gross|money(d.currency) }}{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}. <a href="/dashboard">Zur Übersicht</a>
+{% if docs %}<b>Angekommen:</b> {% for d in docs %}{{ d.term }} {{ d.document_number or d.title }}{% if d.customer_name %} an {{ d.customer_name }}{% endif %}{% if d.amount_gross %} über {{ d.amount_gross|money(d.currency) }}{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}.<div class="btn-row" style="margin-top:10px"><a class="btn sm" href="/dashboard">Zur Übersicht</a></div>
 {% else %}<div class="waiting"><span class="pulse" aria-hidden="true"></span><span>Wir warten auf dein Angebot. Sobald es da ist, bekommst du eine WhatsApp mit allem, was wir erkannt haben.</span></div>{% endif %}
 </div>
 </div>

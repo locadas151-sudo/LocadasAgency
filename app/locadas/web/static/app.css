@@ -212,3 +212,19 @@ details.settings-adv[open]>summary:before{content:"\2212"}
 .meter{height:8px;border-radius:999px;background:var(--bsoft);overflow:hidden;margin:8px 0 4px}
 .meter i{display:block;height:100%;background:var(--cta)}
 .tap-text{white-space:pre-wrap;font:inherit;font-size:15px;line-height:1.55;color:var(--text);background:var(--bg);border:1px solid var(--bs);border-radius:12px;padding:14px 16px;margin:0}
+/* Launch-Check: Handy (390px) ohne Querscrollen, Tippziele mindestens 44px */
+[hidden]{display:none!important}
+.grid2>*,.trial-grid>*{min-width:0}
+@media(max-width:900px){.grid2{grid-template-columns:minmax(0,1fr)}}
+pre,.tap-text,.step pre,.wa-item pre,.app-sub,h1,h2,.timeline span{overflow-wrap:anywhere}
+.btn.sm{min-height:44px}
+.btn{max-width:100%}
+@media(max-width:480px){.btn{white-space:normal;text-align:center}}
+.logo{min-height:44px}
+.step summary,details.adv summary,.wa-item details summary,details.settings-adv>summary{min-height:44px;align-items:center}
+details.adv summary,.wa-item details summary{display:flex}
+.tab{min-height:44px;display:inline-flex;align-items:center}
+@media(max-width:768px){.hd-exit.hd-login{display:inline-flex;border-right:0;margin-right:0;padding:0 4px}.btn-signin{max-width:52vw;overflow:hidden;text-overflow:ellipsis;display:inline-block;line-height:42px;padding:0 12px}.hd-in{gap:8px}}
+@media(max-width:360px){.logo-t{display:none}}
+@media(max-width:600px){.card table{display:block;overflow-x:auto;max-width:100%}}
+.kpi-lbl a{display:inline-block;padding:10px 0;margin:-10px 0}

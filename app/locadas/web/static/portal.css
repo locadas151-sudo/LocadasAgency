@@ -90,3 +90,6 @@
 .kp-foot a{color:inherit}
 .kp-by{display:inline-flex;align-items:center;gap:6px;color:var(--tf)!important;font-size:12px}
 .kp-by img{width:16px;height:16px;opacity:.75}
+/* Launch-Check: Tippziele */
+.kp-view{display:inline-flex;align-items:center;min-height:44px;padding-top:0}
+.kp-by a{display:inline-block;padding:12px 4px}

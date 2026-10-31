@@ -86,8 +86,6 @@ def install(app: FastAPI, render: Callable, get_db: Callable, current_business: 
         values = dict(owner_name=owner_name, business_name=business_name, whatsapp=whatsapp, email=email, wa_optin=wa_optin)
         if website.strip():  # Honigtopf für Bots
             return RedirectResponse("/testen", status_code=303)
-        if not ratelimit.allow("testen", client_ip(request)):
-            return render(request, "error.html", title="Kurz durchatmen", message="Zu viele Anmeldungen in kurzer Zeit. Bitte versuch es in ein paar Minuten noch einmal.", status_code=429)
         if not owner_name.strip() or not business_name.strip():
             return _form(request, values=values, error="Bitte trag deinen Namen und deinen Betrieb ein.")
         number = normalize_phone(whatsapp)
@@ -98,6 +96,10 @@ def install(app: FastAPI, render: Callable, get_db: Callable, current_business: 
         mail = email.strip().lower()
         if mail and not _EMAIL_RE.match(mail):
             return _form(request, values=values, error="Die Mailadresse sieht nicht richtig aus. Du kannst das Feld auch leer lassen.")
+        # Erst nach den Prüfungen zählen: Tippfehler sollen niemanden aussperren (viele Handys teilen sich eine IP).
+        # Gezählt wird, was eine Nachricht auslöst (neuer Zugang oder Login-Link).
+        if not ratelimit.allow("testen", client_ip(request)):
+            return render(request, "error.html", title="Kurz durchatmen", message="Zu viele Anmeldungen in kurzer Zeit. Bitte versuch es in ein paar Minuten noch einmal.", status_code=429)
         existing = session.scalars(select(Business).where(Business.whatsapp_number == number).order_by(Business.id.desc())).first()
         if existing is None and mail:
             existing = auth.business_by_email(session, mail)

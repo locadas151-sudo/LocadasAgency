@@ -435,12 +435,36 @@ def ingest(session: Session, b: Business, inc: Incoming, now: datetime | None = 
     return Result("created", b.id, doc.id)
 
 
+def split_forward(text: str) -> tuple[str, str]:
+    """Weitergeleitete Mail: (Rest ab dem ersten Zitat in der eigenen Mail, eigene Mail des Betriebs).
+
+    Ohne Weiterleitungs-Markierung bleibt der Text, wie er ist (eigene Mail = "")."""
+    t = (text or "").replace("\r\n", "\n")
+    m = _FWD_MARKER.search(t)
+    if not m:
+        return t, ""
+    rest = t[m.end():].split("\n", 1)[1] if "\n" in t[m.end():] else ""
+    lines = rest.split("\n")
+    i = 0
+    while i < len(lines) and (not lines[i].strip() or _HDR.match(lines[i])):
+        i += 1  # Kopfblock (Von/An/Betreff/Datum) überspringen
+    body = "\n".join(lines[i:])
+    own_part, quoted = phones.split_quote(body)
+    return quoted, own_part
+
+
 def _learn_phones(session: Session, b: Business, doc: Document, pdf_text: str, thread: str, hint: str) -> None:
     try:
         cc = phones.country_code(pdf_text, doc.currency)
         own = taps.own_numbers(b, cc=cc)
         names = tuple(n for n in (b.name, b.owner_name) if n)
         found = phones.from_document(pdf_text, doc.customer_name, own, names, cc) if pdf_text else phones.CustomerPhones()
+        if pdf_text:
+            own |= phones.letterhead_numbers(pdf_text, cc)  # Briefkopf/Fußzeile gehören dem Betrieb
+        thread, own_part = split_forward(thread)
+        if own_part:
+            # Weitergeleitet: die erste Mail ist die eigene Mail des Betriebs, ihre Signatur ist seine Nummer
+            own |= {f.number for f in phones.numbers_in(own_part, cc)}
         if not found.mobile and thread:
             t = phones.from_thread(thread, own, cc)
             found.phone, found.mobile = found.phone or t.phone, t.mobile

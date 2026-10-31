@@ -12,6 +12,7 @@ import re
 import unicodedata
 from dataclasses import dataclass, field
 
+from .. import fmt
 from ..config import settings
 from ..db import DocKind, Document
 from . import style, texts
@@ -73,7 +74,7 @@ def anrede(doc: Document, profile: dict | None) -> str:
     if kind == "titled":
         m = _TITLED_RE.match(name)
         title = "Herr" if m.group(1).lower().startswith("h") else "Frau"
-        full = f"{title} {m.group(2)}"
+        full = f"{title} {fmt.surname_form(m.group(2))}"
         if g == "Sehr geehrte":
             return f"{'Sehr geehrter' if title == 'Herr' else 'Sehr geehrte'} {full},"
         return f"{casual} {full},"

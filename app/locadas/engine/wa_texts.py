@@ -10,6 +10,7 @@ import logging
 import re
 from datetime import datetime
 
+from .. import fmt
 from ..config import settings
 from ..db import DocKind, Document
 from . import personalize, style, texts
@@ -32,9 +33,9 @@ def anrede(doc: Document, profile: dict | None = None) -> str:
         m = personalize._TITLED_RE.match(name)
         title = "Herr" if m.group(1).lower().startswith("h") else "Frau"
         rest = re.sub(r"^n\s+", "", m.group(2)) if m.group(1).lower() == "herrn" else m.group(2)
-        return f"Hallo {title} {rest},"
+        return f"Hallo {title} {fmt.surname_form(rest)},"
     if re.match(r"(?i)^herrn\s+\S", name):
-        return f"Hallo Herr {name.split(' ', 1)[1]},"
+        return f"Hallo Herr {fmt.surname_form(name.split(' ', 1)[1])},"
     if kind == "family":
         return "Hallo " + re.sub(r"(?i)^fam\.\s*", "Familie ", name) + ","
     if kind == "person":

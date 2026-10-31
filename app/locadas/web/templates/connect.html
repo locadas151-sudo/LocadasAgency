@@ -40,7 +40,7 @@ Hier brauchst du kein Passwort. Melde dich einfach mit deinem Microsoft-Konto an
 </div>
 {% endif %}
 <div class="field" id="pw-field"{% if ms_now %} hidden{% endif %}><label for="password">Passwort des Postfachs</label><input id="password" name="password" type="password"{% if not ms_now %} required{% endif %} autocomplete="current-password">
-<p class="small muted" id="provider-hint" style="margin:0">{% if provider %}{{ provider.label }}: {{ provider.hint or 'Dein normales Postfach-Passwort.' }}{% else %}Das Passwort, mit dem du dich auch in deinem Mailprogramm anmeldest.{% endif %}</p></div>
+<p class="small muted" id="provider-hint" style="margin:0">{% if provider and provider.key == 'outlook' and not ms_on %}Outlook und Microsoft 365 lassen keinen Passwort-Login zu. Das verbinden wir gerade gemeinsam: Buch dir oben einen kurzen Termin mit Julius.{% elif provider %}{{ provider.label }}: {{ provider.hint or 'Dein normales Postfach-Passwort.' }}{% else %}Das Passwort, mit dem du dich auch in deinem Mailprogramm anmeldest.{% endif %}</p></div>
 <div class="field"><label for="phone">Telefon <small>(optional, steht unter den Mails)</small></label><input id="phone" name="phone" value="{{ values.phone or '' }}" placeholder="0171 2345678"></div>
 
 <details class="adv" {% if show_advanced %}open{% endif %}>
@@ -61,7 +61,7 @@ Hier brauchst du kein Passwort. Melde dich einfach mit deinem Microsoft-Konto an
 
 <label class="check"><input type="checkbox" name="consent" value="1" required><span>Ich bin berechtigt, dieses Postfach zu nutzen. Locadas darf Mails mit Angebots- und Rechnungs-PDFs in meinem Gesendet-Ordner lesen, Antworten meiner Kunden im Posteingang erkennen und in meinem Namen Nachfass-Mails über dieses Postfach verschicken. <a href="/datenschutz">Datenschutz</a></span></label>
 <label class="check"><input type="checkbox" name="avv" value="1" id="avv" required><span>Ich akzeptiere den <a href="/avv" target="_blank">AVV (Auftragsverarbeitungsvertrag)</a>. Locadas verarbeitet die Daten meiner Kunden nur in meinem Auftrag.</span></label>
-<button class="btn" type="submit" id="submit">Verbinden und loslegen <svg class="ic"><use href="#i-arrow"/></svg></button>
+<button class="btn" type="submit" id="submit"{% if ms_now %} hidden{% endif %}>Verbinden und loslegen <svg class="ic"><use href="#i-arrow"/></svg></button>
 <p class="small muted" style="margin:0">Wir prüfen die Verbindung jetzt sofort. Dein Passwort wird verschlüsselt gespeichert und nie angezeigt.</p>
 </form>
 
@@ -83,7 +83,7 @@ Hier brauchst du kein Passwort. Melde dich einfach mit deinem Microsoft-Konto an
 <li><b>GMX, WEB.DE:</b> dein normales Passwort, IMAP muss in den Einstellungen eingeschaltet sein.</li>
 <li><b>T-Online:</b> das E-Mail-Passwort aus dem Kundencenter.</li>
 <li><b>IONOS, STRATO, eigene Domain:</b> dein normales Postfach-Passwort.</li>
-<li><b>Outlook, Microsoft 365:</b> {% if oauth_providers()|selectattr('key','equalto','microsoft')|list %}über „Mit Microsoft anmelden“, kein Passwort nötig. Das gilt auch für deine eigene Domain, wenn sie bei Microsoft 365 liegt.{% else %}noch nicht möglich, kommt.{% endif %}</li>
+<li><b>Outlook, Microsoft 365:</b> {% if oauth_providers()|selectattr('key','equalto','microsoft')|list %}über „Mit Microsoft anmelden“, kein Passwort nötig. Das gilt auch für deine eigene Domain, wenn sie bei Microsoft 365 liegt.{% else %}verbinden wir gerade gemeinsam mit dir, buch dir oben einen Termin.{% endif %}</li>
 </ul>
 </div>
 </div>
@@ -92,13 +92,14 @@ Hier brauchst du kein Passwort. Melde dich einfach mit deinem Microsoft-Konto an
 </section>
 {% endblock %}
 {% block scripts %}
+{% set ms_on = oauth_providers()|selectattr('key','equalto','microsoft')|list %}
 <script>
 (function(){
 var hints={{ hints_json|safe if hints_json else '{}' }};
 var map={"gmail.com":"gmail","googlemail.com":"gmail","outlook.com":"outlook","outlook.de":"outlook","hotmail.com":"outlook","hotmail.de":"outlook","live.de":"outlook","live.com":"outlook","gmx.de":"gmx","gmx.net":"gmx","gmx.at":"gmx","gmx.ch":"gmx","web.de":"webde","t-online.de":"tonline","magenta.de":"tonline","ionos.de":"ionos","1und1.de":"ionos","icloud.com":"icloud","me.com":"icloud","yahoo.de":"yahoo","yahoo.com":"yahoo","freenet.de":"freenet","posteo.de":"posteo","mailbox.org":"mailbox"};
 var texts={
  gmail:"Gmail: Du brauchst ein App-Passwort (Google-Konto → Sicherheit → App-Passwörter). Dein normales Passwort funktioniert nicht.",
- outlook:"Outlook und Microsoft 365 erlauben keinen Passwort-Login. Melde dich oben mit Microsoft an.",
+ outlook:{% if ms_on %}"Outlook und Microsoft 365 erlauben keinen Passwort-Login. Melde dich mit Microsoft an."{% else %}"Outlook und Microsoft 365 lassen keinen Passwort-Login zu. Das verbinden wir gerade gemeinsam: Buch dir oben einen kurzen Termin mit Julius."{% endif %},
  gmx:"GMX: Dein normales Passwort. IMAP muss unter E-Mail → Einstellungen → POP3/IMAP eingeschaltet sein.",
  webde:"WEB.DE: Dein normales Passwort. IMAP muss unter E-Mail → Einstellungen → POP3/IMAP eingeschaltet sein.",
  tonline:"T-Online: Das E-Mail-Passwort aus dem Kundencenter (Passwörter → Passwort für E-Mail-Programme).",
@@ -108,7 +109,7 @@ var texts={
  freenet:"freenet: Dein normales Passwort.",posteo:"Posteo: Dein normales Passwort.",mailbox:"mailbox.org: Dein normales Passwort."};
 var email=document.getElementById('email'),hint=document.getElementById('provider-hint');
 var msBox=document.getElementById('ms-box'),pwField=document.getElementById('pw-field'),pw=document.getElementById('password'),msAsked={};
-function ms(on){if(!msBox)return;msBox.hidden=!on;pwField.hidden=on;pw.required=!on;}
+function ms(on){if(!msBox)return;msBox.hidden=!on;pwField.hidden=on;pw.required=!on;var s=document.getElementById('submit');if(s)s.hidden=on;}
 function upd(){var d=(email.value.split('@')[1]||'').toLowerCase();var k=map[d];hint.textContent=k?texts[k]:(d?'Eigene Domain: Dein normales Postfach-Passwort. Wir suchen den Server automatisch.':'Das Passwort, mit dem du dich auch in deinem Mailprogramm anmeldest.');if(k)ms(k==='outlook');else if(!d)ms(false);}
 function lookup(){var v=email.value.trim().toLowerCase(),d=(v.split('@')[1]||'');if(!msBox||!d||d.indexOf('.')<1||map[d])return;if(d in msAsked){ms(msAsked[d]);return;}fetch('/verbinden/anbieter?'+new URLSearchParams({email:v})).then(function(r){return r.ok?r.json():{microsoft:false};}).then(function(j){msAsked[d]=!!j.microsoft;if((email.value.split('@')[1]||'').toLowerCase()===d)ms(msAsked[d]);}).catch(function(){});}
 email.addEventListener('input',upd);email.addEventListener('change',function(){upd();lookup();});email.addEventListener('blur',lookup);

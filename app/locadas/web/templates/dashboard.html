@@ -25,9 +25,9 @@
 <div class="kpis kpis5">
 <div class="kpi"><span class="kpi-num">{{ counts.open_offers }}</span><span class="kpi-lbl">Offene Angebote</span></div>
 <div class="kpi"><span class="kpi-num">{{ counts.open_invoices }}</span><span class="kpi-lbl">Offene Rechnungen{% if open_amount %} · {{ open_amount|money }}{% endif %}</span></div>
-<div class="kpi"><span class="kpi-num">{{ counts.sent }}</span><span class="kpi-lbl">Nachfass-Mails geschickt</span></div>
+<div class="kpi"><span class="kpi-num">{{ counts.sent }}</span><span class="kpi-lbl">{{ 'Nachfass-Nachrichten raus' if business.is_trial else 'Nachfass-Mails geschickt' }}</span></div>
 <div class="kpi"><span class="kpi-num">{{ counts.won }}</span><span class="kpi-lbl">Aufträge und Zahlungen</span></div>
-<div class="kpi"><span class="kpi-num">{{ counts.review_clicks }}</span><span class="kpi-lbl">Bewertungs-Klicks{% if not business.google_review_url %} · <a href="/einstellungen#bewertung">Link hinterlegen</a>{% endif %}</span></div>
+{% if not business.is_trial %}<div class="kpi"><span class="kpi-num">{{ counts.review_clicks }}</span><span class="kpi-lbl">Bewertungs-Klicks{% if not business.google_review_url %} · <a href="/einstellungen#bewertung">Link hinterlegen</a>{% endif %}</span></div>{% endif %}
 </div>
 {% if month %}
 <div class="card month-card" id="monat" style="margin-bottom:20px">
@@ -49,7 +49,7 @@
 
 {% if wa_taps %}
 <div class="card wa-card" id="whatsapp" style="margin-bottom:20px">
-<h3 class="h3" style="margin:0 0 4px">Heute per WhatsApp ({{ wa_taps|length }})</h3>
+<h3 class="h3" style="margin:0 0 4px">{{ 'Heute zum Abschicken' if business.is_trial else 'Heute per WhatsApp' }} ({{ wa_taps|length }})</h3>
 <p class="small muted" style="margin:0 0 12px">{% if business.is_trial %}Ein Tipp öffnet die fertige Nachricht in WhatsApp oder deinem Mailprogramm. Abschicken und hier kurz auf „Gesendet“. Antworten sehe ich im Test nicht, sag mir dann „Hat geantwortet“.{% else %}Tipp auf „In WhatsApp öffnen“, der Text steht schon im Chat mit dem Kunden. Abschicken und hier kurz auf „Gesendet“. Antworten per WhatsApp sehe ich nicht, sag mir dann „Hat geantwortet“.{% endif %}</p>
 <ul class="wa-list">
 {% for f in wa_taps %}{% set d = f.document %}
@@ -130,12 +130,19 @@
 <div class="card" style="margin-top:16px">
 <h3 class="h3">So läuft's gerade</h3>
 <ul class="plain">
+{% if business.is_trial %}
+<li>Angebote: nachfassen {{ settings.offer_followup_days|join(', ') }} Tage nach Versand</li>
+<li>Rechnungen: nachfassen {{ settings.invoice_followup_days|join(', ') }} Tage nach Fälligkeit</li>
+<li>Im Test geht nichts automatisch an deine Kunden. Ist eine Nachricht dran, bekommst du sie fertig aufs Handy und schickst sie mit einem Tipp ab.</li>
+<li>Die Nachrichten kommen werktags am Morgen, nie am Wochenende</li>
+{% else %}
 <li>Angebote: nachfassen {{ settings.offer_followup_days|join(', ') }} Tage nach Versand{% if not business.followup_offers %} (<b>aus</b>){% endif %}</li>
 <li>Rechnungen: nachfassen {{ settings.invoice_followup_days|join(', ') }} Tage nach Fälligkeit{% if not business.followup_invoices %} (<b>aus</b>){% endif %}</li>
 <li>{% if business.review_mode == 'all' %}Angebote: jede Mail mit deiner Freigabe{% else %}Angebote: automatisch mit Vorschau am Morgen, über {{ business.threshold|money }} mit Freigabe{% endif %}</li>
 <li>Rechnungen: nur nach deinem „Noch offen“</li>
 <li>Versand nur werktags (ohne Feiertage) {{ settings.send_hour_from }} bis {{ settings.send_hour_to }} Uhr</li>
 <li>Kanal: {{ CHANNEL_LABEL.get(business.followup_channel or 'mail', 'Per Mail') }}</li>
+{% endif %}
 </ul>
 <a class="btn ghost sm" href="/einstellungen" style="margin-top:12px">Einstellungen</a>
 </div>

@@ -26,6 +26,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
+from .. import fmt
 from ..config import settings
 from ..db import Business, Customer, DocKind, DocStatus, Document, FollowUp, FollowUpStatus, log_event, utcnow
 from ..extract import phones
@@ -229,7 +230,7 @@ def skip(session: Session, fu: FollowUp) -> bool:
     if fu.status == FollowUpStatus.AWAITING_TAP:
         fu.status = FollowUpStatus.SKIPPED
         _recompute_next(doc)
-        log_event(session, doc.business_id, "skipped", f"WhatsApp-Nachricht {fu.step} für {_ref(doc)} diesmal nicht geschickt. Die nächste Stufe bleibt geplant.", doc.id)
+        log_event(session, doc.business_id, "skipped", f"{tap_noun(fu)} {fu.step} für {_ref(doc)} diesmal nicht geschickt. Die nächste Stufe bleibt geplant.", doc.id)
     return True
 
 
@@ -238,11 +239,11 @@ def state_text(fu: FollowUp) -> tuple[str, str] | None:
     doc = fu.document
     who = doc.customer_name or doc.customer_email
     if fu.tap_state == "sent":
-        return "Schon notiert", f"Die WhatsApp-Nachricht an {who} ist als gesendet vermerkt."
+        return "Schon notiert", f"Die {tap_noun(fu)} an {fmt.dativ(who)} ist als gesendet vermerkt."
     if fu.tap_state in ("replied",) or (doc.status != DocStatus.OPEN and fu.tap_state != "open"):
         return "Schon erledigt", f"Bei {who} fasse ich nicht mehr nach."
     if fu.tap_state in ("skipped", "expired", "cancelled", ""):
-        return "Nicht mehr offen", "Diese WhatsApp-Nachricht ist nicht mehr offen."
+        return "Nicht mehr offen", f"Diese {tap_noun(fu)} ist nicht mehr offen."
     return None
 
 
@@ -263,7 +264,7 @@ def handle(session: Session, fu: FollowUp, action: str, now: datetime | None = N
         confirm_sent(session, fu, now)
         nxt = doc.next_followup_at
         tail = f" Die nächste Stufe ist am {nxt.astimezone(ZoneInfo(settings.timezone)).strftime('%d.%m.')} dran." if nxt and doc.status == DocStatus.OPEN else ""
-        return "Notiert", f"Die WhatsApp-Nachricht an {who} ist als gesendet vermerkt.{tail}"
+        return "Notiert", f"Die {tap_noun(fu)} an {fmt.dativ(who)} ist als gesendet vermerkt.{tail}"
     if action == "skip":
         skip(session, fu)
         return "Übersprungen", "Diese Nachricht wird nicht geschickt. Die nächste Stufe bleibt geplant."
@@ -326,7 +327,7 @@ def housekeeping(session: Session, now: datetime, business_id: int | None = None
                 fu.status = FollowUpStatus.SKIPPED
                 fu.error = "Nicht per WhatsApp verschickt (keine Bestätigung)"
                 _recompute_next(doc)
-            log_event(session, doc.business_id, "skipped", f"WhatsApp-Nachricht {fu.step} für {_ref(doc)} wurde nicht bestätigt, ich lasse sie aus.", doc.id)
+            log_event(session, doc.business_id, "skipped", f"{tap_noun(fu)} {fu.step} für {_ref(doc)} wurde nicht bestätigt, ich lasse sie aus.", doc.id)
         elif fu.tap_reminded_at is None and fu.tap_notified_at is not None:
             reminders.setdefault(doc.business_id, []).append(fu)
     return reminders

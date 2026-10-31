@@ -188,7 +188,7 @@ def completion_mail(c: Customer, docs: list[Document], with_review: bool) -> tup
         "",
         f"Ihr Auftrag{f' „{title}“' if title else ''} ist abgeschlossen. Vielen Dank für Ihr Vertrauen!",
         "",
-        "Angebot, Rechnung und den Stand Ihres Auftrags finden Sie jederzeit hier:",
+        "Ihre Unterlagen und den Stand Ihres Auftrags finden Sie jederzeit hier:",
         portal_url(c),
     ]
     if with_review:

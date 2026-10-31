@@ -112,7 +112,9 @@ def _anrede(doc: Document) -> str:
     parts = name.split()
     lowered = name.lower()
     if lowered.startswith(("herr ", "hr. ", "frau ", "fr. ")):
-        return f"Guten Tag {name},"
+        title, rest = name.split(" ", 1)
+        title = "Herr" if title.lower().startswith("h") else "Frau"
+        return f"Guten Tag {title} {fmt.surname_form(rest)},"
     # Firma oder Einzelperson ohne Anrede: neutral bleiben
     if len(parts) >= 2 and not _COMPANY_RE.search(name):
         return f"Guten Tag {name},"
@@ -124,12 +126,27 @@ def _betrag(doc: Document) -> str:
 
 
 def _ref(doc: Document) -> str:
+    """„Badsanierung, Nr. A-118“ (ohne Nummer und Bezeichnung der Betreff ohne WG:/AW:, sonst leer)."""
     bits = []
+    if doc.title:
+        bits.append(doc.title.strip())
     if doc.document_number:
         bits.append(f"Nr. {doc.document_number}")
-    if doc.title:
-        bits.append(doc.title)
-    return " ".join(bits) if bits else doc.subject
+    if bits:
+        return ", ".join(bits)
+    subj = re.sub(r"^(?:(?:re|aw|wg|fw|fwd)\s*:\s*)+", "", (doc.subject or "").strip(), flags=re.I).strip()
+    # „Ihr Angebot“, „Angebot Gastherme“: Begriff steht schon im Satz, nur der Rest zählt
+    words = re.compile(r"(?i)^(?:ihr|ihre|unser|unsere|das|die|der|anbei|neues|neue|zum|zur|für|fuer|" + re.escape(term(doc)) +
+                       r"|angebot|rechnung|kostenvoranschlag|offerte|nr\.?)\b[\s:,.-]*")
+    prev = None
+    while prev != subj:
+        prev, subj = subj, words.sub("", subj).strip()
+    return subj
+
+
+def _p(ref: str) -> str:
+    """Bezug in Klammern, ohne leere Klammern."""
+    return f" ({ref})" if ref else ""
 
 
 def _sig(doc: Document) -> str:
@@ -143,6 +160,12 @@ def _sig(doc: Document) -> str:
     if b.phone:
         lines.append(b.phone)
     return "\n".join(lines)
+
+
+def _default_due_days() -> int:
+    from ..config import settings
+
+    return int(getattr(settings, "default_invoice_due_days", 14) or 14)
 
 
 def _datum(dt) -> str:
@@ -259,37 +282,37 @@ def _offer_text(doc: Document, step: int) -> str:
     if opened(doc):
         if step == 1:
             return (
-                f"am {gesendet} habe ich Ihnen {unser(doc, 'acc')} {t} ({ref}) geschickt. "
+                f"am {gesendet} habe ich Ihnen {unser(doc, 'acc')} {t}{_p(ref)} geschickt. "
                 f"Falls Sie noch Fragen {zum(doc)} {t} haben oder etwas anders haben möchten, melden Sie sich gern. "
                 f"Ich erkläre Ihnen auch gern einzelne Positionen am Telefon."
             )
         if step == 2:
             return (
-                f"ich melde mich noch einmal zu {unser(doc, 'dat')} {t} ({ref}). "
+                f"ich melde mich noch einmal zu {unser(doc, 'dat')} {t}{_p(ref)}. "
                 f"Falls Sie noch Fragen {zum(doc)} {t} haben oder am Umfang etwas anpassen möchten, sagen Sie mir gern Bescheid.\n\n"
                 f"Lassen Sie sich ruhig die Zeit, die Sie brauchen."
             )
         valid = f" {der(doc).capitalize()} {t} gilt bis {_datum(doc.valid_until)}." if getattr(doc, "valid_until", None) else ""
         return (
-            f"falls Sie noch Fragen {zum(doc)} {t} ({ref}) haben, helfe ich Ihnen gern weiter.{valid}\n\n"
+            f"falls Sie noch Fragen {zum(doc)} {t}{_p(ref)} haben, helfe ich Ihnen gern weiter.{valid}\n\n"
             f"{_phone_line(doc)}"
         )
     if step == 1:
         return (
-            f"am {gesendet} habe ich Ihnen {unser(doc, 'acc')} {t} ({ref}) geschickt. "
+            f"am {gesendet} habe ich Ihnen {unser(doc, 'acc')} {t}{_p(ref)} geschickt. "
             f"Ich wollte kurz nachhören, ob alles angekommen ist und ob noch Fragen offen sind.\n\n"
-            f"Wenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach. Ich antworte schnell."
+            f"Wenn etwas unklar ist oder Sie etwas anpassen möchten, melden Sie sich einfach."
         )
     if step == 2:
         return (
-            f"ich melde mich noch einmal zu {unser(doc, 'dat')} {t} ({ref}). "
+            f"ich melde mich noch einmal zu {unser(doc, 'dat')} {t}{_p(ref)}. "
             f"Falls Sie sich schon entschieden haben, freue ich mich über eine kurze Rückmeldung, auch wenn es nichts wird. "
             f"Dann kann ich besser planen.\n\n"
             f"Falls Sie noch überlegen: Gern besprechen wir Umfang oder Termin, damit es für Sie passt."
         )
     valid = f" {der(doc).capitalize()} {t} gilt bis {_datum(doc.valid_until)}." if getattr(doc, "valid_until", None) else ""
     return (
-        f"zu {unser(doc, 'dat')} {t} ({ref}) habe ich bisher nichts von Ihnen gehört. "
+        f"zu {unser(doc, 'dat')} {t}{_p(ref)} habe ich bisher nichts von Ihnen gehört. "
         f"Vielleicht passt es gerade nicht oder Sie haben sich anders entschieden, beides ist völlig in Ordnung.{valid}\n\n"
         f"{_phone_line(doc)}"
     )
@@ -299,12 +322,12 @@ def _invoice_text(doc: Document, step: int, now: datetime | None) -> str:
     t, ref = term(doc), _ref(doc)
     betrag = _betrag(doc)
     b_txt = f" über {betrag}" if betrag else ""
-    faellig = _datum(doc.due_date)
+    faellig = _datum(doc.due_date or (doc.sent_at + timedelta(days=_default_due_days()) if doc.sent_at else None))
     ack = ack_line(doc)
     ack = f" {ack}" if ack else ""
     pay = payment_line(doc, now)
     tone = invoice_tone(doc)
-    head = f"{unser(doc)} {t} ({ref}){b_txt}"
+    head = f"{unser(doc)} {t}{_p(ref)}{b_txt}"
     offen = f"Laut meinen Unterlagen ist {der(doc)} {t} noch offen."
     # Nur nach Bestätigung durch den Betrieb („Noch offen“). Nie behaupten, wir hätten keinen Zahlungseingang gefunden.
     if tone == "bestimmt":
@@ -351,7 +374,7 @@ def _invoice_text(doc: Document, step: int, now: datetime | None) -> str:
         )
     return (
         f"trotz zweier Erinnerungen ist {head}, fällig seit dem {faellig}, laut meinen Unterlagen noch offen.{ack}\n\n{pay}\n\n"
-        f"Danach müssen wir das Mahnverfahren einleiten. Das bedeutet zusätzliche Kosten für Sie und das möchten wir beide vermeiden."
+        f"Geht bis dahin keine Zahlung ein, müssen wir das Mahnverfahren einleiten. Das würde zusätzliche Kosten für Sie bedeuten, das möchte ich Ihnen gern ersparen."
     )
 
 

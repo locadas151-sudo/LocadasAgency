@@ -233,6 +233,16 @@ def from_document(text: str, customer_name: str = "", own: set[str] | None = Non
     return out
 
 
+def letterhead_numbers(text: str, cc: str = "49") -> set[str]:
+    """Nummern aus den ersten Zeilen (Briefkopf) und der Fußzeile, außer ausdrücklich als Kunde beschriftet."""
+    lines = (text or "").splitlines()
+    if not lines:
+        return set()
+    head = min(3, len(lines))
+    foot = max(head, len(lines) - FOOTER_LINES)
+    return {f.number for f in numbers_in(text, cc) if (f.line < head or f.line >= foot) and not _CUSTOMER_CTX.search(lines[f.line])}
+
+
 # --- Mails ---------------------------------------------------------------------------
 
 _QUOTE_HEAD = re.compile(
