@@ -193,6 +193,37 @@ def parse_message(uid: int, raw: bytes) -> ParsedMail:
     )
 
 
+def extract_text(raw: bytes, limit: int = 4000) -> str:
+    """Text-Teile einer (ggf. abgeschnittenen) Mail, ohne Anhänge anzufassen."""
+    try:
+        msg: Message = email.message_from_bytes(raw)
+    except Exception:
+        return ""
+    plain: list[str] = []
+    htmls: list[str] = []
+    for part in msg.walk():
+        if part.is_multipart():
+            continue
+        ctype = part.get_content_type()
+        if part.get_filename() or "attachment" in (part.get("Content-Disposition") or "").lower():
+            continue
+        if ctype not in ("text/plain", "text/html"):
+            continue
+        try:
+            payload = part.get_payload(decode=True) or b""
+            txt = payload.decode(part.get_content_charset() or "utf-8", "replace")
+        except Exception:
+            continue
+        (plain if ctype == "text/plain" else htmls).append(txt)
+    if plain:
+        return "\n".join(plain).strip()[:limit]
+    if htmls:
+        h = re.sub(r"(?is)<(script|style)\b.*?</\1>", " ", "\n".join(htmls))
+        h = re.sub(r"(?i)<br\s*/?>|</p>|</div>", "\n", h)
+        return re.sub(r"<[^>]+>", " ", h).strip()[:limit]
+    return ""
+
+
 class ImapClient:
     """Dünner Wrapper um imaplib mit UID-basiertem, inkrementellem Lesen."""
 
@@ -312,6 +343,22 @@ class ImapClient:
             if isinstance(item, tuple) and len(item) >= 2:
                 return parse_message(uid, item[1])
         return None
+
+    def fetch_text(self, uid: int, limit: int = 4000, max_bytes: int = 256_000) -> str:
+        """Nur der Text einer Mail (text/plain, sonst text/html), höchstens `limit` Zeichen.
+
+        Holt Header plus die ersten `max_bytes` des Rumpfs statt der ganzen Mail, damit große
+        Anhänge nicht geladen werden. Anhänge werden nicht dekodiert.
+        """
+        assert self.conn
+        typ, data = self.conn.uid("FETCH", str(uid), f"(BODY.PEEK[HEADER] BODY.PEEK[TEXT]<0.{max_bytes}>)")
+        if typ != "OK" or not data:
+            return ""
+        chunks = [item[1] for item in data if isinstance(item, tuple) and len(item) >= 2 and isinstance(item[1], bytes)]
+        if not chunks:
+            return ""
+        raw = chunks[0] if len(chunks) == 1 else chunks[0] + chunks[1]
+        return extract_text(raw, limit)
 
     def append(self, folder: str, raw: bytes) -> bool:
         """Kopie einer selbst verschickten Mail in den Gesendet-Ordner legen."""

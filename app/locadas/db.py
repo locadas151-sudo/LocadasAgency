@@ -56,6 +56,17 @@ class DocKind(str, enum.Enum):
     INVOICE = "invoice"  # Rechnung
 
 
+REPLY_INTENT_LABEL = {
+    "accept": "Zusage",
+    "decline": "Absage",
+    "question": "Rückfrage",
+    "later": "Meldet sich später",
+    "payment_done": "Hat bezahlt",
+    "complaint": "Beschwerde",
+    "other": "Antwort",
+}
+
+
 class DocStatus(str, enum.Enum):
     OPEN = "open"            # wird nachgefasst
     REPLIED = "replied"      # Kunde hat geantwortet, Nachfassen gestoppt
@@ -176,6 +187,9 @@ class Document(Base):
     last_customer_reply_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     closed_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     close_reason: Mapped[str] = mapped_column(String(200), default="")
+    # Kundenantwort, von Claude eingeordnet (Mailtext selbst wird nicht gespeichert)
+    reply_intent: Mapped[str] = mapped_column(String(20), default="", server_default="")
+    reply_summary: Mapped[str] = mapped_column(String(300), default="", server_default="")
     # Beim ersten Scan gefundene ältere Dokumente: Nachfassen nur mit Freigabe (könnte schon erledigt sein)
     needs_review: Mapped[bool] = mapped_column(Boolean, default=False)
     # Lese-Tracking über den Link in den Nachfass-Mails
@@ -199,6 +213,10 @@ class Document(Base):
     @property
     def kind_label(self) -> str:
         return "Angebot" if self.kind == DocKind.OFFER else "Rechnung"
+
+    @property
+    def reply_intent_label(self) -> str:
+        return REPLY_INTENT_LABEL.get(self.reply_intent, "Antwort") if self.reply_intent else ""
 
 
 class FollowUp(Base):
@@ -280,6 +298,34 @@ def new_session() -> Session:
 
 def init_db() -> None:
     Base.metadata.create_all(get_engine())
+    _add_missing_columns()
+
+
+def _add_missing_columns() -> None:
+    """Mini-Migration für SQLite: neue Spalten an bestehende Tabellen hängen (create_all tut das nicht)."""
+    eng = get_engine()
+    if eng.dialect.name != "sqlite":
+        return
+    from sqlalchemy import inspect, text
+
+    insp = inspect(eng)
+    with eng.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            if not insp.has_table(table.name):
+                continue
+            have = {c["name"] for c in insp.get_columns(table.name)}
+            for col in table.columns:
+                if col.name in have or col.primary_key:
+                    continue
+                default = col.default.arg if col.default is not None and col.default.is_scalar else None
+                ddl = f'ALTER TABLE {table.name} ADD COLUMN "{col.name}" {col.type.compile(eng.dialect)}'
+                if isinstance(default, bool):
+                    ddl += f" NOT NULL DEFAULT {int(default)}"
+                elif isinstance(default, (int, float)):
+                    ddl += f" NOT NULL DEFAULT {default}"
+                elif isinstance(default, str):
+                    ddl += " NOT NULL DEFAULT '" + default.replace("'", "''") + "'"
+                conn.execute(text(ddl))
 
 
 def reset_engine_for_tests(url: str) -> None:

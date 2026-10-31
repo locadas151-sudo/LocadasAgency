@@ -14,6 +14,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import re
+from dataclasses import replace
 from datetime import timedelta
 
 from sqlalchemy import select
@@ -26,7 +27,9 @@ from ..extract.fields import extract_fields, utc_from_iso
 from ..extract.pdftext import pdf_to_text
 from ..mail.imap import Attachment, ImapClient, MailAuthError, MailConnectError, ParsedMail, since_days
 from . import accounts as acc
+from . import matcher
 from .followups import close_document, notify_business, schedule_followups
+from .matcher import MatchResult
 
 log = logging.getLogger(__name__)
 
@@ -306,6 +309,91 @@ def _handle_bounce(session: Session, account: MailAccount, mail: ParsedMail, cli
     return True
 
 
+MAX_CLASSIFY_PER_RUN = 40  # Claude-Aufrufe je Posteingangs-Durchlauf, danach wie ohne Claude
+
+
+def _mail_body(client: ImapClient, mail: ParsedMail) -> str:
+    """Nur Text, gekürzt, nur für den Claude-Aufruf (wird nicht gespeichert)."""
+    try:
+        return client.fetch_text(mail.uid, limit=20_000)
+    except Exception as exc:
+        log.warning("Text von UID %s nicht lesbar: %s", mail.uid, exc)
+        return ""
+
+
+def _match_free_mail(session: Session, account: MailAccount, client: ImapClient, mail: ParsedMail, budget: list[int]) -> tuple[Document | None, MatchResult | None]:
+    """Mail ohne Thread-Bezug: exakte Kundenadresse wie bisher, sonst bzw. zusätzlich Claude entscheiden lassen."""
+    fallback = _doc_in_thread(session, account, set(), customer=mail.from_addr)
+    if not matcher.enabled() or budget[0] <= 0:
+        return fallback, None
+    if matcher.is_newsletter(mail) or not looks_like_customer(mail.from_addr, account.email):
+        return fallback, None
+    open_docs = list(session.scalars(
+        select(Document).where(Document.business_id == account.business_id, Document.status == DocStatus.OPEN)
+    ).all())
+    if not open_docs:
+        return fallback, None
+    budget[0] -= 1
+    result = matcher.classify_mail(mail, _mail_body(client, mail), open_docs)
+    if result is None:
+        return fallback, None
+    if result.matched:
+        return next(d for d in open_docs if d.id == result.doc_id), result
+    if fallback is not None:
+        # Bekannter Kunde, Claude unsicher: wie bisher stoppen, Status aber nicht aus der Absicht ableiten
+        return fallback, replace(result, doc_id=fallback.id, confidence=0.0)
+    return None, None
+
+
+def _classify_thread_reply(client: ImapClient, mail: ParsedMail, doc: Document, budget: list[int]) -> MatchResult | None:
+    if not matcher.enabled() or budget[0] <= 0:
+        return None
+    budget[0] -= 1
+    try:
+        return matcher.classify_mail(mail, _mail_body(client, mail), [doc], known=doc)
+    except Exception as exc:  # nie das Schließen verhindern
+        log.warning("Einordnung der Antwort fehlgeschlagen: %s", exc)
+        return None
+
+
+_STATUS_SUBJECT = {DocStatus.WON: "hat zugesagt", DocStatus.LOST: "hat abgesagt", DocStatus.PAID: "hat bezahlt"}
+_STATUS_NOTE = {
+    DocStatus.WON: "Ich habe das Angebot als „Auftrag bekommen“ markiert und fasse nicht mehr nach.",
+    DocStatus.LOST: "Ich habe das Angebot als Absage markiert und fasse nicht mehr nach.",
+    DocStatus.PAID: "Ich habe die Rechnung als bezahlt markiert und fasse nicht mehr nach. Prüf bitte trotzdem den Zahlungseingang.",
+}
+
+
+def _close_on_reply(session: Session, doc: Document, mail: ParsedMail, result: MatchResult | None) -> DocStatus:
+    status = DocStatus.REPLIED
+    doc.reply_intent, doc.reply_summary = "", ""
+    if result is not None:
+        doc.reply_intent = result.intent
+        doc.reply_summary = result.summary[:300]
+        if result.matched and result.doc_id == doc.id:
+            status = matcher.status_for(doc, result.intent)
+    doc.last_customer_reply_at = mail.date
+    close_document(session, doc, status, f"Antwort von {mail.from_addr}")
+    if doc.reply_summary:
+        log_event(session, doc.business_id, "reply", f"{doc.reply_intent_label}: {doc.reply_summary}", doc.id)
+    return status
+
+
+def _notify_reply(session: Session, doc: Document, mail: ParsedMail, status: DocStatus) -> None:
+    who = doc.customer_name or mail.from_addr
+    ref = f"{doc.kind_label} {doc.document_number or doc.title}"
+    lines = [f"Hallo {doc.business.owner_name or doc.business.name},", ""]
+    lines.append(f"{who} hat auf {ref} geantwortet (Betreff: {mail.subject}).")
+    if doc.reply_summary:
+        lines += ["", f"» {doc.reply_summary}"]
+    if doc.customer_email and mail.from_addr != doc.customer_email:
+        lines += ["", f"Die Mail kam von {mail.from_addr}, nicht von {doc.customer_email}. Ich habe sie anhand des Inhalts zugeordnet."]
+    lines += ["", _STATUS_NOTE.get(status, "Ich fasse dort nicht mehr nach."), ""]
+    lines.append(f"Wenn das nicht stimmt oder du doch weiter nachfassen willst, kannst du das hier ändern: {settings.base_url}/dokument/{doc.id}")
+    lines += ["", "Locadas Nachfasser"]
+    notify_business(session, doc.business, f"{who} {_STATUS_SUBJECT.get(status, 'hat geantwortet')} ({ref})", "\n".join(lines))
+
+
 def scan_inbox(session: Session, account: MailAccount, client: ImapClient) -> int:
     validity, uidnext = client.select(account.inbox_folder)
     if account.inbox_uidvalidity is None or validity != account.inbox_uidvalidity:
@@ -315,6 +403,7 @@ def scan_inbox(session: Session, account: MailAccount, client: ImapClient) -> in
         return 0
     uids = client.search_uids(account.inbox_last_uid + 1)
     replies = 0
+    budget = [MAX_CLASSIFY_PER_RUN]
     for uid in uids[:200]:
         mail = client.fetch_headers(uid)
         account.inbox_last_uid = max(account.inbox_last_uid, uid)
@@ -323,27 +412,25 @@ def scan_inbox(session: Session, account: MailAccount, client: ImapClient) -> in
         if mail.is_bounce:
             _handle_bounce(session, account, mail, client)
             continue
-        doc = _doc_in_thread(session, account, _thread_ids(mail), customer=mail.from_addr)
+        # Billig zuerst: Thread-Bezug über In-Reply-To/References
+        doc = _doc_in_thread(session, account, _thread_ids(mail))
+        if mail.is_auto_reply:
+            doc = doc or _doc_in_thread(session, account, set(), customer=mail.from_addr)
+            if doc is not None:
+                log_event(session, doc.business_id, "autoreply", f"Abwesenheitsnotiz von {mail.from_addr}. Ich fasse trotzdem weiter nach.", doc.id)
+                session.commit()
+            continue
+        if doc is not None:
+            result = _classify_thread_reply(client, mail, doc, budget)
+        else:
+            doc, result = _match_free_mail(session, account, client, mail, budget)
         if doc is None:
             continue
-        if mail.is_auto_reply:
-            log_event(session, doc.business_id, "autoreply", f"Abwesenheitsnotiz von {mail.from_addr}. Ich fasse trotzdem weiter nach.", doc.id)
-            session.commit()
-            continue
-        doc.last_customer_reply_at = mail.date
-        close_document(session, doc, DocStatus.REPLIED, f"Antwort von {mail.from_addr}")
+        status = _close_on_reply(session, doc, mail, result)
         replies += 1
         session.commit()
         if doc.business.notify_opened:
-            notify_business(
-                session, doc.business,
-                f"{doc.customer_name or mail.from_addr} hat geantwortet ({doc.kind_label} {doc.document_number or doc.title})",
-                f"Hallo {doc.business.owner_name or doc.business.name},\n\n"
-                f"{doc.customer_name or mail.from_addr} hat auf {doc.kind_label} {doc.document_number or doc.title} geantwortet (Betreff: {mail.subject}). "
-                f"Ich fasse dort nicht mehr nach.\n\n"
-                f"Wenn du doch weiter nachfassen willst, kannst du das hier wieder einschalten: {settings.base_url}/dokument/{doc.id}\n\n"
-                f"Locadas Nachfasser",
-            )
+            _notify_reply(session, doc, mail, status)
     if len(uids) <= 200:
         account.inbox_last_uid = max(account.inbox_last_uid, uidnext - 1)
     return replies

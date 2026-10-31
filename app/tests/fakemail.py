@@ -124,6 +124,16 @@ class _Handler(socketserver.StreamRequestHandler):
                             continue
                         if "RFC822.SIZE" in what:
                             self._send(f"* {seq} FETCH (UID {u} RFC822.SIZE {len(raw)})")
+                        elif "HEADER" in what and "TEXT" in what:
+                            sep = re.search(rb"\r?\n\r?\n", raw)
+                            hdr, body = (raw[: sep.end()], raw[sep.end():]) if sep else (raw, b"")
+                            m2 = re.search(r"TEXT\]<0\.(\d+)>", what)
+                            body = body[: int(m2.group(1))] if m2 else body
+                            srv.text_fetches.append(u)
+                            self.wfile.write(
+                                f"* {seq} FETCH (UID {u} BODY[HEADER] {{{len(hdr)}}}\r\n".encode() + hdr
+                                + f" BODY[TEXT]<0> {{{len(body)}}}\r\n".encode() + body + b")\r\n"
+                            )
                         elif "HEADER" in what:
                             hdr = raw.split(b"\r\n\r\n", 1)[0] + b"\r\n\r\n"
                             self.wfile.write(f"* {seq} FETCH (UID {u} BODY[HEADER] {{{len(hdr)}}}\r\n".encode() + hdr + b")\r\n")
@@ -147,6 +157,7 @@ class FakeImapServer(socketserver.ThreadingTCPServer):
         self.store = _Store(sent, sent_flag)
         self.log: list[str] = []
         self.appended: list[tuple[str, bytes]] = []
+        self.text_fetches: list[int] = []
         self._thread = threading.Thread(target=self.serve_forever, daemon=True)
 
     def start(self) -> "FakeImapServer":

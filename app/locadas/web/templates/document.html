@@ -36,6 +36,7 @@
 <button class="btn ghost sm" name="action" value="reopen">Wieder nachfassen</button>
 </form>
 {% endif %}
+{% if doc.reply_summary %}<p class="small" style="margin:0 0 12px"><span class="pill muted">{{ doc.reply_intent_label }}</span> {{ doc.reply_summary }}</p>{% endif %}
 {% if not doc.customer_email %}<div class="note err" style="margin-bottom:12px">Keine Kunden-Mailadresse gefunden. Trag sie rechts ein, sonst können wir nicht nachfassen.</div>{% endif %}
 <ul class="steps">
 {% for f in doc.followups %}

@@ -57,6 +57,7 @@
 <div>
 <a class="t" href="/dokument/{{ d.id }}">{{ d.customer_name or d.customer_email }}</a>
 <div class="meta"><span class="pill kind">{{ d.kind_label }}{% if d.document_number %} {{ d.document_number }}{% endif %}</span>{% if d.title %}<span>{{ d.title }}</span>{% endif %}<span>gesendet {{ d.sent_at|date }}</span>{% if d.kind == DocKind.INVOICE and d.due_date %}<span>fällig {{ d.due_date|date }}</span>{% endif %}</div>
+{% if d.reply_summary %}<div class="meta"><span>{{ d.reply_intent_label }}: {{ d.reply_summary }}</span></div>{% endif %}
 </div>
 <div class="right">
 <span class="amt">{{ d.amount_gross|money }}</span>
